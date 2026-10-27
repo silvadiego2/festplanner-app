@@ -1,6 +1,5 @@
 'use client';
 
-// ... existing code ...
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Calendar,
@@ -15,38 +14,23 @@ import {
   Plus,
   Trash2,
   Edit2,
-  ExternalLink,
   Download,
   Share2,
-  AlertCircle,
-  CheckCircle2,
-  HelpCircle,
-  XCircle,
-  Copy,
-  Layers,
-  ShoppingBag,
-  Home,
-  Building,
-  Cake,
-  GlassWater,
   Flame,
   Gamepad2,
-  Armchair,
-  Printer,
+  Layers,
   RotateCcw,
   Sun,
   Moon,
   ChevronRight,
-  Filter,
   Check,
   TrendingUp,
-  ArrowUpRight,
-  SlidersHorizontal,
-  ChevronDown,
-  Info
+  Building,
+  Cake,
+  Boxes
 } from 'lucide-react';
 
-// --- INITIAL MOCK DATA ---
+// --- DADOS INICIAIS DE DEMONSTRAÇÃO ---
 const INITIAL_EVENT_CONFIG = {
   celebrantName: "Mariana Souza",
   age: 30,
@@ -56,21 +40,18 @@ const INITIAL_EVENT_CONFIG = {
   endTime: "22:00",
   durationHours: 6,
   locationType: "rented", // 'home' | 'rented'
-  // Home config
   condoFee: 150,
-  noiseRules: "Música ao vivo permitida até as 22h no salão de festas do condomínio.",
-  // Rented config
+  noiseRules: "Música ao vivo permitida até as 22h no salão de festas.",
   venueName: "Espaço Villa Verde & Lounge",
-  venueAddress: "Av. dos Coqueiros, 1420 - Itapuã, Salvador - BA",
+  venueAddress: "Av. dos Coqueiros, 1420 - Salvador, BA",
   venueCost: 2800,
   venueDeposit: 800,
   setupStartTime: "11:00",
   teardownEndTime: "02:00",
   venueMapUrl: "https://maps.google.com",
   venueContact: "(71) 98765-4321 - Paula",
-  // Service
   serviceType: "buffet", // 'buffet' | 'alacarte' | 'churrasco' | 'fingerfood'
-  hotDishesCount: 4, // for rechaud calculation
+  hotDishesCount: 4,
   servesBeer: true,
   servesWine: true,
   safetyMarginPct: 15,
@@ -89,54 +70,60 @@ const INITIAL_GUESTS = [
 ];
 
 const INITIAL_EXPENSES = [
-  { id: '1', description: 'Locação Salão Villa Verde', category: 'Locações', estimated: 2800, actual: 2800, paid: true },
-  { id: '2', description: 'Carnes e Proteínas Nobres', category: 'Buffet', estimated: 1400, actual: 1250, paid: true },
-  { id: '3', description: 'Chopp Artesanal & Cervejas', category: 'Bebidas', estimated: 950, actual: 920, paid: true },
-  { id: '4', description: 'Bolo Decorado & Docinhos Finos', category: 'Buffet', estimated: 650, actual: 650, paid: false },
-  { id: '5', description: 'Aluguel de Rechauds e Louças', category: 'Locações', estimated: 420, actual: 400, paid: true },
-  { id: '6', description: 'Cama Elástica com Monitor', category: 'Locações', estimated: 350, actual: 350, paid: true }
+  { id: '1', description: 'Locação Salão Villa Verde', category: 'Locação Espaço', estimated: 2800, actual: 2800, paid: true },
+  { id: '2', description: 'Carnes e Proteínas Nobres', category: 'Buffet & Comidas', estimated: 1400, actual: 1250, paid: true },
+  { id: '3', description: 'Chopp Artesanal & Cervejas', category: 'Bebidas & Gelo', estimated: 950, actual: 920, paid: true },
+  { id: '4', description: 'Bolo Decorado & Docinhos Finos', category: 'Confeitaria', estimated: 650, actual: 650, paid: false },
+  { id: '5', description: 'Aluguel de Rechauds e Louças', category: 'Aluguel Materiais', estimated: 420, actual: 400, paid: true },
+  { id: '6', description: 'Cama Elástica com Monitor', category: 'Brinquedos', estimated: 350, actual: 350, paid: true }
 ];
 
 const INITIAL_RENTALS = [
   { id: '1', name: 'Salão Villa Verde', category: 'venue', cost: 2800, supplier: 'Espaço Villa Verde', notes: 'Incluso limpeza pós-evento' },
-  { id: '2', name: 'Cama Elástica 3,05m', category: 'toy', cost: 350, supplier: 'Tio Pipoca Festas', hasMonitor: true, notes: 'Montagem 1h antes' },
-  { id: '3', name: '10 Jogos de Mesas e Cadeiras', category: 'furniture', cost: 220, supplier: 'LocMóveis Eventos', notes: 'Entrega na sexta-feira' },
+  { id: '2', name: 'Cama Elástica 3,05m', category: 'toy', cost: 350, supplier: 'Tio Pipoca Festas', hasMonitor: true, notes: 'Montagem 1h antes com monitor' },
+  { id: '3', name: '10 Jogos de Mesas e Cadeiras', category: 'furniture', cost: 220, supplier: 'LocMóveis Eventos', notes: 'Entrega na sexta-feira à tarde' },
   { id: '4', name: 'Kit 4 Rechauds Inox com Cubas', category: 'furniture', cost: 180, supplier: 'LocMóveis Eventos', notes: 'Devolução limpo' }
 ];
 
 const INITIAL_CHECKLIST = [
-  { id: '1', title: 'Definir tema e data oficial', period: '45 dias antes', completed: true },
+  { id: '1', title: 'Definir tema, estilo e data oficial', period: '45 dias antes', completed: true },
   { id: '2', title: 'Reservar local ou salão de festas', period: '45 dias antes', completed: true },
-  { id: '3', title: 'Contratar brinquedos e monitores', period: '20 dias antes', completed: true },
+  { id: '3', title: 'Contratar brinquedos infláveis e monitores', period: '20 dias antes', completed: true },
   { id: '4', title: 'Disparar convites e link de RSVP', period: '20 dias antes', completed: true },
-  { id: '5', title: 'Fechar aluguel de louças e rechauds', period: '15 dias antes', completed: false },
+  { id: '5', title: 'Fechar aluguel de louças, taças e rechauds', period: '15 dias antes', completed: false },
   { id: '6', title: 'Comprar bebidas não perecíveis e descartáveis', period: '7 dias antes', completed: false },
   { id: '7', title: 'Confirmar entrega de gelo filtrado e carnes', period: '3 dias antes', completed: false },
-  { id: '8', title: 'Montar buffet e testar acendimento dos rechauds', period: 'No dia', completed: false }
+  { id: '8', title: 'Montar buffet e testar acendimento dos rechauds', period: 'No dia da festa', completed: false }
 ];
 
-export function App() {
+export default function App() {
+  // --- ESTADOS COM PERSISTÊNCIA EM LOCALSTORAGE ---
   const [config, setConfig] = useState(() => {
+    if (typeof window === 'undefined') return INITIAL_EVENT_CONFIG;
     const saved = localStorage.getItem('festplanner_config');
     return saved ? JSON.parse(saved) : INITIAL_EVENT_CONFIG;
   });
 
   const [guests, setGuests] = useState(() => {
+    if (typeof window === 'undefined') return INITIAL_GUESTS;
     const saved = localStorage.getItem('festplanner_guests');
     return saved ? JSON.parse(saved) : INITIAL_GUESTS;
   });
 
   const [expenses, setExpenses] = useState(() => {
+    if (typeof window === 'undefined') return INITIAL_EXPENSES;
     const saved = localStorage.getItem('festplanner_expenses');
     return saved ? JSON.parse(saved) : INITIAL_EXPENSES;
   });
 
   const [rentals, setRentals] = useState(() => {
+    if (typeof window === 'undefined') return INITIAL_RENTALS;
     const saved = localStorage.getItem('festplanner_rentals');
     return saved ? JSON.parse(saved) : INITIAL_RENTALS;
   });
 
   const [checklist, setChecklist] = useState(() => {
+    if (typeof window === 'undefined') return INITIAL_CHECKLIST;
     const saved = localStorage.getItem('festplanner_checklist');
     return saved ? JSON.parse(saved) : INITIAL_CHECKLIST;
   });
@@ -145,14 +132,14 @@ export function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
-  // Modals state
+  // Modais
   const [guestModalOpen, setGuestModalOpen] = useState(false);
   const [editingGuest, setEditingGuest] = useState(null);
   const [rsvpSimModalOpen, setRsvpSimModalOpen] = useState(false);
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
   const [rentalModalOpen, setRentalModalOpen] = useState(false);
 
-  // Sync to localStorage
+  // Salvar no localStorage
   useEffect(() => {
     localStorage.setItem('festplanner_config', JSON.stringify(config));
   }, [config]);
@@ -173,15 +160,12 @@ export function App() {
     localStorage.setItem('festplanner_checklist', JSON.stringify(checklist));
   }, [checklist]);
 
-  // Toast notification timer
   const showToast = (msg) => {
     setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 3500);
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // --- CALCULATIONS CORE (BASED ON CONFIRMED ONLY) ---
+  // --- CÁLCULOS PRINCIPAIS BASEADOS EM CONFIRMADOS ---
   const stats = useMemo(() => {
     const totalGuests = guests.length;
     const confirmedList = guests.filter(g => g.status === 'confirmed');
@@ -192,15 +176,16 @@ export function App() {
     const confirmedKids611 = confirmedList.filter(g => g.category === 'child_6_11').length;
     const confirmedKids05 = confirmedList.filter(g => g.category === 'child_0_5').length;
 
+    // Crianças de 6 a 11 anos contam como 0.5 cota alimentar; de 0 a 5 são isentas
     const weightedEaters = confirmedAdults + (confirmedKids611 * 0.5);
     const alcoholDrinkers = confirmedList.filter(g => g.category === 'adult' && g.drinksAlcohol).length;
 
-    // Financials
+    // Custos
     const totalEstimatedCost = expenses.reduce((acc, curr) => acc + (Number(curr.estimated) || 0), 0);
     const totalActualCost = expenses.reduce((acc, curr) => acc + (Number(curr.actual) || 0), 0);
     const costPerConfirmed = confirmedList.length > 0 ? (totalEstimatedCost / confirmedList.length) : 0;
 
-    // Breakdown by Category
+    // Gastos por categoria
     const categoryTotals = expenses.reduce((acc, exp) => {
       const cat = exp.category || 'Outros';
       acc[cat] = (acc[cat] || 0) + (Number(exp.actual) || Number(exp.estimated) || 0);
@@ -212,7 +197,7 @@ export function App() {
     const checklistProgress = checklist.length > 0 ? Math.round((completedChecklist / checklist.length) * 100) : 0;
     const pendingUrgentTasks = checklist.filter(c => !c.completed).slice(0, 3);
 
-    // Days until event
+    // Contagem de dias até o evento
     const eventDate = new Date(config.date);
     const today = new Date();
     const diffTime = eventDate - today;
@@ -239,13 +224,12 @@ export function App() {
     };
   }, [guests, expenses, checklist, config.date]);
 
-  // Food & Beverage Calculations
+  // Cálculos de Comidas e Bebidas
   const calculatedFoodAndBeverages = useMemo(() => {
     const eaters = stats.weightedEaters;
     const drinkers = stats.alcoholDrinkers;
     const hours = Number(config.durationHours) || 5;
 
-    // Food
     const meatPerPersonKg = config.serviceType === 'churrasco' ? 0.38 : 0.25;
     const totalMeatKg = Math.round(eaters * meatPerPersonKg * 10) / 10;
     const sidesKg = Math.round(eaters * 0.2 * 10) / 10;
@@ -253,7 +237,6 @@ export function App() {
     const cakeKg = Math.round(stats.confirmedCount * 0.1 * 10) / 10;
     const docinhos = Math.round(stats.confirmedCount * 5);
 
-    // Drinks
     const waterLiters = Math.round(stats.confirmedCount * 0.5 * 10) / 10;
     const sodaJuiceLiters = Math.round(stats.confirmedCount * 0.6 * 10) / 10;
     const beerPerDrinkerLiters = hours <= 4 ? 1.5 : hours <= 6 ? 2.0 : 2.5;
@@ -279,7 +262,7 @@ export function App() {
     };
   }, [stats, config.durationHours, config.serviceType]);
 
-  // Materials & Tableware Calculations
+  // Cálculos de Louças, Rechauds e Mobiliário
   const calculatedMaterials = useMemo(() => {
     const confirmed = stats.confirmedCount;
     const safety = 1 + ((Number(config.safetyMarginPct) || 15) / 100);
@@ -313,7 +296,7 @@ export function App() {
     };
   }, [stats.confirmedCount, stats.alcoholDrinkers, config.safetyMarginPct, config.hotDishesCount, config.durationHours, config.tableCapacity]);
 
-  // Handlers
+  // --- HANDLERS ---
   const handleSaveGuest = (e) => {
     e.preventDefault();
     const form = e.target;
@@ -372,7 +355,7 @@ export function App() {
 
     setExpenses([...expenses, newExpense]);
     setExpenseModalOpen(false);
-    showToast('Despesa adicionada com sucesso!');
+    showToast('Despesa registrada!');
   };
 
   const handleDeleteExpense = (id) => {
@@ -403,7 +386,7 @@ export function App() {
 
     setRentals([...rentals, newRental]);
     setRentalModalOpen(false);
-    showToast('Item de locação registrado!');
+    showToast('Item de locação salvo!');
   };
 
   const handleDeleteRental = (id) => {
@@ -421,7 +404,7 @@ export function App() {
     setExpenses(INITIAL_EXPENSES);
     setRentals(INITIAL_RENTALS);
     setChecklist(INITIAL_CHECKLIST);
-    showToast('Dados de teste restaurados!');
+    showToast('Dados padrão restaurados!');
   };
 
   const handleExportShoppingList = () => {
@@ -432,7 +415,7 @@ Data: ${config.date} | Duração: ${config.durationHours}h
 Confirmados: ${stats.confirmedCount} pessoas (${stats.weightedEaters.toFixed(1)} cotas alimentares)
 
 ========================================
-ALIMENTOS & BUFFET
+1. ALIMENTOS & BUFFET
 ========================================
 - Carnes/Proteínas: ${calculatedFoodAndBeverages.totalMeatKg} kg
 - Guarnições (arroz/massas/farofas): ${calculatedFoodAndBeverages.sidesKg} kg
@@ -441,22 +424,22 @@ ALIMENTOS & BUFFET
 - Docinhos Gourmet: ${calculatedFoodAndBeverages.docinhos} un
 
 ========================================
-BEBIDAS & GELO
+2. BEBIDAS & GELO
 ========================================
 - Água Mineral: ${calculatedFoodAndBeverages.waterLiters} Litros
 - Refrigerantes e Sucos: ${calculatedFoodAndBeverages.sodaJuiceLiters} Litros
-${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters} L (~${calculatedFoodAndBeverages.totalBeerCans} latas de 350ml)\n` : ''}${config.servesWine ? `- Vinhos/Espumantes: ${calculatedFoodAndBeverages.wineBottles} garrafas\n` : ''}- Gelo para consumo (Filtrado): ${calculatedFoodAndBeverages.filteredIceKg} kg
+${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters} L (~${calculatedFoodAndBeverages.totalBeerCans} latas de 350ml)\n` : ''}${config.servesWine ? `- Vinhos/Espumantes: ${calculatedFoodAndBeverages.wineBottles} garrafas\n` : ''}- Gelo filtrado para consumo: ${calculatedFoodAndBeverages.filteredIceKg} kg
 - Gelo para tina/coolers: ${calculatedFoodAndBeverages.coolerIceBags} sacos de 5kg
 
 ========================================
-LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁVEIS'})
+3. LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁVEIS'})
 ========================================
 - Pratos Principais: ${calculatedMaterials.mainPlates} un
 - Pratos de Sobremesa: ${calculatedMaterials.dessertPlates} un
 - Garfos e Facas de Mesa: ${calculatedMaterials.forksAndKnives} pares
 - Copos/Taças de Água: ${calculatedMaterials.waterGlasses} un
 - Tulipas/Copos de Chopp: ${calculatedMaterials.beerTulips} un
-- Rechauds Inox: ${calculatedMaterials.rechauds} cubas
+- Rechauds Inox com Banho-Maria: ${calculatedMaterials.rechauds} cubas
 - Pastilhas de Álcool Gel: ${calculatedMaterials.fuelPastesNeeded} un
 - Mesas de Convidados: ${calculatedMaterials.guestTablesNeeded} jogos (${calculatedMaterials.guestChairsNeeded} cadeiras)
 `.trim();
@@ -468,21 +451,21 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
-    showToast('Lista de compras baixada com sucesso!');
+    showToast('Arquivo baixado com sucesso!');
   };
 
   return (
-    <div className={`min-h-screen font-sans antialiased transition-colors duration-200 ${darkMode ? 'bg-zinc-950 text-zinc-100 selection:bg-zinc-800 selection:text-zinc-100' : 'bg-zinc-50/70 text-zinc-900 selection:bg-zinc-200'}`}>
+    <div className={`min-h-screen font-sans antialiased transition-colors duration-200 ${darkMode ? 'bg-zinc-950 text-zinc-100 selection:bg-zinc-800' : 'bg-zinc-50/70 text-zinc-900 selection:bg-zinc-200'}`}>
       
-      {/* TOAST FEEDBACK */}
+      {/* FEEDBACK TOAST */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 bg-zinc-900 text-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 px-4 py-2.5 rounded-xl shadow-lg border border-zinc-800 dark:border-zinc-200 text-xs font-medium animate-in slide-in-from-bottom-2 duration-200">
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-zinc-900 text-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 px-4 py-2.5 rounded-xl shadow-lg border border-zinc-800 dark:border-zinc-200 text-xs font-medium animate-in slide-in-from-bottom-2 duration-200">
           <Sparkles className="w-4 h-4 text-amber-400" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* TOP HEADER */}
+      {/* CABEÇALHO */}
       <header className={`border-b sticky top-0 z-40 backdrop-blur-md transition-colors ${darkMode ? 'bg-zinc-950/80 border-zinc-800/80' : 'bg-white/80 border-zinc-200/80'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -493,10 +476,10 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-sm tracking-tight">FestPlanner</span>
                 <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-                  Minimal Pro
+                  Pro
                 </span>
               </div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate max-w-[200px] sm:max-w-none">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate max-w-[180px] sm:max-w-none">
                 {config.celebrantName} • {config.age} anos
               </p>
             </div>
@@ -523,7 +506,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
             <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800 mx-1" />
             <button
               onClick={handleResetDemoData}
-              title="Restaurar dados de teste"
+              title="Restaurar dados padrão"
               className="p-2 rounded-lg text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -537,16 +520,16 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
           </div>
         </div>
 
-        {/* SUBTLE HORIZONTAL NAVIGATION TABS */}
+        {/* NAVEGAÇÃO ENTRE ABAS */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 overflow-x-auto no-scrollbar">
           <nav className="flex space-x-1 py-1.5">
             {[
               { id: 'dashboard', label: 'Visão Geral', icon: Sparkles },
               { id: 'guests', label: 'Convidados & RSVP', icon: Users, count: stats.confirmedCount },
-              { id: 'catering', label: 'Calculadora (Buffet & Louças)', icon: Utensils },
-              { id: 'rentals', label: 'Locações & Brinquedos', icon: Gamepad2 },
-              { id: 'finance', label: 'Financeiro & Compras', icon: DollarSign },
-              { id: 'checklist', label: 'Linha do Tempo', icon: CheckSquare, badge: `${stats.checklistProgress}%` },
+              { id: 'catering', label: 'Buffet & Louças', icon: Utensils },
+              { id: 'rentals', label: 'Locações & Espaço', icon: Gamepad2 },
+              { id: 'finance', label: 'Centro de Custos', icon: DollarSign },
+              { id: 'checklist', label: 'Cronograma', icon: CheckSquare, badge: `${stats.checklistProgress}%` },
               { id: 'config', label: 'Configurações', icon: Building },
             ].map(tab => {
               const Icon = tab.icon;
@@ -584,16 +567,16 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
         </div>
       </header>
 
-      {/* MAIN CONTENT AREA */}
+      {/* CONTEÚDO PRINCIPAL */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24">
         
         {/* ============================================================ */}
-        {/* TAB 1: REFACTORED CLEAN & SOPHISTICATED DASHBOARD */}
+        {/* ABA 1: DASHBOARD MINIMALISTA E MODERNO */}
         {/* ============================================================ */}
         {activeTab === 'dashboard' && (
           <div className="space-y-6">
             
-            {/* HERO BANNER */}
+            {/* HERO CARD */}
             <div className={`rounded-2xl border p-6 transition-all ${
               darkMode 
                 ? 'bg-gradient-to-b from-zinc-900/80 to-zinc-950 border-zinc-800' 
@@ -603,11 +586,11 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] font-semibold tracking-wider uppercase text-zinc-500 dark:text-zinc-400">
-                      Painel do Anfitrião
+                      Painel do Evento
                     </span>
                     <span className="inline-block w-1 h-1 rounded-full bg-zinc-400" />
                     <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200/50 dark:border-emerald-800/50">
-                      {stats.daysUntilEvent > 0 ? `Faltam ${stats.daysUntilEvent} dias` : stats.daysUntilEvent === 0 ? 'É hoje!' : 'Evento finalizado'}
+                      {stats.daysUntilEvent > 0 ? `Faltam ${stats.daysUntilEvent} dias` : stats.daysUntilEvent === 0 ? 'É hoje!' : 'Concluído'}
                     </span>
                   </div>
 
@@ -653,10 +636,10 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
               </div>
             </div>
 
-            {/* 4 ELEGANT & CLEAN KPI METRICS */}
+            {/* 4 CARDS DE INDICADORES (KPIS) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               
-              {/* KPI 1: RSVP Confirmados */}
+              {/* Confirmados */}
               <div className={`p-4 rounded-xl border transition-all ${
                 darkMode ? 'bg-zinc-900/40 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'
               }`}>
@@ -683,7 +666,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
                 </div>
               </div>
 
-              {/* KPI 2: Saúde do Orçamento */}
+              {/* Orçamento */}
               <div className={`p-4 rounded-xl border transition-all ${
                 darkMode ? 'bg-zinc-900/40 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'
               }`}>
@@ -715,7 +698,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
                 </div>
               </div>
 
-              {/* KPI 3: Custo por Confirmado */}
+              {/* Custo por pessoa */}
               <div className={`p-4 rounded-xl border transition-all ${
                 darkMode ? 'bg-zinc-900/40 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'
               }`}>
@@ -730,14 +713,14 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
                   <span className="text-xs text-zinc-500 font-normal">/ pessoa</span>
                 </div>
                 <div className="mt-3 flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-2 border-t border-zinc-100 dark:border-zinc-800/60">
-                  <span>Base de consumo:</span>
+                  <span>Base alimentar:</span>
                   <span className="font-medium text-zinc-700 dark:text-zinc-300">
                     {stats.weightedEaters.toFixed(1)} cotas
                   </span>
                 </div>
               </div>
 
-              {/* KPI 4: Checklist & Prontidão */}
+              {/* Checklist */}
               <div className={`p-4 rounded-xl border transition-all ${
                 darkMode ? 'bg-zinc-900/40 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'
               }`}>
@@ -765,13 +748,13 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
 
             </div>
 
-            {/* FOCUSED 2-COLUMN DASHBOARD GRID */}
+            {/* GRID PRINCIPAL DO DASHBOARD */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
-              {/* LEFT COLUMN: RSVP & BUFFET TEASER */}
+              {/* COLUNA ESQUERDA: RSVP E BUFFET RÁPIDO */}
               <div className="lg:col-span-2 space-y-6">
                 
-                {/* RSVP TRACKER */}
+                {/* STATUS DOS CONVITES */}
                 <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -830,7 +813,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
                   </div>
 
                   <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800/60 flex items-center justify-between text-xs">
-                    <span className="text-zinc-500">Restrições detectadas:</span>
+                    <span className="text-zinc-500">Restrições apontadas:</span>
                     <div className="flex flex-wrap gap-1.5 justify-end">
                       {Array.from(new Set(guests.filter(g => g.status === 'confirmed' && g.restrictions !== 'Sem restrições').map(g => g.restrictions))).slice(0, 3).map((r, i) => (
                         <span key={i} className="text-[11px] px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium">
@@ -844,12 +827,12 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
                   </div>
                 </div>
 
-                {/* CONDENSED BUFFET SUMMARY */}
+                {/* RESUMO RÁPIDO DO BUFFET */}
                 <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h3 className="text-sm font-semibold tracking-tight">Cálculo Essencial de Buffet & Estrutura</h3>
-                      <p className="text-xs text-zinc-500 mt-0.5">Baseado em {stats.confirmedCount} confirmados durante {config.durationHours}h</p>
+                      <p className="text-xs text-zinc-500 mt-0.5">Para {stats.confirmedCount} confirmados em {config.durationHours}h de evento</p>
                     </div>
                     <button
                       onClick={() => setActiveTab('catering')}
@@ -870,7 +853,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
                     <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
                       <span className="text-[11px] text-zinc-400 block">Bolo & Doces</span>
                       <strong className="text-sm font-semibold mt-1 block">{calculatedFoodAndBeverages.cakeKg} kg</strong>
-                      <span className="text-[10px] text-zinc-500">+{calculatedFoodAndBeverages.docinhos} docinhos</span>
+                      <span className="text-[10px] text-zinc-500">+{calculatedFoodAndBeverages.docinhos} doces</span>
                     </div>
 
                     <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
@@ -891,10 +874,10 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
 
               </div>
 
-              {/* RIGHT COLUMN: EXPENSES & TASKS */}
+              {/* COLUNA DIREITA: GASTOS E TAREFAS */}
               <div className="space-y-6">
                 
-                {/* EXPENSES BY CATEGORY */}
+                {/* DISTRIBUIÇÃO DE GASTOS */}
                 <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold tracking-tight">Distribuição de Gastos</h3>
@@ -929,7 +912,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
                   </div>
                 </div>
 
-                {/* PRIORITY NEXT STEPS */}
+                {/* PRÓXIMOS PASSOS PRIORITÁRIOS */}
                 <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -976,16 +959,16 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
         )}
 
         {/* ============================================================ */}
-        {/* TAB 2: GESTÃO DE CONVIDADOS & RSVP */}
+        {/* ABA 2: GESTÃO DE CONVIDADOS & RSVP */}
         {/* ============================================================ */}
         {activeTab === 'guests' && (
           <div className="space-y-6">
             <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-base font-semibold tracking-tight">Lista de Convidados & Presenças</h2>
+                  <h2 className="text-base font-semibold tracking-tight">Lista de Convidados & Confirmações (RSVP)</h2>
                   <p className="text-xs text-zinc-500 mt-1">
-                    {stats.confirmedCount} confirmados, {stats.pendingCount} pendentes e {stats.declinedCount} recusados
+                    {stats.confirmedCount} confirmados ({stats.confirmedAdults} adultos, {stats.confirmedKids611 + stats.confirmedKids05} crianças), {stats.pendingCount} pendentes e {stats.declinedCount} recusados
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1009,7 +992,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
                 </div>
               </div>
 
-              {/* Guests Table */}
+              {/* Tabela de Convidados */}
               <div className="mt-5 overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className={`border-b ${darkMode ? 'border-zinc-800 text-zinc-400' : 'border-zinc-200 text-zinc-500'}`}>
@@ -1043,7 +1026,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
                           </span>
                         </td>
                         <td className="py-3 text-zinc-500">{guest.drinksAlcohol ? 'Sim' : 'Não'}</td>
-                        <td className="py-3 text-zinc-500">{guest.restrictions || 'Nenhuma'}</td>
+                        <td className="py-3 text-zinc-500">{guest.restrictions || 'Sem restrições'}</td>
                         <td className="py-3 text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             <button
@@ -1082,7 +1065,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
         )}
 
         {/* ============================================================ */}
-        {/* TAB 3: CALCULADORA UNIFICADA (COMIDAS, BEBIDAS & LOUÇAS) */}
+        {/* ABA 3: CALCULADORA DE BUFFET, BEBIDAS & LOUÇAS */}
         {/* ============================================================ */}
         {activeTab === 'catering' && (
           <div className="space-y-6">
@@ -1092,7 +1075,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
                 <div>
                   <h2 className="text-base font-semibold tracking-tight">Calculadora de Suprimentos & Materiais</h2>
                   <p className="text-xs text-zinc-500 mt-1">
-                    Cálculos baseados em <strong>{stats.confirmedCount} confirmados</strong> ({stats.weightedEaters.toFixed(1)} cotas de consumo) e <strong>{config.durationHours}h de duração</strong>.
+                    Cálculos baseados em <strong>{stats.confirmedCount} confirmados</strong> ({stats.weightedEaters.toFixed(1)} cotas alimentares) e <strong>{config.durationHours}h de duração</strong>.
                   </p>
                 </div>
 
@@ -1122,10 +1105,10 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
               </div>
             </div>
 
-            {/* Calculations Grid */}
+            {/* Grid dos Cálculos */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               
-              {/* FOOD */}
+              {/* COMIDAS */}
               <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-4 flex items-center gap-2">
                   <Flame className="w-4 h-4 text-zinc-400" /> Alimentos & Doces
@@ -1154,7 +1137,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
                 </div>
               </div>
 
-              {/* BEVERAGES */}
+              {/* BEBIDAS */}
               <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-4 flex items-center gap-2">
                   <Wine className="w-4 h-4 text-zinc-400" /> Bebidas & Gelo
@@ -1187,7 +1170,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
                 </div>
               </div>
 
-              {/* TABLEWARE & RECHAUDS */}
+              {/* LOUÇAS E RECHAUDS */}
               <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-4 flex items-center gap-2">
                   <Layers className="w-4 h-4 text-zinc-400" /> Louças & Equipamentos
@@ -1222,7 +1205,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
         )}
 
         {/* ============================================================ */}
-        {/* TAB 4: LOCAÇÕES (ESPAÇO, MÓVEIS E BRINQUEDOS) */}
+        {/* ABA 4: LOCAÇÕES (ESPAÇO, MÓVEIS E BRINQUEDOS) */}
         {/* ============================================================ */}
         {activeTab === 'rentals' && (
           <div className="space-y-6">
@@ -1282,7 +1265,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
         )}
 
         {/* ============================================================ */}
-        {/* TAB 5: FINANCEIRO & COMPRAS */}
+        {/* ABA 5: FINANCEIRO & CENTRO DE CUSTOS */}
         {/* ============================================================ */}
         {activeTab === 'finance' && (
           <div className="space-y-6">
@@ -1359,7 +1342,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
         )}
 
         {/* ============================================================ */}
-        {/* TAB 6: LINHA DO TEMPO & CHECKLIST */}
+        {/* ABA 6: LINHA DO TEMPO & CHECKLIST */}
         {/* ============================================================ */}
         {activeTab === 'checklist' && (
           <div className="space-y-6">
@@ -1405,7 +1388,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
         )}
 
         {/* ============================================================ */}
-        {/* TAB 7: CONFIGURAÇÕES DO EVENTO */}
+        {/* ABA 7: CONFIGURAÇÕES DO EVENTO */}
         {/* ============================================================ */}
         {activeTab === 'config' && (
           <div className="space-y-6">
@@ -1415,7 +1398,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 <div>
-                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Nome do Celebrante</label>
+                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Nome do Aniversariante</label>
                   <input
                     type="text"
                     value={config.celebrantName}
@@ -1442,7 +1425,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
                   />
                 </div>
                 <div>
-                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Duração (horas)</label>
+                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Duração do Evento (horas)</label>
                   <input
                     type="number"
                     value={config.durationHours}
@@ -1474,6 +1457,24 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
                     <option value="fingerfood">Finger Foods & Salgados</option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Pratos Quentes (Rechauds)</label>
+                  <input
+                    type="number"
+                    value={config.hotDishesCount}
+                    onChange={(e) => setConfig({ ...config, hotDishesCount: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Capacidade por Mesa (Lugares)</label>
+                  <input
+                    type="number"
+                    value={config.tableCapacity}
+                    onChange={(e) => setConfig({ ...config, tableCapacity: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -1482,7 +1483,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
       </main>
 
       {/* ============================================================ */}
-      {/* MODAL: CONVIDADO (NOVO / EDITAR) */}
+      {/* MODAL: CONVIDADO (CRIAR / EDITAR) */}
       {/* ============================================================ */}
       {guestModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
@@ -1503,7 +1504,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-zinc-500 mb-1">Grupo / Categoria</label>
+                  <label className="block text-zinc-500 mb-1">Grupo</label>
                   <input
                     type="text"
                     defaultValue={editingGuest?.group || 'Família'}
@@ -1512,7 +1513,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
                   />
                 </div>
                 <div>
-                  <label className="block text-zinc-500 mb-1">Faixa Etária</label>
+                  <label className="block text-zinc-500 mb-1">Categoria</label>
                   <select
                     name="category"
                     defaultValue={editingGuest?.category || 'adult'}
@@ -1581,13 +1582,13 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
       )}
 
       {/* ============================================================ */}
-      {/* MODAL: SIMULADOR DE RSVP PÚBLICO */}
+      {/* MODAL: LINK DE RSVP */}
       {/* ============================================================ */}
       {rsvpSimModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className={`w-full max-w-sm rounded-2xl border p-5 shadow-xl ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
             <h3 className="text-sm font-semibold mb-1">Link de Convite & RSVP</h3>
-            <p className="text-xs text-zinc-500 mb-4">Compartilhe o endereço abaixo para que seus convidados confirmem a presença.</p>
+            <p className="text-xs text-zinc-500 mb-4">Compartilhe o endereço com seus convidados para registrar presença online.</p>
             <div className="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 text-[11px] font-mono break-all mb-4">
               https://festplanner.app/rsvp/{encodeURIComponent(config.celebrantName.toLowerCase().replace(/\s+/g, '-'))}
             </div>
@@ -1626,7 +1627,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
                   type="text"
                   name="description"
                   required
-                  placeholder="Ex: Chopp artesanal 50L"
+                  placeholder="Ex: Barril de Chopp 50L"
                   className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
                 />
               </div>
@@ -1634,10 +1635,12 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
                 <div>
                   <label className="block text-zinc-500 mb-1">Categoria</label>
                   <select name="category" className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent">
-                    <option value="Bebidas" className="dark:bg-zinc-900">Bebidas</option>
-                    <option value="Buffet" className="dark:bg-zinc-900">Buffet / Carnes</option>
-                    <option value="Locações" className="dark:bg-zinc-900">Locações</option>
-                    <option value="Decoração" className="dark:bg-zinc-900">Decoração</option>
+                    <option value="Bebidas & Gelo" className="dark:bg-zinc-900">Bebidas & Gelo</option>
+                    <option value="Buffet & Comidas" className="dark:bg-zinc-900">Buffet & Comidas</option>
+                    <option value="Locação Espaço" className="dark:bg-zinc-900">Locação Espaço</option>
+                    <option value="Aluguel Materiais" className="dark:bg-zinc-900">Aluguel Materiais</option>
+                    <option value="Brinquedos" className="dark:bg-zinc-900">Brinquedos</option>
+                    <option value="Confeitaria" className="dark:bg-zinc-900">Confeitaria</option>
                     <option value="Outros" className="dark:bg-zinc-900">Outros</option>
                   </select>
                 </div>
@@ -1674,7 +1677,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
       )}
 
       {/* ============================================================ */}
-      {/* MODAL: NOVO ITEM DE LOCAÇÃO */}
+      {/* MODAL: ITEM DE LOCAÇÃO */}
       {/* ============================================================ */}
       {rentalModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
@@ -1717,7 +1720,7 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
                 <input
                   type="text"
                   name="supplier"
-                  placeholder="Ex: Tio Pipoca Brinquedos"
+                  placeholder="Ex: Tio Pipoca Festas"
                   className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
                 />
               </div>
@@ -1750,5 +1753,3 @@ LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁ
     </div>
   );
 }
-
-export default App;
