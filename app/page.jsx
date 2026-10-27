@@ -344,6 +344,10 @@ export default function App() {
   });
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
+  const [changePinModalOpen, setChangePinModalOpen] = useState(false);
+  const [currentPinAttempt, setCurrentPinAttempt] = useState('');
+  const [newPinValue, setNewPinValue] = useState('');
+  const [confirmNewPinValue, setConfirmNewPinValue] = useState('');
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -356,7 +360,7 @@ export default function App() {
       setIsAuthenticated(true);
       sessionStorage.setItem('festplanner_auth', 'true');
       setPinError(false);
-      showToast('Acesso de anfitrião liberado!');
+      showToast('Acesso liberado!');
     } else {
       setPinError(true);
       setPinInput('');
@@ -367,6 +371,33 @@ export default function App() {
     setIsAuthenticated(false);
     sessionStorage.removeItem('festplanner_auth');
     showToast('Painel bloqueado com sucesso.');
+  };
+
+  const handleChangePinSubmit = (e) => {
+    e.preventDefault();
+    if (currentPinAttempt.trim() !== hostPin) {
+      showToast('PIN atual incorreto.');
+      return;
+    }
+    if (!newPinValue || newPinValue.trim().length < 4) {
+      showToast('O novo PIN deve conter no mínimo 4 dígitos.');
+      return;
+    }
+    if (newPinValue.trim() !== confirmNewPinValue.trim()) {
+      showToast('A confirmação do novo PIN não confere.');
+      return;
+    }
+
+    const updatedPin = newPinValue.trim();
+    setHostPin(updatedPin);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('festplanner_host_pin', updatedPin);
+    }
+    setCurrentPinAttempt('');
+    setNewPinValue('');
+    setConfirmNewPinValue('');
+    setChangePinModalOpen(false);
+    showToast('PIN alterado com sucesso!');
   };
 
   // Carregamento do Postgres com fallback em localStorage
@@ -1080,9 +1111,9 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center mx-auto mb-4 shadow-lg">
             <Cake className="w-6 h-6 text-white" />
           </div>
-          <h2 className="text-base font-bold text-white tracking-tight">Painel Exclusivo do Anfitrião</h2>
+          <h2 className="text-base font-bold text-white tracking-tight">Painel do Anfitrião</h2>
           <p className="text-xs text-zinc-400 mt-1 mb-5">
-            Área restrita de gestão de custos e convidados. Insira seu PIN para acessar:
+            Área restrita de gestão. Digite seu PIN de segurança para continuar:
           </p>
 
           <form onSubmit={handleVerifyPin} className="space-y-3">
@@ -1096,7 +1127,7 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
                 setPinInput(e.target.value);
                 setPinError(false);
               }}
-              placeholder="Digite o PIN (Padrão: 1234)"
+              placeholder="Digite o PIN de acesso"
               className={`w-full px-4 py-2.5 rounded-xl bg-zinc-950 border text-center text-sm font-mono tracking-widest text-white outline-none transition ${
                 pinError ? 'border-rose-500 text-rose-300' : 'border-zinc-800 focus:border-emerald-500'
               }`}
@@ -2039,8 +2070,42 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
           {/* TAB 7: CONFIGURAÇÕES GERAIS COM CAMPO DO TEMA */}
           {/* ============================================================ */}
           {activeTab === 'config' && (
-            <div className={`p-5 rounded-3xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800' : 'bg-white border-zinc-200 shadow-xs'} space-y-4 text-xs`}>
-              <h2 className="text-base font-bold">Parâmetros Gerais do Evento</h2>
+            <div className={`p-5 rounded-3xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800' : 'bg-white border-zinc-200 shadow-xs'} space-y-6 text-xs`}>
+              <div>
+                <h2 className="text-base font-bold">Parâmetros Gerais do Evento</h2>
+                <p className="text-xs text-zinc-500 mt-0.5">Configure os dados do aniversariante, local e segurança de acesso.</p>
+              </div>
+
+              {/* BLOCO DE SEGURANÇA E PIN */}
+              <div className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-bold text-xs text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                      🔒 Senha de Proteção do Painel (PIN)
+                    </h3>
+                    <p className="text-[11px] text-zinc-500 mt-0.5">
+                      Impede que pessoas que receberem o link de RSVP acessem seus custos, fornecedores ou convidados ao apagar /rsvp da URL.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setChangePinModalOpen(true)}
+                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition shadow-sm"
+                    >
+                      Alterar PIN
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleLogoutHost}
+                      className="px-3 py-1.5 rounded-xl border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition text-xs"
+                    >
+                      Bloquear Agora
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-zinc-500 mb-1">Nome do Aniversariante</label>
@@ -2072,31 +2137,6 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
                   <span className="text-[10px] text-zinc-400 mt-0.5 block">
                     Este texto aparece com destaque logo abaixo do seu nome no convite digital (/rsvp).
                   </span>
-                </div>
-                <div>
-                  <label className="block text-zinc-500 mb-1">PIN de Proteção do Painel (Senha de Acesso)</label>
-                  <input
-                    type="text"
-                    value={hostPin}
-                    onChange={(e) => {
-                      setHostPin(e.target.value);
-                      localStorage.setItem('festplanner_host_pin', e.target.value);
-                    }}
-                    placeholder="Ex: 1234"
-                    className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent font-mono tracking-widest text-emerald-600 dark:text-emerald-400"
-                  />
-                  <span className="text-[10px] text-zinc-400 mt-0.5 block">
-                    Bloqueia convidados curiosos que apagarem /rsvp da URL.
-                  </span>
-                </div>
-                <div className="flex items-end">
-                  <button
-                    onClick={handleLogoutHost}
-                    type="button"
-                    className="w-full py-2 px-3 rounded-xl border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-medium transition"
-                  >
-                    Bloquear Painel Agora (Testar PIN)
-                  </button>
                 </div>
                 <div>
                   <label className="block text-zinc-500 mb-1">Nome do Espaço</label>
@@ -2144,6 +2184,80 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
       {/* ============================================================ */}
       {/* MODAIS */}
       {/* ============================================================ */}
+
+      {/* MODAL: ALTERAR PIN DE SEGURANÇA */}
+      {changePinModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="w-full max-w-sm rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-100 space-y-4 text-xs">
+            <div className="flex justify-between items-center border-b border-zinc-800 pb-3">
+              <h3 className="font-bold text-sm flex items-center gap-2">
+                <span>Alterar PIN de Acesso</span>
+              </h3>
+              <button onClick={() => setChangePinModalOpen(false)} className="text-zinc-400 hover:text-white">✕</button>
+            </div>
+
+            <form onSubmit={handleChangePinSubmit} className="space-y-3">
+              <div>
+                <label className="block text-zinc-400 mb-1">PIN Atual</label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={8}
+                  required
+                  value={currentPinAttempt}
+                  onChange={(e) => setCurrentPinAttempt(e.target.value)}
+                  placeholder="Digite seu PIN atual"
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white outline-none focus:border-emerald-500 tracking-widest text-center"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-400 mb-1">Novo PIN (mínimo 4 dígitos)</label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={8}
+                  required
+                  value={newPinValue}
+                  onChange={(e) => setNewPinValue(e.target.value)}
+                  placeholder="Digite o novo PIN"
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white outline-none focus:border-emerald-500 tracking-widest text-center"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-400 mb-1">Confirme o Novo PIN</label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={8}
+                  required
+                  value={confirmNewPinValue}
+                  onChange={(e) => setConfirmNewPinValue(e.target.value)}
+                  placeholder="Repita o novo PIN"
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white outline-none focus:border-emerald-500 tracking-widest text-center"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setChangePinModalOpen(false)}
+                  className="px-3 py-2 rounded-xl border border-zinc-700"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-emerald-600 font-bold text-white hover:bg-emerald-500 transition"
+                >
+                  Confirmar Novo PIN
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* MODAL: RECADO DO CONVIDADO */}
       {guestMessageModalOpen && viewingGuestMessage && (
