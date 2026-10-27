@@ -212,22 +212,14 @@ export default function PublicInviteAndRsvpPage() {
             Você é nosso convidado especial!
           </span>
 
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-1">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-1.5">
             {eventInfo?.celebrantName || 'Aniversariante'}
           </h1>
 
-          {eventInfo?.age && (
-            <p className="text-sm font-medium text-zinc-400">
-              Celebração de <span className="text-emerald-400 font-bold">{eventInfo.age} anos</span>
-            </p>
-          )}
-
-          {/* Texto do Tema Editável */}
-          {eventInfo?.theme && (
-            <p className="text-xs italic text-zinc-300 mt-2 font-medium">
-              "{eventInfo.theme}"
-            </p>
-          )}
+          {/* Subtítulo limpo e elegante da comemoração editável */}
+          <p className="text-sm font-medium text-emerald-400">
+            {eventInfo?.theme || (eventInfo?.age ? `Aniversário de ${eventInfo.age} anos` : 'Aniversário')}
+          </p>
 
           {/* Contador Regressivo */}
           {timeLeft.days > 0 && (
