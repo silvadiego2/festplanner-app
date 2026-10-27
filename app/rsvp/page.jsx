@@ -32,7 +32,8 @@ const PRESET_RESTRICTION_OPTIONS = [
   'Sem lactose',
   'Sem frutos do mar',
   'Não come carne vermelha',
-  'Não come carne de porco'
+  'Não come carne de porco',
+  'Outra restrição / alergia'
 ];
 
 export default function PublicInviteAndRsvpPage() {
@@ -44,12 +45,11 @@ export default function PublicInviteAndRsvpPage() {
   
   // Resposta do Convidado
   const [status, setStatus] = useState('confirmed'); // 'confirmed' | 'declined'
-  const [selectedRestrictions, setSelectedRestrictions] = useState(['Sem restrições']);
+  const [selectedRestriction, setSelectedRestriction] = useState('Sem restrições');
   const [customRestriction, setCustomRestriction] = useState('');
   const [declineReason, setDeclineReason] = useState(PRESET_DECLINE_REASONS[0]);
   const [customDeclineReason, setCustomDeclineReason] = useState('');
   const [messageToCelebrant, setMessageToCelebrant] = useState('');
-  const [companions, setCompanions] = useState([]);
 
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -106,40 +106,17 @@ export default function PublicInviteAndRsvpPage() {
     setSelectedGuest(g);
     setStatus(g.status === 'declined' ? 'declined' : 'confirmed');
     if (Array.isArray(g.restrictions) && g.restrictions.length > 0) {
-      setSelectedRestrictions(g.restrictions);
+      const first = g.restrictions[0];
+      if (PRESET_RESTRICTION_OPTIONS.includes(first)) {
+        setSelectedRestriction(first);
+      } else {
+        setSelectedRestriction('Outra restrição / alergia');
+        setCustomRestriction(first);
+      }
     } else {
-      setSelectedRestrictions(['Sem restrições']);
+      setSelectedRestriction('Sem restrições');
     }
     setSearch('');
-  };
-
-  const handleToggleRestriction = (opt) => {
-    if (opt === 'Sem restrições') {
-      setSelectedRestrictions(['Sem restrições']);
-      return;
-    }
-
-    const withoutSem = selectedRestrictions.filter(r => r !== 'Sem restrições');
-    if (selectedRestrictions.includes(opt)) {
-      const filtered = withoutSem.filter(r => r !== opt);
-      setSelectedRestrictions(filtered.length === 0 ? ['Sem restrições'] : filtered);
-    } else {
-      setSelectedRestrictions([...withoutSem, opt]);
-    }
-  };
-
-  const handleAddCompanion = () => {
-    setCompanions([...companions, { name: '', category: 'adult' }]);
-  };
-
-  const handleUpdateCompanion = (index, field, value) => {
-    const updated = [...companions];
-    updated[index][field] = value;
-    setCompanions(updated);
-  };
-
-  const handleRemoveCompanion = (index) => {
-    setCompanions(companions.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
@@ -153,20 +130,27 @@ export default function PublicInviteAndRsvpPage() {
       ? customDeclineReason.trim()
       : declineReason;
 
-    let finalRestrictions = selectedRestrictions.filter(r => r !== 'Sem restrições');
-    if (customRestriction.trim()) finalRestrictions.push(customRestriction.trim());
-    if (finalRestrictions.length === 0) finalRestrictions = ['Sem restrições'];
+    let finalRestrictions = [];
+    if (selectedRestriction === 'Outra restrição / alergia') {
+      finalRestrictions = customRestriction.trim() ? [customRestriction.trim()] : ['Sem restrições'];
+    } else if (selectedRestriction && selectedRestriction !== 'Sem restrições') {
+      finalRestrictions = [selectedRestriction];
+      if (customRestriction.trim()) {
+        finalRestrictions.push(customRestriction.trim());
+      }
+    } else {
+      finalRestrictions = ['Sem restrições'];
+    }
 
     try {
       const payload = {
         guestId: selectedGuest?.id,
         name: selectedGuest?.name || search.trim(),
         status,
-        drinksAlcohol: true, // valor padrão do sistema sem incomodar o convidado
+        drinksAlcohol: true,
         restrictions: finalRestrictions,
         declineReason: status === 'declined' ? finalDeclineReason : '',
-        messageToCelebrant: messageToCelebrant.trim(),
-        companions: status === 'confirmed' ? companions.filter(c => c.name && c.name.trim().length > 0) : []
+        messageToCelebrant: messageToCelebrant.trim()
       };
 
       const res = await fetch('/api/rsvp', {
@@ -347,7 +331,6 @@ export default function PublicInviteAndRsvpPage() {
               onClick={() => {
                 setSubmitted(false);
                 setSelectedGuest(null);
-                setCompanions([]);
                 setMessageToCelebrant('');
               }}
               className="text-xs text-zinc-500 hover:text-zinc-300 underline pt-4 block mx-auto"
@@ -377,7 +360,7 @@ export default function PublicInviteAndRsvpPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
               
-              {/* PASSO 1: LOCALIZAR O NOME (SEM EXIBIR GRUPO) */}
+              {/* PASSO 1: LOCALIZAR O NOME */}
               <div>
                 <label className="block font-semibold text-zinc-300 mb-1.5">
                   1. Localize seu nome na lista:
@@ -462,87 +445,32 @@ export default function PublicInviteAndRsvpPage() {
 
               {/* CENÁRIO A: CONFIRMOU PRESENÇA */}
               {status === 'confirmed' && (
-                <div className="space-y-4 pt-2 border-t border-zinc-800">
+                <div className="space-y-3 pt-2 border-t border-zinc-800">
                   
-                  {/* RESTRIÇÕES ALIMENTARES CLICÁVEIS (CHIPS) */}
+                  {/* RESTRIÇÕES ALIMENTARES EM DROPDOWN (COMPACTO) */}
                   <div>
-                    <label className="block text-[11px] text-zinc-300 font-semibold mb-2">
-                      Possui alguma restrição alimentar ou preferência? (Clique nas opções):
+                    <label className="block text-[11px] text-zinc-300 font-semibold mb-1.5">
+                      Possui alguma restrição alimentar ou alergia?
                     </label>
-                    <div className="flex flex-wrap gap-1.5 mb-2">
-                      {PRESET_RESTRICTION_OPTIONS.map((opt, i) => {
-                        const isSelected = selectedRestrictions.includes(opt);
-                        return (
-                          <button
-                            key={i}
-                            type="button"
-                            onClick={() => handleToggleRestriction(opt)}
-                            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition ${
-                              isSelected
-                                ? 'bg-emerald-600 text-white border-emerald-500 font-semibold'
-                                : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700'
-                            }`}
-                          >
-                            {opt}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Outra alergia ou observação (opcional)..."
-                      value={customRestriction}
-                      onChange={(e) => setCustomRestriction(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-white"
-                    />
-                  </div>
-
-                  {/* Acompanhantes */}
-                  <div className="pt-2">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[11px] font-semibold text-zinc-300">Vai levar filhos ou acompanhante?</span>
-                      <button
-                        type="button"
-                        onClick={handleAddCompanion}
-                        className="text-[10px] font-medium text-emerald-400 bg-emerald-950/60 hover:bg-emerald-950 border border-emerald-800/60 px-2.5 py-1 rounded-lg"
-                      >
-                        + Adicionar
-                      </button>
-                    </div>
-
-                    <div className="space-y-2">
-                      {companions.map((comp, idx) => (
-                        <div key={idx} className="p-2.5 rounded-xl border border-zinc-800 bg-zinc-950 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              placeholder="Nome do acompanhante"
-                              value={comp.name}
-                              onChange={(e) => handleUpdateCompanion(idx, 'name', e.target.value)}
-                              className="flex-1 px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-white"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveCompanion(idx)}
-                              className="text-zinc-500 hover:text-rose-400 p-1"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                          <div className="flex items-center justify-between text-[11px]">
-                            <select
-                              value={comp.category}
-                              onChange={(e) => handleUpdateCompanion(idx, 'category', e.target.value)}
-                              className="px-2 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-200"
-                            >
-                              <option value="adult">Adulto</option>
-                              <option value="child_6_11">Criança (6-11 anos)</option>
-                              <option value="child_0_5">Criança (0-5 anos)</option>
-                            </select>
-                          </div>
-                        </div>
+                    <select
+                      value={selectedRestriction}
+                      onChange={(e) => setSelectedRestriction(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 focus:border-emerald-500 outline-none"
+                    >
+                      {PRESET_RESTRICTION_OPTIONS.map((opt, i) => (
+                        <option key={i} value={opt}>{opt}</option>
                       ))}
-                    </div>
+                    </select>
+
+                    {selectedRestriction !== 'Sem restrições' && (
+                      <input
+                        type="text"
+                        placeholder="Detalhes ou observações da restrição (opcional)..."
+                        value={customRestriction}
+                        onChange={(e) => setCustomRestriction(e.target.value)}
+                        className="w-full mt-2 px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-white placeholder-zinc-500 focus:border-emerald-500 outline-none"
+                      />
+                    )}
                   </div>
                 </div>
               )}
@@ -552,12 +480,12 @@ export default function PublicInviteAndRsvpPage() {
                 <div className="space-y-3 pt-2 border-t border-zinc-800">
                   <div>
                     <label className="block text-[11px] text-zinc-300 font-medium mb-1.5">
-                      Qual o motivo da ausência? (Opcional, para o anfitrião saber):
+                      Qual o motivo da ausência? (Opcional):
                     </label>
                     <select
                       value={declineReason}
                       onChange={(e) => setDeclineReason(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-zinc-200"
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 focus:border-emerald-500 outline-none"
                     >
                       {PRESET_DECLINE_REASONS.map((reason, i) => (
                         <option key={i} value={reason}>{reason}</option>
@@ -570,7 +498,7 @@ export default function PublicInviteAndRsvpPage() {
                         placeholder="Conte rapidamente o motivo se desejar..."
                         value={customDeclineReason}
                         onChange={(e) => setCustomDeclineReason(e.target.value)}
-                        className="w-full mt-2 px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-white"
+                        className="w-full mt-2 px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-white placeholder-zinc-500 focus:border-emerald-500 outline-none"
                       />
                     )}
                   </div>
@@ -588,7 +516,7 @@ export default function PublicInviteAndRsvpPage() {
                   value={messageToCelebrant}
                   onChange={(e) => setMessageToCelebrant(e.target.value)}
                   placeholder="Escreva seus votos de parabéns ou uma mensagem especial..."
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-white resize-none"
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-white placeholder-zinc-500 resize-none focus:border-emerald-500 outline-none"
                 />
               </div>
 
