@@ -242,47 +242,66 @@ const INITIAL_CHECKLIST = [
   { id: '9', title: 'Montar buffet e testar acendimento dos rechauds', period: 'No dia da festa', completed: false }
 ];
 
+// Função auxiliar para resgatar dados antigos (v1) ou usar a versão v2 sem perder nada
+const loadPersistedData = (keyV2, keyV1, fallback) => {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const v2 = localStorage.getItem(keyV2);
+    if (v2) return JSON.parse(v2);
+
+    const v1 = localStorage.getItem(keyV1);
+    if (v1) {
+      const parsedV1 = JSON.parse(v1);
+      // Migra automaticamente para a chave v2
+      localStorage.setItem(keyV2, JSON.stringify(parsedV1));
+      return parsedV1;
+    }
+  } catch (err) {
+    console.error('Erro ao ler localStorage:', err);
+  }
+  return fallback;
+};
+
 export default function App() {
   const [config, setConfig] = useState(() => {
-    if (typeof window === 'undefined') return INITIAL_EVENT_CONFIG;
-    const saved = localStorage.getItem('festplanner_config_v2');
-    return saved ? JSON.parse(saved) : INITIAL_EVENT_CONFIG;
+    return loadPersistedData('festplanner_config_v2', 'festplanner_config', INITIAL_EVENT_CONFIG);
   });
 
   const [menu, setMenu] = useState(() => {
-    if (typeof window === 'undefined') return INITIAL_MENU;
-    const saved = localStorage.getItem('festplanner_menu_v2');
-    return saved ? JSON.parse(saved) : INITIAL_MENU;
+    return loadPersistedData('festplanner_menu_v2', 'festplanner_menu', INITIAL_MENU);
   });
 
   const [beverages, setBeverages] = useState(() => {
-    if (typeof window === 'undefined') return INITIAL_BEVERAGE_TYPES;
-    const saved = localStorage.getItem('festplanner_beverages_v2');
-    return saved ? JSON.parse(saved) : INITIAL_BEVERAGE_TYPES;
+    return loadPersistedData('festplanner_beverages_v2', 'festplanner_beverages', INITIAL_BEVERAGE_TYPES);
   });
 
   const [guests, setGuests] = useState(() => {
-    if (typeof window === 'undefined') return INITIAL_GUESTS;
-    const saved = localStorage.getItem('festplanner_guests_v2');
-    return saved ? JSON.parse(saved) : INITIAL_GUESTS;
+    const rawGuests = loadPersistedData('festplanner_guests_v2', 'festplanner_guests', INITIAL_GUESTS);
+    // Assegura compatibilidade de tipos caso venha da v1 (ex: restrição em string convertida para array)
+    if (Array.isArray(rawGuests)) {
+      return rawGuests.map(g => ({
+        ...g,
+        restrictions: Array.isArray(g.restrictions)
+          ? g.restrictions
+          : typeof g.restrictions === 'string' && g.restrictions.trim()
+          ? [g.restrictions]
+          : ['Sem restrições'],
+        group: g.group || 'Família'
+      }));
+    }
+    return INITIAL_GUESTS;
   });
 
   const [rentals, setRentals] = useState(() => {
-    if (typeof window === 'undefined') return INITIAL_RENTALS;
-    const saved = localStorage.getItem('festplanner_rentals_v2');
-    return saved ? JSON.parse(saved) : INITIAL_RENTALS;
+    return loadPersistedData('festplanner_rentals_v2', 'festplanner_rentals', INITIAL_RENTALS);
   });
 
   const [manualExpenses, setManualExpenses] = useState(() => {
-    if (typeof window === 'undefined') return INITIAL_MANUAL_EXPENSES;
-    const saved = localStorage.getItem('festplanner_manual_expenses_v2');
-    return saved ? JSON.parse(saved) : INITIAL_MANUAL_EXPENSES;
+    return loadPersistedData('festplanner_manual_expenses_v2', 'festplanner_expenses', INITIAL_MANUAL_EXPENSES);
   });
 
   const [checklist, setChecklist] = useState(() => {
-    if (typeof window === 'undefined') return INITIAL_CHECKLIST;
-    const saved = localStorage.getItem('festplanner_checklist_v2');
-    return saved ? JSON.parse(saved) : INITIAL_CHECKLIST;
+    return loadPersistedData('festplanner_checklist_v2', 'festplanner_checklist', INITIAL_CHECKLIST);
   });
 
   const [activeTab, setActiveTab] = useState('dashboard');
