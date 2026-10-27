@@ -10,12 +10,8 @@ import {
   X,
   Search,
   Sparkles,
-  Wine,
   AlertCircle,
-  ExternalLink,
   Heart,
-  MessageSquareQuote,
-  Smile,
   Navigation
 } from 'lucide-react';
 
@@ -28,6 +24,17 @@ const PRESET_DECLINE_REASONS = [
   'Outro motivo'
 ];
 
+const PRESET_RESTRICTION_OPTIONS = [
+  'Sem restrições',
+  'Vegetariano',
+  'Vegano',
+  'Sem glúten',
+  'Sem lactose',
+  'Sem frutos do mar',
+  'Não come carne vermelha',
+  'Não come carne de porco'
+];
+
 export default function PublicInviteAndRsvpPage() {
   const [loading, setLoading] = useState(true);
   const [eventInfo, setEventInfo] = useState(null);
@@ -37,7 +44,7 @@ export default function PublicInviteAndRsvpPage() {
   
   // Resposta do Convidado
   const [status, setStatus] = useState('confirmed'); // 'confirmed' | 'declined'
-  const [drinksAlcohol, setDrinksAlcohol] = useState(true);
+  const [selectedRestrictions, setSelectedRestrictions] = useState(['Sem restrições']);
   const [customRestriction, setCustomRestriction] = useState('');
   const [declineReason, setDeclineReason] = useState(PRESET_DECLINE_REASONS[0]);
   const [customDeclineReason, setCustomDeclineReason] = useState('');
@@ -98,12 +105,31 @@ export default function PublicInviteAndRsvpPage() {
   const handleSelectGuest = (g) => {
     setSelectedGuest(g);
     setStatus(g.status === 'declined' ? 'declined' : 'confirmed');
-    setDrinksAlcohol(g.drinksAlcohol ?? true);
+    if (Array.isArray(g.restrictions) && g.restrictions.length > 0) {
+      setSelectedRestrictions(g.restrictions);
+    } else {
+      setSelectedRestrictions(['Sem restrições']);
+    }
     setSearch('');
   };
 
+  const handleToggleRestriction = (opt) => {
+    if (opt === 'Sem restrições') {
+      setSelectedRestrictions(['Sem restrições']);
+      return;
+    }
+
+    const withoutSem = selectedRestrictions.filter(r => r !== 'Sem restrições');
+    if (selectedRestrictions.includes(opt)) {
+      const filtered = withoutSem.filter(r => r !== opt);
+      setSelectedRestrictions(filtered.length === 0 ? ['Sem restrições'] : filtered);
+    } else {
+      setSelectedRestrictions([...withoutSem, opt]);
+    }
+  };
+
   const handleAddCompanion = () => {
-    setCompanions([...companions, { name: '', category: 'adult', drinksAlcohol: false }]);
+    setCompanions([...companions, { name: '', category: 'adult' }]);
   };
 
   const handleUpdateCompanion = (index, field, value) => {
@@ -127,16 +153,20 @@ export default function PublicInviteAndRsvpPage() {
       ? customDeclineReason.trim()
       : declineReason;
 
+    let finalRestrictions = selectedRestrictions.filter(r => r !== 'Sem restrições');
+    if (customRestriction.trim()) finalRestrictions.push(customRestriction.trim());
+    if (finalRestrictions.length === 0) finalRestrictions = ['Sem restrições'];
+
     try {
       const payload = {
         guestId: selectedGuest?.id,
         name: selectedGuest?.name || search.trim(),
         status,
-        drinksAlcohol: status === 'confirmed' ? drinksAlcohol : false,
-        restrictions: customRestriction ? [customRestriction] : selectedGuest?.restrictions || ['Sem restrições'],
+        drinksAlcohol: true, // valor padrão do sistema sem incomodar o convidado
+        restrictions: finalRestrictions,
         declineReason: status === 'declined' ? finalDeclineReason : '',
         messageToCelebrant: messageToCelebrant.trim(),
-        companions: status === 'confirmed' ? companions.filter(c => c.name.trim().length > 0) : []
+        companions: status === 'confirmed' ? companions.filter(c => c.name && c.name.trim().length > 0) : []
       };
 
       const res = await fetch('/api/rsvp', {
@@ -158,7 +188,6 @@ export default function PublicInviteAndRsvpPage() {
     }
   };
 
-  // Monta link do Google Maps / Waze
   const getMapLink = () => {
     if (eventInfo?.venueMapUrl && eventInfo.venueMapUrl.startsWith('http')) {
       return eventInfo.venueMapUrl;
@@ -187,7 +216,6 @@ export default function PublicInviteAndRsvpPage() {
         {/* ============================================================ */}
         <div className="relative rounded-3xl overflow-hidden border border-zinc-800/80 bg-zinc-900/90 shadow-2xl backdrop-blur-md p-6 sm:p-8 text-center">
           
-          {/* Efeito sutil de luz festiva de fundo */}
           <div className="absolute -top-12 -left-12 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-12 -right-12 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -210,8 +238,9 @@ export default function PublicInviteAndRsvpPage() {
             </p>
           )}
 
+          {/* Texto do Tema Editável */}
           {eventInfo?.theme && (
-            <p className="text-xs italic text-zinc-400 mt-2">
+            <p className="text-xs italic text-zinc-300 mt-2 font-medium">
               "{eventInfo.theme}"
             </p>
           )}
@@ -252,15 +281,16 @@ export default function PublicInviteAndRsvpPage() {
               </div>
             )}
 
+            {/* Apenas horário de início */}
             {eventInfo?.startTime && (
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-zinc-800/70 flex items-center justify-center shrink-0">
                   <Clock className="w-4 h-4 text-emerald-400" />
                 </div>
                 <div>
-                  <span className="text-[10px] text-zinc-500 block">Horário</span>
+                  <span className="text-[10px] text-zinc-500 block">Horário de Início</span>
                   <span className="font-semibold text-zinc-200">
-                    Das {eventInfo.startTime} às {eventInfo.endTime || '22:00'} ({eventInfo.durationHours || 5} horas de festa)
+                    A partir das {eventInfo.startTime}
                   </span>
                 </div>
               </div>
@@ -293,7 +323,7 @@ export default function PublicInviteAndRsvpPage() {
         </div>
 
         {/* ============================================================ */}
-        {/* PARTE 2: CONFIRMAÇÃO DE PRESENÇA (RSVP ACOPLADO) */}
+        {/* PARTE 2: CONFIRMAÇÃO DE PRESENÇA (RSVP) */}
         {/* ============================================================ */}
         {submitted ? (
           <div className="rounded-3xl border border-emerald-500/30 bg-zinc-900/90 p-6 sm:p-8 text-center space-y-3 animate-in fade-in zoom-in-95 duration-200">
@@ -301,12 +331,12 @@ export default function PublicInviteAndRsvpPage() {
               <Check className="w-6 h-6 stroke-[3]" />
             </div>
             <h2 className="text-lg font-bold text-white">
-              {status === 'confirmed' ? 'Presença confirmada com sucesso!' : 'Mensagem enviada ao anfitrião!'}
+              {status === 'confirmed' ? 'Presença confirmada com sucesso!' : 'Mensagem enviada com sucesso!'}
             </h2>
             <p className="text-xs text-zinc-400 leading-relaxed max-w-sm mx-auto">
               {status === 'confirmed'
                 ? `Que alegria ter você com a gente, ${selectedGuest?.name || search}! Sua presença já foi atualizada na lista oficial da festa.`
-                : `Agradecemos pelo carinho de avisar, ${selectedGuest?.name || search}. Sentiremos sua falta, mas guardaremos um abraço bem forte!`}
+                : `Agradecemos por nos avisar, ${selectedGuest?.name || search}. Sentiremos sua falta, mas guardaremos um abraço bem forte!`}
             </p>
             {messageToCelebrant && (
               <div className="p-3 rounded-xl bg-zinc-950/60 border border-zinc-800 text-[11px] text-zinc-300 italic text-left mt-3">
@@ -347,7 +377,7 @@ export default function PublicInviteAndRsvpPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
               
-              {/* PASSO 1: LOCALIZAR O NOME */}
+              {/* PASSO 1: LOCALIZAR O NOME (SEM EXIBIR GRUPO) */}
               <div>
                 <label className="block font-semibold text-zinc-300 mb-1.5">
                   1. Localize seu nome na lista:
@@ -357,7 +387,6 @@ export default function PublicInviteAndRsvpPage() {
                   <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-between">
                     <div>
                       <strong className="text-sm font-semibold text-white block">{selectedGuest.name}</strong>
-                      <span className="text-[10px] text-zinc-500">{selectedGuest.group || 'Convidado'}</span>
                     </div>
                     <button
                       type="button"
@@ -386,10 +415,9 @@ export default function PublicInviteAndRsvpPage() {
                           <div
                             key={g.id}
                             onClick={() => handleSelectGuest(g)}
-                            className="p-2.5 hover:bg-zinc-900 cursor-pointer flex items-center justify-between"
+                            className="p-3 hover:bg-zinc-900 cursor-pointer flex items-center justify-between transition"
                           >
                             <span className="font-medium text-zinc-200">{g.name}</span>
-                            <span className="text-[10px] text-zinc-500">{g.group}</span>
                           </div>
                         ))}
                       </div>
@@ -434,27 +462,35 @@ export default function PublicInviteAndRsvpPage() {
 
               {/* CENÁRIO A: CONFIRMOU PRESENÇA */}
               {status === 'confirmed' && (
-                <div className="space-y-3 pt-2 border-t border-zinc-800">
-                  <label className="flex items-center gap-2 cursor-pointer p-2.5 rounded-xl bg-zinc-950 border border-zinc-800">
-                    <input
-                      type="checkbox"
-                      checked={drinksAlcohol}
-                      onChange={(e) => setDrinksAlcohol(e.target.checked)}
-                      className="rounded border-zinc-700 text-emerald-600 focus:ring-0 bg-zinc-900"
-                    />
-                    <div className="flex items-center gap-1.5 text-zinc-300">
-                      <Wine className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Consome bebidas alcoólicas (cerveja/chopp/vinho)</span>
-                    </div>
-                  </label>
-
+                <div className="space-y-4 pt-2 border-t border-zinc-800">
+                  
+                  {/* RESTRIÇÕES ALIMENTARES CLICÁVEIS (CHIPS) */}
                   <div>
-                    <label className="block text-[11px] text-zinc-400 mb-1">
-                      Possui alguma restrição alimentar ou alergia?
+                    <label className="block text-[11px] text-zinc-300 font-semibold mb-2">
+                      Possui alguma restrição alimentar ou preferência? (Clique nas opções):
                     </label>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {PRESET_RESTRICTION_OPTIONS.map((opt, i) => {
+                        const isSelected = selectedRestrictions.includes(opt);
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => handleToggleRestriction(opt)}
+                            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition ${
+                              isSelected
+                                ? 'bg-emerald-600 text-white border-emerald-500 font-semibold'
+                                : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700'
+                            }`}
+                          >
+                            {opt}
+                          </button>
+                        );
+                      })}
+                    </div>
                     <input
                       type="text"
-                      placeholder="Ex: Vegetariano, intolerância a lactose, alergia a camarão..."
+                      placeholder="Outra alergia ou observação (opcional)..."
                       value={customRestriction}
                       onChange={(e) => setCustomRestriction(e.target.value)}
                       className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-white"
@@ -503,15 +539,6 @@ export default function PublicInviteAndRsvpPage() {
                               <option value="child_6_11">Criança (6-11 anos)</option>
                               <option value="child_0_5">Criança (0-5 anos)</option>
                             </select>
-                            <label className="flex items-center gap-1.5 cursor-pointer text-zinc-400">
-                              <input
-                                type="checkbox"
-                                checked={comp.drinksAlcohol}
-                                onChange={(e) => handleUpdateCompanion(idx, 'drinksAlcohol', e.target.checked)}
-                                className="rounded border-zinc-700 bg-zinc-900"
-                              />
-                              <span>Bebe álcool</span>
-                            </label>
                           </div>
                         </div>
                       ))}
@@ -520,7 +547,7 @@ export default function PublicInviteAndRsvpPage() {
                 </div>
               )}
 
-              {/* CENÁRIO B: NÃO PODERÁ COMPARECER (MOTIVO HUMANIZADO) */}
+              {/* CENÁRIO B: NÃO PODERÁ COMPARECER */}
               {status === 'declined' && (
                 <div className="space-y-3 pt-2 border-t border-zinc-800">
                   <div>
@@ -550,7 +577,7 @@ export default function PublicInviteAndRsvpPage() {
                 </div>
               )}
 
-              {/* RECADO CARINHOSO / FELICITAÇÕES PARA O ANIVERSARIANTE */}
+              {/* RECADO CARINHOSO / FELICITAÇÕES */}
               <div>
                 <label className="block text-[11px] text-zinc-300 font-medium mb-1 flex items-center gap-1.5">
                   <Heart className="w-3.5 h-3.5 text-rose-400" />
