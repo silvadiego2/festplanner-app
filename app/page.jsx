@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Calendar,
   Clock,
@@ -32,10 +32,159 @@ import {
   Coins,
   Database,
   Upload,
-  Settings2,
+  Cloud,
+  RefreshCw,
+  Search,
+  Sparkle,
   SlidersHorizontal,
-  X
+  Info
 } from 'lucide-react';
+
+// ==============================================================================
+// 1. BANCO DE DADOS REGIONAL DE PREÇOS MÉDIOS DE SALVADOR - BA (ATACADO & VAREJO)
+// E MATRIZ DE CONSUMO TÉCNICO POR PESSOA (GRAMATURA E ML)
+// ==============================================================================
+const SALVADOR_INGREDIENT_DATABASE = [
+  // Carnes Bovinas Nobres & Churrasco
+  { keywords: ['picanha'], defaultAmount: 0.18, unit: 'kg', defaultCost: 74.90, category: 'Carnes Nobres' },
+  { keywords: ['file mignon', 'filé mignon'], defaultAmount: 0.18, unit: 'kg', defaultCost: 78.90, category: 'Carnes Nobres' },
+  { keywords: ['alcatra', 'miolo de alcatra', 'baby beef'], defaultAmount: 0.18, unit: 'kg', defaultCost: 49.90, category: 'Carnes Bovinas' },
+  { keywords: ['fraldinha', 'maminha'], defaultAmount: 0.18, unit: 'kg', defaultCost: 52.00, category: 'Carnes Bovinas' },
+  { keywords: ['contra file', 'contrafilé'], defaultAmount: 0.18, unit: 'kg', defaultCost: 56.90, category: 'Carnes Bovinas' },
+  { keywords: ['patinho', 'carne moida', 'carne moída'], defaultAmount: 0.15, unit: 'kg', defaultCost: 42.90, category: 'Carnes Bovinas' },
+  { keywords: ['costela', 'cupim'], defaultAmount: 0.22, unit: 'kg', defaultCost: 36.90, category: 'Carnes Bovinas' },
+
+  // Aves e Suínos
+  { keywords: ['frango', 'peito de frango', 'file de frango', 'filé de frango'], defaultAmount: 0.16, unit: 'kg', defaultCost: 22.90, category: 'Aves' },
+  { keywords: ['sobrecoxa', 'coxa de frango', 'asa', 'tulipa'], defaultAmount: 0.20, unit: 'kg', defaultCost: 19.50, category: 'Aves' },
+  { keywords: ['coracao', 'coração de frango'], defaultAmount: 0.08, unit: 'kg', defaultCost: 39.90, category: 'Aves' },
+  { keywords: ['costelinha suina', 'costela de porco', 'costelinha'], defaultAmount: 0.18, unit: 'kg', defaultCost: 32.90, category: 'Suínos' },
+  { keywords: ['pernil', 'lombo suino', 'lombo'], defaultAmount: 0.16, unit: 'kg', defaultCost: 28.50, category: 'Suínos' },
+  { keywords: ['linguica', 'linguiça toscana', 'linguica cuiabana'], defaultAmount: 0.12, unit: 'kg', defaultCost: 26.90, category: 'Churrasco' },
+  { keywords: ['bacon'], defaultAmount: 0.03, unit: 'kg', defaultCost: 38.00, category: 'Frios & Embutidos' },
+
+  // Frutos do Mar & Peixes (Culinária Baiana)
+  { keywords: ['camarao', 'camarão'], defaultAmount: 0.18, unit: 'kg', defaultCost: 65.00, category: 'Frutos do Mar' },
+  { keywords: ['peixe', 'tilapia', 'robalo', 'pescada', 'salmao', 'salmão'], defaultAmount: 0.20, unit: 'kg', defaultCost: 48.00, category: 'Pescados' },
+  { keywords: ['polvo', 'lula'], defaultAmount: 0.15, unit: 'kg', defaultCost: 75.00, category: 'Frutos do Mar' },
+  { keywords: ['leite de coco'], defaultAmount: 0.04, unit: 'L', defaultCost: 9.50, category: 'Ingredientes Baianos' },
+  { keywords: ['azeite de dende', 'dendê', 'dende'], defaultAmount: 0.015, unit: 'L', defaultCost: 18.00, category: 'Ingredientes Baianos' },
+
+  // Queijos e Frios
+  { keywords: ['queijo coalho', 'coalho'], defaultAmount: 0.08, unit: 'kg', defaultCost: 48.90, category: 'Queijos' },
+  { keywords: ['parmesao', 'parmesão'], defaultAmount: 0.03, unit: 'kg', defaultCost: 88.00, category: 'Queijos' },
+  { keywords: ['mussarela', 'muçarela', 'queijo prato'], defaultAmount: 0.05, unit: 'kg', defaultCost: 44.90, category: 'Queijos' },
+  { keywords: ['gorgonzola', 'brie', 'gouda'], defaultAmount: 0.04, unit: 'kg', defaultCost: 89.00, category: 'Queijos Especiais' },
+  { keywords: ['presunto', 'salame', 'peito de peru'], defaultAmount: 0.04, unit: 'kg', defaultCost: 52.00, category: 'Frios' },
+
+  // Acompanhamentos, Massas, Arroz & Farofas
+  { keywords: ['arroz arboreo', 'arroz arbóreo', 'arroz de risoto'], defaultAmount: 0.07, unit: 'kg', defaultCost: 22.00, category: 'Grãos' },
+  { keywords: ['arroz', 'arroz branco', 'arroz parboilizado'], defaultAmount: 0.06, unit: 'kg', defaultCost: 6.80, category: 'Grãos' },
+  { keywords: ['farinha', 'farinha de mandioca', 'farinha biju', 'farofa'], defaultAmount: 0.05, unit: 'kg', defaultCost: 8.50, category: 'Acompanhamentos' },
+  { keywords: ['massa', 'macarrao', 'macarrão', 'penne', 'espaguete'], defaultAmount: 0.08, unit: 'kg', defaultCost: 8.90, category: 'Massas' },
+  { keywords: ['manteiga'], defaultAmount: 0.02, unit: 'kg', defaultCost: 42.00, category: 'Laticínios' },
+  { keywords: ['creme de leite'], defaultAmount: 0.04, unit: 'L', defaultCost: 14.50, category: 'Laticínios' },
+  { keywords: ['azeite de oliva', 'azeite extra virgem'], defaultAmount: 0.015, unit: 'L', defaultCost: 46.00, category: 'Óleos' },
+  { keywords: ['castanha', 'castanha de caju', 'nozes'], defaultAmount: 0.02, unit: 'kg', defaultCost: 85.00, category: 'Castanhas' },
+  { keywords: ['molho barbecue', 'barbecue'], defaultAmount: 0.04, unit: 'kg', defaultCost: 24.00, category: 'Molhos' },
+  { keywords: ['sal grosso', 'tempero', 'alho'], defaultAmount: 0.015, unit: 'kg', defaultCost: 12.00, category: 'Temperos' },
+
+  // Salgados, Entradas & Canapés
+  { keywords: ['salgado', 'coxinha', 'kibe', 'pastel', 'empada', 'quiche', 'canapé'], defaultAmount: 8, unit: 'un', defaultCost: 1.40, category: 'Entradas' },
+
+  // Sobremesas, Bolos & Doces
+  { keywords: ['bolo', 'torta'], defaultAmount: 0.10, unit: 'kg', defaultCost: 75.00, category: 'Confeitaria' },
+  { keywords: ['doce', 'docinho', 'brigadeiro', 'beijinho', 'trufa'], defaultAmount: 4, unit: 'un', defaultCost: 2.20, category: 'Doces' },
+  { keywords: ['leite condensado'], defaultAmount: 0.05, unit: 'kg', defaultCost: 16.50, category: 'Confeitaria' },
+  { keywords: ['chocolate em po', 'cacau', 'nutella'], defaultAmount: 0.02, unit: 'kg', defaultCost: 42.00, category: 'Confeitaria' }
+];
+
+// MODELOS RÁPIDOS DE PRATOS SUGERIDOS PARA FESTA EM SALVADOR
+const SUGGESTED_DISH_TEMPLATES = [
+  {
+    name: 'Churrasco Baiano: Picanha & Queijo Coalho',
+    category: 'protein',
+    isHot: true,
+    ingredients: [
+      { name: 'Picanha Bovina Resfriada', amountPerPerson: 0.18, unit: 'kg', unitCost: 74.90 },
+      { name: 'Espeto de Queijo Coalho', amountPerPerson: 0.08, unit: 'kg', unitCost: 48.90 },
+      { name: 'Sal Grosso com Alho e Ervas', amountPerPerson: 0.015, unit: 'kg', unitCost: 12.00 }
+    ]
+  },
+  {
+    name: 'Bobó de Camarão Cremoso com Dendê',
+    category: 'protein',
+    isHot: true,
+    ingredients: [
+      { name: 'Camarão Limpo Médio', amountPerPerson: 0.18, unit: 'kg', unitCost: 65.00 },
+      { name: 'Leite de Coco Natural', amountPerPerson: 0.05, unit: 'L', defaultCost: 9.50, unitCost: 9.50 },
+      { name: 'Azeite de Dendê da Bahia', amountPerPerson: 0.015, unit: 'L', unitCost: 18.00 },
+      { name: 'Mandioca / Aipim Cozido', amountPerPerson: 0.12, unit: 'kg', unitCost: 7.50 }
+    ]
+  },
+  {
+    name: 'Risoto de Filé Mignon ao Gorgonzola',
+    category: 'protein',
+    isHot: true,
+    ingredients: [
+      { name: 'Filé Mignon em Tiras', amountPerPerson: 0.15, unit: 'kg', unitCost: 78.90 },
+      { name: 'Arroz Arbóreo', amountPerPerson: 0.07, unit: 'kg', unitCost: 22.00 },
+      { name: 'Queijo Gorgonzola', amountPerPerson: 0.03, unit: 'kg', unitCost: 89.00 },
+      { name: 'Manteiga e Parmesão', amountPerPerson: 0.02, unit: 'kg', unitCost: 55.00 }
+    ]
+  },
+  {
+    name: 'Farofa Crocante de Castanhas de Caju e Bacon',
+    category: 'side',
+    isHot: false,
+    ingredients: [
+      { name: 'Farinha de Mandioca Biju', amountPerPerson: 0.05, unit: 'kg', unitCost: 8.50 },
+      { name: 'Castanha de Caju Picada', amountPerPerson: 0.02, unit: 'kg', unitCost: 85.00 },
+      { name: 'Bacon em Cubinhos', amountPerPerson: 0.03, unit: 'kg', unitCost: 38.00 }
+    ]
+  },
+  {
+    name: 'Buffet de Mini Salgados Finos & Canapés',
+    category: 'starter',
+    isHot: false,
+    ingredients: [
+      { name: 'Mini Salgados & Quiches Sortidos', amountPerPerson: 10, unit: 'un', unitCost: 1.40 }
+    ]
+  },
+  {
+    name: 'Bolo Comemorativo & Brigadeiros Gourmet',
+    category: 'dessert',
+    isHot: false,
+    ingredients: [
+      { name: 'Bolo Artesanal Recheado', amountPerPerson: 0.10, unit: 'kg', unitCost: 75.00 },
+      { name: 'Docinhos Gourmet (Brigadeiro / Ninho)', amountPerPerson: 5, unit: 'un', unitCost: 2.20 }
+    ]
+  }
+];
+
+// Função inteligente de predição de consumo e preço com base no nome do insumo
+function findIngredientIntel(ingredientName) {
+  if (!ingredientName || typeof ingredientName !== 'string') return null;
+  const clean = ingredientName
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  for (const item of SALVADOR_INGREDIENT_DATABASE) {
+    for (const kw of item.keywords) {
+      const cleanKw = kw
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+      if (clean.includes(cleanKw)) {
+        return item;
+      }
+    }
+  }
+
+  // Fallback padrão se não reconhecido:
+  return { defaultAmount: 0.10, unit: 'kg', defaultCost: 25.00, category: 'Outros' };
+}
 
 // --- DADOS INICIAIS ---
 const INITIAL_EVENT_CONFIG = {
@@ -59,12 +208,12 @@ const INITIAL_EVENT_CONFIG = {
   venueContact: "(71) 98765-4321 - Paula",
   serviceType: "buffet",
   safetyMarginPct: 15,
-  materialMode: "rental", // 'rental' | 'disposable'
+  materialMode: "rental",
   tableCapacity: 4,
-  rentalUnitCost: 4.50, // Custo médio por pessoa para aluguel de louças
-  disposableUnitCost: 1.80, // Custo médio por pessoa para descartáveis
-  rechaudRentalCost: 45.00, // Custo de locação por rechaud
-  fuelPasteCost: 8.00 // Custo por pastilha de álcool gel
+  rentalUnitCost: 4.50,
+  disposableUnitCost: 1.80,
+  rechaudRentalCost: 45.00,
+  fuelPasteCost: 8.00
 };
 
 const INITIAL_GUESTS = [
@@ -75,77 +224,6 @@ const INITIAL_GUESTS = [
   { id: '5', name: 'Rodrigo Alves', group: 'Amigos Próximos', category: 'adult', status: 'pending', drinksAlcohol: true, restrictions: ['Sem restrições'] },
   { id: '6', name: 'Juliana Pires', group: 'Amigos Próximos', category: 'adult', status: 'declined', drinksAlcohol: true, restrictions: ['Sem restrições'] },
   { id: '7', name: 'Gabriel Pires (Bebê)', group: 'Amigos Próximos', category: 'child_0_5', status: 'confirmed', drinksAlcohol: false, restrictions: ['Sem restrições'] }
-];
-
-const INITIAL_MENU = [
-  {
-    id: 'm1',
-    name: 'Picanha Fatiada na Brasa',
-    category: 'protein',
-    isHot: true,
-    ingredients: [
-      { name: 'Picanha Bovina Resfriada', amountPerPerson: 0.18, unit: 'kg', unitCost: 78.00 },
-      { name: 'Sal Grosso com Alho & Especiarias', amountPerPerson: 0.01, unit: 'kg', unitCost: 15.00 }
-    ]
-  },
-  {
-    id: 'm2',
-    name: 'Costelinha Suína ao Barbecue',
-    category: 'protein',
-    isHot: true,
-    ingredients: [
-      { name: 'Costelinha Suína Especial', amountPerPerson: 0.15, unit: 'kg', unitCost: 34.00 },
-      { name: 'Molho Barbecue Artesanal', amountPerPerson: 0.04, unit: 'kg', unitCost: 28.00 }
-    ]
-  },
-  {
-    id: 'm3',
-    name: 'Risoto de Parmesão com Alho Poró',
-    category: 'side',
-    isHot: true,
-    ingredients: [
-      { name: 'Arroz Arbóreo', amountPerPerson: 0.07, unit: 'kg', unitCost: 22.00 },
-      { name: 'Queijo Parmesão Ralado', amountPerPerson: 0.03, unit: 'kg', unitCost: 95.00 },
-      { name: 'Manteiga e Alho Poró', amountPerPerson: 0.02, unit: 'kg', unitCost: 35.00 }
-    ]
-  },
-  {
-    id: 'm4',
-    name: 'Farofa Crocante de Castanhas e Bacon',
-    category: 'side',
-    isHot: false,
-    ingredients: [
-      { name: 'Farinha de Mandioca Biju', amountPerPerson: 0.05, unit: 'kg', unitCost: 9.00 },
-      { name: 'Bacon em Cubos e Castanhas', amountPerPerson: 0.03, unit: 'kg', unitCost: 45.00 }
-    ]
-  },
-  {
-    id: 'm5',
-    name: 'Mini Salgados & Canapés Finos',
-    category: 'starter',
-    isHot: false,
-    ingredients: [
-      { name: 'Mini Quiches & Empadas Variadas', amountPerPerson: 10, unit: 'un', unitCost: 1.60 }
-    ]
-  },
-  {
-    id: 'm6',
-    name: 'Bolo Decorado de Frutas Vermelhas',
-    category: 'dessert',
-    isHot: false,
-    ingredients: [
-      { name: 'Bolo Artesanal Recheado', amountPerPerson: 0.10, unit: 'kg', unitCost: 75.00 }
-    ]
-  },
-  {
-    id: 'm7',
-    name: 'Docinhos Gourmet (Brigadeiro & Ninho)',
-    category: 'dessert',
-    isHot: false,
-    ingredients: [
-      { name: 'Docinhos Gourmet Enrolados', amountPerPerson: 5, unit: 'un', unitCost: 2.20 }
-    ]
-  }
 ];
 
 const INITIAL_BEVERAGE_TYPES = [
@@ -212,7 +290,7 @@ export default function App() {
 
   // States principais
   const [config, setConfig] = useState(INITIAL_EVENT_CONFIG);
-  const [menu, setMenu] = useState(INITIAL_MENU);
+  const [menu, setMenu] = useState(SUGGESTED_DISH_TEMPLATES);
   const [beverages, setBeverages] = useState(INITIAL_BEVERAGE_TYPES);
   const [guests, setGuests] = useState(INITIAL_GUESTS);
   const [rentals, setRentals] = useState(INITIAL_RENTALS);
@@ -222,6 +300,11 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [darkMode, setDarkMode] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Status de Sincronização na Nuvem (Vercel Postgres)
+  const [cloudSyncStatus, setCloudSyncStatus] = useState('syncing'); // 'synced' | 'saving' | 'offline' | 'syncing'
+  const [lastSyncTime, setLastSyncTime] = useState(null);
+  const isInitialLoadDone = useRef(false);
 
   // Ordenação de convidados
   const [guestSortField, setGuestSortField] = useState('name');
@@ -249,95 +332,136 @@ export default function App() {
   const [backupModalOpen, setBackupModalOpen] = useState(false);
   const [rawLocalStorageDump, setRawLocalStorageDump] = useState([]);
 
-  // Carregamento e Migração Segura no Cliente
-  useEffect(() => {
-    try {
-      const savedConfig = localStorage.getItem('festplanner_config_v3') || localStorage.getItem('festplanner_config_v2') || localStorage.getItem('festplanner_config');
-      if (savedConfig) setConfig(JSON.parse(savedConfig));
-
-      const savedGuests = localStorage.getItem('festplanner_guests_v3') || localStorage.getItem('festplanner_guests_v2') || localStorage.getItem('festplanner_guests');
-      if (savedGuests) setGuests(JSON.parse(savedGuests));
-
-      const savedMenu = localStorage.getItem('festplanner_menu_v3') || localStorage.getItem('festplanner_menu_v2') || localStorage.getItem('festplanner_menu');
-      if (savedMenu) setMenu(JSON.parse(savedMenu));
-
-      const savedBeverages = localStorage.getItem('festplanner_beverages_v3') || localStorage.getItem('festplanner_beverages_v2') || localStorage.getItem('festplanner_beverages');
-      if (savedBeverages) setBeverages(JSON.parse(savedBeverages));
-
-      const savedRentals = localStorage.getItem('festplanner_rentals_v3') || localStorage.getItem('festplanner_rentals_v2') || localStorage.getItem('festplanner_rentals');
-      if (savedRentals) setRentals(JSON.parse(savedRentals));
-
-      const savedExpenses = localStorage.getItem('festplanner_manual_expenses_v3') || localStorage.getItem('festplanner_manual_expenses_v2') || localStorage.getItem('festplanner_expenses');
-      if (savedExpenses) setManualExpenses(JSON.parse(savedExpenses));
-
-      const savedChecklist = localStorage.getItem('festplanner_checklist_v3') || localStorage.getItem('festplanner_checklist_v2') || localStorage.getItem('festplanner_checklist');
-      if (savedChecklist) setChecklist(JSON.parse(savedChecklist));
-    } catch (e) {
-      console.warn("Storage sync warning:", e);
-    }
-    setMounted(true);
-  }, []);
-
-  // Persistência contínua após montagem
-  useEffect(() => {
-    if (!mounted) return;
-    try {
-      localStorage.setItem('festplanner_config_v3', JSON.stringify(config));
-      localStorage.setItem('festplanner_config_v2', JSON.stringify(config));
-    } catch (_) {}
-  }, [config, mounted]);
-
-  useEffect(() => {
-    if (!mounted) return;
-    try {
-      localStorage.setItem('festplanner_guests_v3', JSON.stringify(guests));
-      localStorage.setItem('festplanner_guests_v2', JSON.stringify(guests));
-    } catch (_) {}
-  }, [guests, mounted]);
-
-  useEffect(() => {
-    if (!mounted) return;
-    try {
-      localStorage.setItem('festplanner_menu_v3', JSON.stringify(menu));
-      localStorage.setItem('festplanner_menu_v2', JSON.stringify(menu));
-    } catch (_) {}
-  }, [menu, mounted]);
-
-  useEffect(() => {
-    if (!mounted) return;
-    try {
-      localStorage.setItem('festplanner_beverages_v3', JSON.stringify(beverages));
-      localStorage.setItem('festplanner_beverages_v2', JSON.stringify(beverages));
-    } catch (_) {}
-  }, [beverages, mounted]);
-
-  useEffect(() => {
-    if (!mounted) return;
-    try {
-      localStorage.setItem('festplanner_rentals_v3', JSON.stringify(rentals));
-      localStorage.setItem('festplanner_rentals_v2', JSON.stringify(rentals));
-    } catch (_) {}
-  }, [rentals, mounted]);
-
-  useEffect(() => {
-    if (!mounted) return;
-    try {
-      localStorage.setItem('festplanner_manual_expenses_v3', JSON.stringify(manualExpenses));
-      localStorage.setItem('festplanner_manual_expenses_v2', JSON.stringify(manualExpenses));
-    } catch (_) {}
-  }, [manualExpenses, mounted]);
-
-  useEffect(() => {
-    if (!mounted) return;
-    try {
-      localStorage.setItem('festplanner_checklist_v3', JSON.stringify(checklist));
-      localStorage.setItem('festplanner_checklist_v2', JSON.stringify(checklist));
-    } catch (_) {}
-  }, [checklist, mounted]);
-
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  // ==============================================================================
+  // SINCRONIZAÇÃO EM NUVEM (VERCEL POSTGRES) + FALLBACK LOCALSTORAGE
+  // ==============================================================================
+  useEffect(() => {
+    async function loadDataFromCloudOrLocal() {
+      try {
+        setCloudSyncStatus('syncing');
+        // 1. Tenta carregar do Vercel Postgres
+        const res = await fetch('/api/event');
+        const json = await res.json();
+
+        if (json.success && json.data) {
+          const d = json.data;
+          if (d.config) setConfig(d.config);
+          if (d.guests) setGuests(d.guests);
+          if (d.menu) setMenu(d.menu);
+          if (d.beverages) setBeverages(d.beverages);
+          if (d.rentals) setRentals(d.rentals);
+          if (d.manualExpenses) setManualExpenses(d.manualExpenses);
+          if (d.checklist) setChecklist(d.checklist);
+          setCloudSyncStatus('synced');
+          setLastSyncTime(new Date());
+          isInitialLoadDone.current = true;
+          setMounted(true);
+          return;
+        }
+      } catch (err) {
+        console.warn('Postgres fetch fallback to local:', err);
+      }
+
+      // 2. Se falhar ou estiver offline, resgata do localStorage
+      try {
+        const savedConfig = localStorage.getItem('festplanner_config_v3') || localStorage.getItem('festplanner_config');
+        if (savedConfig) setConfig(JSON.parse(savedConfig));
+
+        const savedGuests = localStorage.getItem('festplanner_guests_v3') || localStorage.getItem('festplanner_guests');
+        if (savedGuests) setGuests(JSON.parse(savedGuests));
+
+        const savedMenu = localStorage.getItem('festplanner_menu_v3') || localStorage.getItem('festplanner_menu');
+        if (savedMenu) setMenu(JSON.parse(savedMenu));
+
+        const savedBeverages = localStorage.getItem('festplanner_beverages_v3') || localStorage.getItem('festplanner_beverages');
+        if (savedBeverages) setBeverages(JSON.parse(savedBeverages));
+
+        const savedRentals = localStorage.getItem('festplanner_rentals_v3') || localStorage.getItem('festplanner_rentals');
+        if (savedRentals) setRentals(JSON.parse(savedRentals));
+
+        const savedExpenses = localStorage.getItem('festplanner_manual_expenses_v3') || localStorage.getItem('festplanner_expenses');
+        if (savedExpenses) setManualExpenses(JSON.parse(savedExpenses));
+
+        const savedChecklist = localStorage.getItem('festplanner_checklist_v3') || localStorage.getItem('festplanner_checklist');
+        if (savedChecklist) setChecklist(JSON.parse(savedChecklist));
+      } catch (_) {}
+
+      setCloudSyncStatus('offline');
+      isInitialLoadDone.current = true;
+      setMounted(true);
+    }
+
+    loadDataFromCloudOrLocal();
+  }, []);
+
+  // Salvamento contínuo: Grava no localStorage E envia para o Vercel Postgres
+  useEffect(() => {
+    if (!mounted || !isInitialLoadDone.current) return;
+
+    // Backup local
+    try {
+      localStorage.setItem('festplanner_config_v3', JSON.stringify(config));
+      localStorage.setItem('festplanner_guests_v3', JSON.stringify(guests));
+      localStorage.setItem('festplanner_menu_v3', JSON.stringify(menu));
+      localStorage.setItem('festplanner_beverages_v3', JSON.stringify(beverages));
+      localStorage.setItem('festplanner_rentals_v3', JSON.stringify(rentals));
+      localStorage.setItem('festplanner_manual_expenses_v3', JSON.stringify(manualExpenses));
+      localStorage.setItem('festplanner_checklist_v3', JSON.stringify(checklist));
+    } catch (_) {}
+
+    // Auto-save no Postgres com debounce de 1 segundo
+    const timeout = setTimeout(async () => {
+      setCloudSyncStatus('saving');
+      try {
+        const payload = { config, guests, menu, beverages, rentals, manualExpenses, checklist };
+        const res = await fetch('/api/event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const resData = await res.json();
+        if (resData.success) {
+          setCloudSyncStatus('synced');
+          setLastSyncTime(new Date());
+        } else {
+          setCloudSyncStatus('offline');
+        }
+      } catch (e) {
+        setCloudSyncStatus('offline');
+      }
+    }, 1200);
+
+    return () => clearTimeout(timeout);
+  }, [config, guests, menu, beverages, rentals, manualExpenses, checklist, mounted]);
+
+  // Função manual para forçar sincronização
+  const handleForceCloudSync = async () => {
+    setCloudSyncStatus('saving');
+    try {
+      const payload = { config, guests, menu, beverages, rentals, manualExpenses, checklist };
+      const res = await fetch('/api/event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const resData = await res.json();
+      if (resData.success) {
+        setCloudSyncStatus('synced');
+        setLastSyncTime(new Date());
+        showToast('Dados salvos no Vercel Postgres!');
+      } else {
+        setCloudSyncStatus('offline');
+        showToast('Nuvem offline. Salvo localmente.');
+      }
+    } catch (e) {
+      setCloudSyncStatus('offline');
+      showToast('Erro ao sincronizar na nuvem.');
+    }
   };
 
   // --- ESTATÍSTICAS E COTAS DE CONSUMO ---
@@ -463,7 +587,6 @@ export default function App() {
     const waterGlasses = Math.ceil(confirmed * 1.5 * safety);
     const beerTulips = Math.ceil(stats.confirmedDrinkers * 2 * safety);
 
-    // Rechauds sincronizados com pratos quentes do cardápio
     const rechauds = Math.max(1, stats.hotDishesCount);
     const durationHours = Number(config.durationHours) || 5;
     const fuelPastesNeeded = Math.ceil(rechauds * (durationHours / 2.5));
@@ -475,9 +598,8 @@ export default function App() {
     const allTablesNeeded = Math.ceil(all / capacity);
     const allChairsNeeded = allTablesNeeded * capacity;
 
-    // Custos configuráveis
-    const unitMaterialCost = config.materialMode === 'rental' 
-      ? (Number(config.rentalUnitCost) || 4.50) 
+    const unitMaterialCost = config.materialMode === 'rental'
+      ? (Number(config.rentalUnitCost) || 4.50)
       : (Number(config.disposableUnitCost) || 1.80);
 
     const rechaudUnitCost = Number(config.rechaudRentalCost) || 45.00;
@@ -523,26 +645,17 @@ export default function App() {
 
   // --- MOTOR 4: CENTRO DE CUSTOS INTEGRADO E SINCRONIZADO ---
   const budget = useMemo(() => {
-    // Locações (espaço, brinquedos, mobiliário)
     const rentalsCost = rentals.reduce((acc, curr) => acc + (Number(curr.cost) || 0), 0);
-
-    // Buffet & Receitas
     const foodCostConfirmed = calculatedMenu.totalCostConfirmed;
     const foodCostAll = calculatedMenu.totalCostAll;
-
-    // Bebidas & Gelo
     const beveragesCostConfirmed = calculatedBeverages.totalCostConfirmed;
     const beveragesCostAll = calculatedBeverages.totalCostAll;
-
-    // Louças & Apoio
     const tablewareCostConfirmed = calculatedMaterials.tablewareCostConfirmed;
     const tablewareCostAll = calculatedMaterials.tablewareCostAll;
 
-    // Despesas Manuais
     const manualTotalEstimated = manualExpenses.reduce((acc, curr) => acc + (Number(curr.estimated) || 0), 0);
     const manualTotalActual = manualExpenses.reduce((acc, curr) => acc + (Number(curr.actual) || Number(curr.estimated) || 0), 0);
 
-    // Totais Consolidados
     const grandTotalConfirmed = rentalsCost + foodCostConfirmed + beveragesCostConfirmed + tablewareCostConfirmed + manualTotalActual;
     const grandTotalAll = rentalsCost + foodCostAll + beveragesCostAll + tablewareCostAll + manualTotalEstimated;
     const rsvpSavings = Math.max(0, grandTotalAll - grandTotalConfirmed);
@@ -636,14 +749,14 @@ export default function App() {
     showToast('Convidado removido.');
   };
 
-  // --- CRUD 2: CARDÁPIO & RECEITAS ---
+  // --- CRUD 2: CARDÁPIO COM AUTO-CÁLCULO E PREÇOS DE SALVADOR ---
   const handleOpenMenuModal = (item = null) => {
     setEditingMenuItem(item);
     if (item && Array.isArray(item.ingredients)) {
       setEditingIngredients(JSON.parse(JSON.stringify(item.ingredients)));
     } else {
       setEditingIngredients([
-        { name: '', amountPerPerson: 0.15, unit: 'kg', unitCost: 35.00 }
+        { name: 'Picanha Bovina Resfriada', amountPerPerson: 0.18, unit: 'kg', unitCost: 74.90 }
       ]);
     }
     setMenuModalOpen(true);
@@ -652,7 +765,7 @@ export default function App() {
   const handleAddIngredientRow = () => {
     setEditingIngredients([
       ...editingIngredients,
-      { name: '', amountPerPerson: 0.1, unit: 'kg', unitCost: 20.00 }
+      { name: '', amountPerPerson: 0.10, unit: 'kg', unitCost: 25.00 }
     ]);
   };
 
@@ -663,7 +776,51 @@ export default function App() {
   const handleUpdateIngredient = (idx, field, value) => {
     const updated = [...editingIngredients];
     updated[idx] = { ...updated[idx], [field]: value };
+
+    // Se o usuário digitou o nome do ingrediente, aciona o motor de busca inteligente
+    if (field === 'name' && value && value.length >= 3) {
+      const intel = findIngredientIntel(value);
+      if (intel) {
+        // Sugere automaticamente a gramatura e unidade se o usuário ainda não tiver alterado
+        updated[idx].amountPerPerson = intel.defaultAmount;
+        updated[idx].unit = intel.unit;
+        updated[idx].unitCost = intel.defaultCost;
+      }
+    }
+
     setEditingIngredients(updated);
+  };
+
+  // Botão de 1-Clique: Auto-calcular todos os ingredientes com a tabela de Salvador
+  const handleAutoApplySalvadorPricing = () => {
+    let matchedCount = 0;
+    const updated = editingIngredients.map(ing => {
+      const intel = findIngredientIntel(ing.name);
+      if (intel) {
+        matchedCount++;
+        return {
+          ...ing,
+          amountPerPerson: intel.defaultAmount,
+          unit: intel.unit,
+          unitCost: intel.defaultCost
+        };
+      }
+      return ing;
+    });
+    setEditingIngredients(updated);
+    showToast(`${matchedCount} ingredientes calibrados com preços médios de Salvador!`);
+  };
+
+  // Aplicar Template de Prato Sugerido
+  const handleApplyDishTemplate = (template) => {
+    setEditingIngredients(JSON.parse(JSON.stringify(template.ingredients)));
+    const nameInput = document.getElementById('menu-item-name-input');
+    if (nameInput) nameInput.value = template.name;
+    const categorySelect = document.getElementById('menu-item-category-input');
+    if (categorySelect) categorySelect.value = template.category;
+    const isHotCheckbox = document.getElementById('menu-item-ishot-input');
+    if (isHotCheckbox) isHotCheckbox.checked = template.isHot;
+    showToast(`Template "${template.name}" aplicado!`);
   };
 
   const handleSaveMenuItem = (e) => {
@@ -686,7 +843,7 @@ export default function App() {
 
     if (editingMenuItem) {
       setMenu(menu.map(m => m.id === editingMenuItem.id ? { ...m, name, category, isHot, ingredients: validIngredients } : m));
-      showToast('Prato atualizado e custos recalculados!');
+      showToast('Prato atualizado e Centro de Custos recalculado!');
     } else {
       const newItem = {
         id: 'm-' + Date.now(),
@@ -838,7 +995,7 @@ export default function App() {
   const handleResetDemoData = () => {
     setConfig(INITIAL_EVENT_CONFIG);
     setGuests(INITIAL_GUESTS);
-    setMenu(INITIAL_MENU);
+    setMenu(SUGGESTED_DISH_TEMPLATES);
     setBeverages(INITIAL_BEVERAGE_TYPES);
     setRentals(INITIAL_RENTALS);
     setManualExpenses(INITIAL_MANUAL_EXPENSES);
@@ -847,7 +1004,7 @@ export default function App() {
   };
 
   const handleExportBackup = () => {
-    const backupData = { version: '3.0', timestamp: new Date().toISOString(), config, guests, menu, beverages, rentals, manualExpenses, checklist };
+    const backupData = { version: '3.5', timestamp: new Date().toISOString(), config, guests, menu, beverages, rentals, manualExpenses, checklist };
     const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -920,6 +1077,7 @@ export default function App() {
 ============================================================
 FESTPLANNER PRO - RELATÓRIO OPERACIONAL & LISTA DE COMPRAS
 Evento: Aniversário de ${config.celebrantName} (${config.age} anos)
+Localidade de Referência: Salvador - BA (Preços Médios de Mercado)
 Data: ${config.date} | Duração: ${config.durationHours}h
 Confirmados: ${stats.confirmedCount} pessoas (${stats.confirmedEaters.toFixed(1)} cotas de consumo)
 Total na Lista Geral: ${stats.totalGuests} convidados (${stats.allPotentialEaters.toFixed(1)} cotas)
@@ -932,14 +1090,14 @@ COMPARATIVO FINANCEIRO SINCRONIZADO
 - Economia obtida (RSVP): R$ ${budget.rsvpSavings.toLocaleString('pt-BR')}
 
 ============================================================
-CARDÁPIO SUGERIDO & FICHA TÉCNICA (RECEITAS)
+CARDÁPIO SUGERIDO & FICHA TÉCNICA (RECEITAS & GRAMATURA)
 ============================================================
 ${calculatedMenu.itemsDetailed.map(item => `
 * ${item.name} (${item.isHot ? 'Prato Quente - Rechaud' : 'Servido Frio'})
   Subtotal Estimado (Confirmados): R$ ${item.itemCostConfirmed.toLocaleString('pt-BR')}
   Subtotal se Todos Forem:       R$ ${item.itemCostAll.toLocaleString('pt-BR')}
-  Ingredientes calculados:
-${item.ingredients.map(ing => `    - ${ing.name}: ${ing.qtyConfirmed} ${ing.unit} x R$ ${ing.unitCost.toFixed(2)} = R$ ${ing.costConfirmed.toFixed(2)} (Se todos: ${ing.qtyAll} ${ing.unit})`).join('\n')}
+  Ingredientes Calculados:
+${item.ingredients.map(ing => `    - ${ing.name}: ${ing.qtyConfirmed} ${ing.unit} x R$ ${ing.unitCost.toFixed(2)} = R$ ${ing.costConfirmed.toFixed(2)} (Gramatura: ${ing.amountPerPerson} ${ing.unit}/pessoa)`).join('\n')}
 `).join('')}
 Subtotal do Buffet: R$ ${budget.foodCostConfirmed.toLocaleString('pt-BR')} (Se todos: R$ ${budget.foodCostAll.toLocaleString('pt-BR')})
 
@@ -982,7 +1140,7 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
     const element = document.createElement("a");
     const file = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
     element.href = URL.createObjectURL(file);
-    element.download = `FestPlanner_Relatorio_${(config.celebrantName || 'evento').replace(/\s+/g, '_')}.txt`;
+    element.download = `FestPlanner_Relatorio_Salvador_${(config.celebrantName || 'evento').replace(/\s+/g, '_')}.txt`;
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
@@ -994,8 +1152,8 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
         <div className="flex items-center gap-2 text-zinc-500 text-sm">
-          <Cake className="w-5 h-5 animate-spin" />
-          <span>Carregando FestPlanner Pro...</span>
+          <Cake className="w-5 h-5 animate-spin text-emerald-600" />
+          <span>Carregando FestPlanner Pro (Salvador Engine)...</span>
         </div>
       </div>
     );
@@ -1022,25 +1180,46 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-sm tracking-tight">FestPlanner</span>
-                <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-                  Pro Engine
+                <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50">
+                  Salvador Pro
                 </span>
               </div>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate max-w-[200px] sm:max-w-none">
-                {config.celebrantName} • {config.age} anos
+                {config.celebrantName} • {config.age} anos • {config.venueAddress.split('-')[1]?.trim() || 'Salvador - BA'}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
+            
+            {/* BADGE DE SINCRONIZAÇÃO EM NUVEM (VERCEL POSTGRES) */}
+            <button
+              onClick={handleForceCloudSync}
+              title={cloudSyncStatus === 'synced' ? 'Nuvem Conectada e Sincronizada' : 'Salvar no Vercel Postgres'}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition ${
+                cloudSyncStatus === 'synced'
+                  ? 'border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
+                  : cloudSyncStatus === 'saving'
+                  ? 'border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300'
+                  : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400'
+              }`}
+            >
+              <Cloud className={`w-3.5 h-3.5 ${cloudSyncStatus === 'synced' ? 'text-emerald-500' : cloudSyncStatus === 'saving' ? 'animate-pulse text-amber-500' : 'text-zinc-400'}`} />
+              <span className="hidden md:inline">
+                {cloudSyncStatus === 'synced' ? 'Nuvem Salva' : cloudSyncStatus === 'saving' ? 'Gravando...' : 'Nuvem Offline'}
+              </span>
+              <RefreshCw className={`w-3 h-3 text-zinc-400 ${cloudSyncStatus === 'saving' ? 'animate-spin' : ''}`} />
+            </button>
+
             <button
               onClick={openDiagnostics}
               title="Backup e Diagnóstico"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
             >
               <Database className="w-3.5 h-3.5 text-zinc-500" />
-              <span className="hidden sm:inline">Backup / Restaurar</span>
+              <span className="hidden sm:inline">Backup</span>
             </button>
+
             <button
               onClick={() => setRsvpSimModalOpen(true)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
@@ -1048,14 +1227,17 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
               <Share2 className="w-3.5 h-3.5 text-zinc-500" />
               <span className="hidden sm:inline">Link RSVP</span>
             </button>
+
             <button
               onClick={() => handleOpenGuestModal(null)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Convidado</span>
             </button>
+
             <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800 mx-1" />
+
             <button
               onClick={handleResetDemoData}
               title="Restaurar dados de teste"
@@ -1063,6 +1245,7 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
             >
               <RotateCcw className="w-3.5 h-3.5" />
             </button>
+
             <button
               onClick={() => setDarkMode(!darkMode)}
               className="p-2 rounded-lg text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
@@ -1161,7 +1344,7 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
                     </span>
                     <span className="flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-zinc-400" />
-                      {config.locationType === 'home' ? 'Espaço Próprio / Condomínio' : config.venueName}
+                      {config.locationType === 'home' ? 'Espaço Próprio / Condomínio' : config.venueName} (Salvador - BA)
                     </span>
                     <span className="flex items-center gap-1.5">
                       <Utensils className="w-3.5 h-3.5 text-zinc-400" />
@@ -1333,7 +1516,7 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
                 <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="text-sm font-semibold tracking-tight">Síntese de Operação & Cardápio</h3>
+                      <h3 className="text-sm font-semibold tracking-tight">Síntese de Operação & Cardápio (Referência: Salvador)</h3>
                       <p className="text-xs text-zinc-500 mt-0.5">Calculado para {stats.confirmedEaters.toFixed(1)} cotas alimentares em {config.durationHours}h</p>
                     </div>
                     <button
@@ -1612,21 +1795,26 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
         )}
 
         {/* ============================================================ */}
-        {/* TAB 3: CARDÁPIO SUGERIDO & FICHA TÉCNICA (TOTALMENTE EDITÁVEL) */}
+        {/* TAB 3: CARDÁPIO SUGERIDO COM AUTO-CÁLCULO & PREÇOS SALVADOR */}
         {/* ============================================================ */}
         {activeTab === 'menu' && (
           <div className="space-y-6">
             <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-base font-semibold tracking-tight">Cardápio Sugerido & Ficha Técnica de Receitas</h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-semibold tracking-tight">Cardápio Sugerido & Ficha Técnica de Receitas</h2>
+                    <span className="text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-200/50">
+                      Salvador Market Engine
+                    </span>
+                  </div>
                   <p className="text-xs text-zinc-500 mt-1">
-                    Custos calculados dinamicamente com base nos ingredientes por pessoa e sincronizados ao Centro de Custos.
+                    Gramaturas calculadas automaticamente por pessoa. Preços médios de Salvador sincronizados em tempo real ao Centro de Custos.
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-xs text-right">
-                    <span className="text-zinc-400 block text-[10px]">Custo c/ Confirmados</span>
+                    <span className="text-zinc-400 block text-[10px]">Custo Buffet c/ Confirmados</span>
                     <strong className="text-sm text-emerald-600 dark:text-emerald-400">R$ {budget.foodCostConfirmed.toLocaleString('pt-BR')}</strong>
                   </div>
                   <button
@@ -1639,6 +1827,34 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
                 </div>
               </div>
 
+              {/* CARD DE TEMPLATES RÁPIDOS REGIONAIS */}
+              <div className="mt-4 p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/40">
+                <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 block mb-2">
+                  Sugestões Rápidas de Pratos com Ficha Pronta:
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {SUGGESTED_DISH_TEMPLATES.map((tpl, i) => (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        const exists = menu.some(m => m.name === tpl.name);
+                        if (!exists) {
+                          setMenu([...menu, { ...tpl, id: 'tpl-' + Date.now() + '-' + i }]);
+                          showToast(`Prato "${tpl.name}" adicionado ao cardápio!`);
+                        } else {
+                          showToast('Este prato já está no cardápio.');
+                        }
+                      }}
+                      className="px-2.5 py-1 rounded-lg text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-emerald-500 dark:hover:border-emerald-500 text-zinc-700 dark:text-zinc-300 transition flex items-center gap-1.5"
+                    >
+                      <Plus className="w-3 h-3 text-emerald-500" />
+                      <span>{tpl.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* LISTA DE PRATOS DO CARDÁPIO */}
               <div className="mt-6 space-y-4">
                 {calculatedMenu.itemsDetailed.map(item => (
                   <div key={item.id} className={`p-4 rounded-xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-zinc-50 border-zinc-200/70'}`}>
@@ -1683,10 +1899,10 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
                         <thead>
                           <tr className="text-zinc-400 text-[11px]">
                             <th className="pb-1.5 font-normal">Ingrediente / Insumo</th>
-                            <th className="pb-1.5 font-normal">Qtd / Pessoa</th>
-                            <th className="pb-1.5 font-normal">Preço Unitário</th>
-                            <th className="pb-1.5 font-normal">Qtd Total (Confirmados)</th>
-                            <th className="pb-1.5 font-normal text-right">Custo Total</th>
+                            <th className="pb-1.5 font-normal">Qtd / Pessoa (Auto)</th>
+                            <th className="pb-1.5 font-normal">Preço Unit. (Salvador)</th>
+                            <th className="pb-1.5 font-normal">Total Confirmados ({stats.confirmedEaters.toFixed(1)} cotas)</th>
+                            <th className="pb-1.5 font-normal text-right">Subtotal</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-200/40 dark:divide-zinc-800/40 text-zinc-600 dark:text-zinc-300">
@@ -1793,7 +2009,7 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
         )}
 
         {/* ============================================================ */}
-        {/* TAB 5: LOCAÇÕES, BRINQUEDOS E MOBILIÁRIO (EDITÁVEL) */}
+        {/* TAB 5: LOCAÇÕES, BRINQUEDOS E MOBILIÁRIO */}
         {/* ============================================================ */}
         {activeTab === 'rentals' && (
           <div className="space-y-6">
@@ -1863,7 +2079,7 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
         )}
 
         {/* ============================================================ */}
-        {/* TAB 6: LOUÇAS, RECHAUDS, MOBILIÁRIO E DESCARTÁVEIS (EDITÁVEL) */}
+        {/* TAB 6: LOUÇAS, RECHAUDS, MOBILIÁRIO E DESCARTÁVEIS */}
         {/* ============================================================ */}
         {activeTab === 'catering' && (
           <div className="space-y-6">
@@ -2041,7 +2257,7 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
               </div>
 
               <div className="mt-5 space-y-4">
-                <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Custos Sincronizados em Tempo Real:</h4>
+                <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Custos Sincronizados em Tempo Real (Base Salvador):</h4>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
                   <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800">
                     <span className="text-zinc-400 block text-[11px]">Locações, Espaço & Brinquedos</span>
@@ -2066,7 +2282,7 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
                 </div>
 
                 <div className="flex items-center justify-between pt-4">
-                  <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Despesas Manuais & Contratações Adicionais:</h4>
+                  <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Despesas Manuais & Contratações Extras:</h4>
                   <span className="text-xs text-zinc-500 font-medium">Subtotal Manual: R$ {budget.manualTotalActual.toLocaleString('pt-BR')}</span>
                 </div>
 
@@ -2175,7 +2391,7 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
           <div className="space-y-6">
             <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
               <h2 className="text-base font-semibold tracking-tight">Parâmetros Gerais do Evento</h2>
-              <p className="text-xs text-zinc-500 mt-1 mb-5">Configure dados do aniversariante e regras do espaço</p>
+              <p className="text-xs text-zinc-500 mt-1 mb-5">Configure dados do aniversariante e regras do espaço em Salvador</p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 <div>
@@ -2234,6 +2450,15 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
                     className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
                   />
                 </div>
+                <div className="md:col-span-2">
+                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Endereço Completo</label>
+                  <input
+                    type="text"
+                    value={config.venueAddress}
+                    onChange={(e) => setConfig({ ...config, venueAddress: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -2242,14 +2467,36 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
       </main>
 
       {/* ============================================================ */}
-      {/* MODAL 1: EDITAR / ADICIONAR PRATO E RECEITA NO CARDÁPIO */}
+      {/* MODAL 1: EDITAR / ADICIONAR PRATO COM MOTOR DE INSUMOS & SALVADOR */}
       {/* ============================================================ */}
       {menuModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className={`w-full max-w-2xl rounded-2xl border p-5 shadow-xl max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold">{editingMenuItem ? 'Editar Prato & Ficha Técnica' : 'Novo Prato no Cardápio'}</h3>
+              <div className="flex items-center gap-2">
+                <Sparkle className="w-4 h-4 text-emerald-500" />
+                <h3 className="text-sm font-semibold">{editingMenuItem ? 'Editar Prato & Ficha Técnica' : 'Novo Prato no Cardápio'}</h3>
+              </div>
               <button onClick={() => setMenuModalOpen(false)} className="text-zinc-400 hover:text-zinc-600 text-xs">✕</button>
+            </div>
+
+            {/* SELETOR DE TEMPLATES RÁPIDOS */}
+            <div className="mb-4 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700">
+              <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 block mb-1.5">
+                Preencher com um Template Pronto de Salvador:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {SUGGESTED_DISH_TEMPLATES.map((tpl, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => handleApplyDishTemplate(tpl)}
+                    className="px-2 py-0.5 rounded text-[11px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 hover:border-emerald-500 text-zinc-700 dark:text-zinc-300"
+                  >
+                    {tpl.name}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <form onSubmit={handleSaveMenuItem} className="space-y-4 text-xs">
@@ -2259,19 +2506,20 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
                   <input
                     type="text"
                     name="name"
+                    id="menu-item-name-input"
                     required
                     defaultValue={editingMenuItem?.name || ''}
-                    placeholder="Ex: Risoto de Alho Poró"
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                    placeholder="Ex: Picanha na Brasa com Alho"
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent font-medium"
                   />
                 </div>
                 <div>
                   <label className="block text-zinc-500 mb-1">Categoria do Prato</label>
-                  <select name="category" defaultValue={editingMenuItem?.category || 'side'} className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent">
-                    <option value="starter" className="dark:bg-zinc-900">Entrada / Salgado</option>
+                  <select name="category" id="menu-item-category-input" defaultValue={editingMenuItem?.category || 'protein'} className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent">
                     <option value="protein" className="dark:bg-zinc-900">Proteína / Prato Principal</option>
                     <option value="side" className="dark:bg-zinc-900">Guarnição / Acompanhamento</option>
-                    <option value="dessert" className="dark:bg-zinc-900">Sobremesa / Bolo</option>
+                    <option value="starter" className="dark:bg-zinc-900">Entrada / Salgado / Canapé</option>
+                    <option value="dessert" className="dark:bg-zinc-900">Sobremesa / Bolo / Doces</option>
                   </select>
                 </div>
               </div>
@@ -2281,47 +2529,65 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
                   <input
                     type="checkbox"
                     name="isHot"
-                    defaultChecked={editingMenuItem ? editingMenuItem.isHot : false}
+                    id="menu-item-ishot-input"
+                    defaultChecked={editingMenuItem ? editingMenuItem.isHot : true}
                     className="rounded border-zinc-300"
                   />
-                  <span><strong>Prato servido quente</strong> (necessita de rechaud inox em banho-maria)</span>
+                  <span><strong>Prato servido quente</strong> (adiciona automaticamente rechaud inox e pastilhas de aquecimento)</span>
                 </label>
               </div>
 
-              {/* LISTA DINÂMICA DE INGREDIENTES */}
-              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800">
-                <div className="flex items-center justify-between mb-2">
+              {/* LISTA DINÂMICA DE INGREDIENTES COM AUTO-PREENCHIMENTO */}
+              <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                   <div>
-                    <h4 className="font-semibold text-xs">Ingredientes / Insumos da Receita</h4>
-                    <span className="text-[10px] text-zinc-400">Quantidade calculada por pessoa consumidora</span>
+                    <h4 className="font-semibold text-xs flex items-center gap-1.5">
+                      <span>Ingredientes / Insumos</span>
+                      <span className="text-[10px] font-normal text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded border border-emerald-200/50">
+                        Auto-calculado por pessoa
+                      </span>
+                    </h4>
+                    <span className="text-[11px] text-zinc-400">Digite o nome do insumo (ex: picanha, queijo coalho, arroz, camarão) e os valores se ajustam sozinhos.</span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleAddIngredientRow}
-                    className="px-2.5 py-1 rounded bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-700 dark:text-zinc-300 font-medium text-[11px] flex items-center gap-1"
-                  >
-                    <Plus className="w-3 h-3" />
-                    <span>Adicionar Insumo</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleAutoApplySalvadorPricing}
+                      title="Aplicar preços médios de Salvador em todos os itens"
+                      className="px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 font-medium text-[11px] flex items-center gap-1"
+                    >
+                      <Sparkles className="w-3 h-3 text-emerald-600" />
+                      <span>Preços Salvador</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleAddIngredientRow}
+                      className="px-2.5 py-1 rounded bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-700 dark:text-zinc-300 font-medium text-[11px] flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>Insumo</span>
+                    </button>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 mt-3">
                   {editingIngredients.map((ing, idx) => (
                     <div key={idx} className="flex flex-col sm:flex-row items-center gap-2 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-800">
                       <div className="flex-1 w-full">
                         <input
                           type="text"
-                          placeholder="Nome do Ingrediente (ex: Arroz Arbóreo)"
+                          placeholder="Ex: Picanha Bovina, Camarão, Queijo Coalho..."
                           value={ing.name}
                           onChange={(e) => handleUpdateIngredient(idx, 'name', e.target.value)}
-                          className="w-full px-2.5 py-1.5 rounded border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs"
+                          className="w-full px-2.5 py-1.5 rounded border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs font-medium"
                         />
                       </div>
                       <div className="w-24">
+                        <label className="text-[9px] text-zinc-400 block sm:hidden">Qtd/pessoa</label>
                         <input
                           type="number"
-                          step="0.01"
-                          placeholder="Qtd/pessoa"
+                          step="0.005"
+                          placeholder="Qtd/pess"
                           value={ing.amountPerPerson}
                           onChange={(e) => handleUpdateIngredient(idx, 'amountPerPerson', e.target.value)}
                           className="w-full px-2.5 py-1.5 rounded border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs"
@@ -2340,13 +2606,14 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
                         </select>
                       </div>
                       <div className="w-28">
+                        <label className="text-[9px] text-zinc-400 block sm:hidden">R$ Salvador</label>
                         <input
                           type="number"
                           step="0.10"
-                          placeholder="R$ Preço Unit."
+                          placeholder="R$ Preço/un"
                           value={ing.unitCost}
                           onChange={(e) => handleUpdateIngredient(idx, 'unitCost', e.target.value)}
-                          className="w-full px-2.5 py-1.5 rounded border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs"
+                          className="w-full px-2.5 py-1.5 rounded border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs font-semibold text-emerald-600 dark:text-emerald-400"
                         />
                       </div>
                       <button
