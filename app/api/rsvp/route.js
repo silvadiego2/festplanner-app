@@ -7,7 +7,7 @@ function getDb() {
   return neon(connectionString);
 }
 
-// GET: Retorna dados essenciais do evento e a lista de convidados para pesquisa
+// GET: Retorna dados seguros do evento para o convite e lista de convidados
 export async function GET(request) {
   try {
     const sql = getDb();
@@ -25,17 +25,19 @@ export async function GET(request) {
 
     const { config, guests } = rows[0].data;
 
-    // Retorna apenas dados públicos seguros (sem valores financeiros)
     return NextResponse.json({
       success: true,
       event: {
         celebrantName: config?.celebrantName || 'Aniversariante',
         age: config?.age,
+        theme: config?.theme || 'Comemoração Especial',
         date: config?.date,
         startTime: config?.startTime,
         endTime: config?.endTime,
+        durationHours: config?.durationHours,
         venueName: config?.venueName,
-        venueAddress: config?.venueAddress
+        venueAddress: config?.venueAddress,
+        venueMapUrl: config?.venueMapUrl || ''
       },
       guests: (guests || []).map(g => ({
         id: g.id,
@@ -44,7 +46,9 @@ export async function GET(request) {
         category: g.category,
         status: g.status,
         drinksAlcohol: g.drinksAlcohol,
-        restrictions: g.restrictions || []
+        restrictions: g.restrictions || [],
+        declineReason: g.declineReason || '',
+        messageToCelebrant: g.messageToCelebrant || ''
       }))
     });
   } catch (error) {
@@ -53,7 +57,7 @@ export async function GET(request) {
   }
 }
 
-// POST: Convidado confirma presença ou recusa
+// POST: Convidado confirma presença ou informa ausência com motivo e recado
 export async function POST(request) {
   try {
     const sql = getDb();
@@ -62,7 +66,15 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { guestId, status, drinksAlcohol, restrictions, companions } = body;
+    const { 
+      guestId, 
+      status, // 'confirmed' | 'declined'
+      drinksAlcohol, 
+      restrictions, 
+      companions,
+      declineReason,
+      messageToCelebrant
+    } = body;
 
     const rows = await sql`
       SELECT data FROM festplanner_events WHERE id = 'default_event' LIMIT 1;
@@ -75,22 +87,24 @@ export async function POST(request) {
     const eventData = rows[0].data;
     let guestFound = false;
 
-    // Atualiza o convidado existente
+    // Atualiza convidado na lista
     eventData.guests = (eventData.guests || []).map(g => {
       if (g.id === guestId) {
         guestFound = true;
         return {
           ...g,
-          status,
-          drinksAlcohol: drinksAlcohol ?? g.drinksAlcohol,
-          restrictions: Array.isArray(restrictions) ? restrictions : (restrictions ? [restrictions] : g.restrictions)
+          status: status === 'confirmed' ? 'confirmed' : 'declined',
+          drinksAlcohol: status === 'confirmed' ? (drinksAlcohol ?? g.drinksAlcohol) : false,
+          restrictions: Array.isArray(restrictions) ? restrictions : (restrictions ? [restrictions] : g.restrictions),
+          declineReason: status === 'declined' ? (declineReason || 'Não informado') : '',
+          messageToCelebrant: messageToCelebrant || g.messageToCelebrant || ''
         };
       }
       return g;
     });
 
-    // Se o convidado adicionou acompanhantes extras
-    if (Array.isArray(companions) && companions.length > 0) {
+    // Se confirmou e adicionou acompanhantes extras
+    if (status === 'confirmed' && Array.isArray(companions) && companions.length > 0) {
       for (const comp of companions) {
         if (comp.name && comp.name.trim()) {
           eventData.guests.push({
@@ -98,37 +112,39 @@ export async function POST(request) {
             name: comp.name.trim(),
             group: 'Acompanhante',
             category: comp.category || 'adult',
-            status: status === 'confirmed' ? 'confirmed' : 'declined',
+            status: 'confirmed',
             drinksAlcohol: Boolean(comp.drinksAlcohol),
-            restrictions: comp.restrictions || ['Sem restrições']
+            restrictions: comp.restrictions || ['Sem restrições'],
+            declineReason: '',
+            messageToCelebrant: ''
           });
         }
       }
     }
 
-    if (!guestFound && !guestId) {
-      // Caso seja um convidado novo que não estava na lista original
-      if (body.name && body.name.trim()) {
-        eventData.guests.push({
-          id: 'guest-' + Date.now(),
-          name: body.name.trim(),
-          group: 'RSVP Público',
-          category: body.category || 'adult',
-          status: status || 'confirmed',
-          drinksAlcohol: Boolean(drinksAlcohol),
-          restrictions: restrictions || ['Sem restrições']
-        });
-      }
+    // Se for um novo convidado que respondeu diretamente pelo link público
+    if (!guestFound && !guestId && body.name && body.name.trim()) {
+      eventData.guests.push({
+        id: 'guest-' + Date.now(),
+        name: body.name.trim(),
+        group: 'RSVP Público',
+        category: body.category || 'adult',
+        status: status === 'confirmed' ? 'confirmed' : 'declined',
+        drinksAlcohol: status === 'confirmed' ? Boolean(drinksAlcohol) : false,
+        restrictions: restrictions || ['Sem restrições'],
+        declineReason: status === 'declined' ? (declineReason || 'Não informado') : '',
+        messageToCelebrant: messageToCelebrant || ''
+      });
     }
 
-    // Salva no Postgres
+    // Salva no Postgres da Vercel
     await sql`
       UPDATE festplanner_events
       SET data = ${JSON.stringify(eventData)}, updated_at = CURRENT_TIMESTAMP
       WHERE id = 'default_event';
     `;
 
-    return NextResponse.json({ success: true, message: 'Presença atualizada com sucesso!' });
+    return NextResponse.json({ success: true, message: 'Resposta registrada com sucesso!' });
   } catch (error) {
     console.error('Erro ao salvar RSVP:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
