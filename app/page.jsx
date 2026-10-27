@@ -297,7 +297,13 @@ export default function App() {
   const [manualExpenses, setManualExpenses] = useState(INITIAL_MANUAL_EXPENSES);
   const [checklist, setChecklist] = useState(INITIAL_CHECKLIST);
 
+  // Navegação Principal e Sub-abas integradas
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [cateringSubTab, setCateringSubTab] = useState('menu'); // 'menu' | 'beverages'
+  const [structureSubTab, setStructureSubTab] = useState('rentals'); // 'rentals' | 'tableware'
+  
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [eventEditModalOpen, setEventEditModalOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -1159,142 +1165,115 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
     );
   }
 
+  // Lista enxuta de seções principais da barra lateral
+  const navItems = [
+    { id: 'dashboard', label: 'Visão Geral', icon: Sparkles },
+    { id: 'guests', label: 'Convidados & RSVP', icon: Users, badge: stats.confirmedCount },
+    { id: 'catering_hub', label: 'Gastronomia & Bar', icon: Utensils, subtext: 'Cardápio, Bebidas e Gelo' },
+    { id: 'structure_hub', label: 'Estrutura & Locações', icon: Building, subtext: 'Brinquedos, Louças e Mesas' },
+    { id: 'finance', label: 'Centro de Custos', icon: DollarSign, badge: `R$ ${budget.grandTotalConfirmed >= 1000 ? `${(budget.grandTotalConfirmed/1000).toFixed(1)}k` : budget.grandTotalConfirmed}` },
+    { id: 'checklist', label: 'Linha do Tempo', icon: CheckSquare, badge: `${stats.checklistProgress}%` },
+    { id: 'config', label: 'Configurações', icon: SlidersHorizontal },
+  ];
+
   return (
-    <div className={`min-h-screen font-sans antialiased transition-colors duration-200 ${darkMode ? 'bg-zinc-950 text-zinc-100 selection:bg-zinc-800' : 'bg-zinc-50/70 text-zinc-900 selection:bg-zinc-200'}`}>
+    <div className={`min-h-screen font-sans antialiased transition-colors duration-200 flex ${darkMode ? 'bg-zinc-950 text-zinc-100 selection:bg-zinc-800' : 'bg-zinc-50/60 text-zinc-900 selection:bg-zinc-200'}`}>
       
       {/* TOAST FEEDBACK */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 bg-zinc-900 text-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 px-4 py-2.5 rounded-xl shadow-lg border border-zinc-800 dark:border-zinc-200 text-xs font-medium animate-in slide-in-from-bottom-2 duration-200">
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 bg-zinc-900 text-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 px-4 py-2.5 rounded-xl shadow-xl border border-zinc-800 dark:border-zinc-200 text-xs font-medium animate-in slide-in-from-bottom-2 duration-200">
           <Sparkles className="w-4 h-4 text-amber-400" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* TOP HEADER */}
-      <header className={`border-b sticky top-0 z-40 backdrop-blur-md transition-colors ${darkMode ? 'bg-zinc-950/80 border-zinc-800/80' : 'bg-white/80 border-zinc-200/80'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 flex items-center justify-center font-bold text-base shadow-sm">
-              <Cake className="w-4 h-4" />
+      {/* ============================================================ */}
+      {/* 1. SIDEBAR LATERAL FIXA MODERNA (DESKTOP) */}
+      {/* ============================================================ */}
+      <aside className={`hidden lg:flex w-72 flex-col justify-between border-r shrink-0 sticky top-0 h-screen p-5 backdrop-blur-md transition-colors z-40 ${
+        darkMode ? 'bg-zinc-950/95 border-zinc-800/80' : 'bg-white/90 border-zinc-200/80 shadow-2xs'
+      }`}>
+        <div className="space-y-6">
+          
+          {/* LOGO & BADGE DO EVENTO */}
+          <div className="flex items-center gap-3 px-1">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+              <Cake className="w-5 h-5 text-white" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-sm tracking-tight">FestPlanner</span>
-                <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50">
-                  Salvador Pro
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-sm tracking-tight">FestPlanner</span>
+                <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.2 rounded-md bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60">
+                  Salvador
                 </span>
               </div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate max-w-[200px] sm:max-w-none">
-                {config.celebrantName} • {config.age} anos • {config.venueAddress.split('-')[1]?.trim() || 'Salvador - BA'}
+              <p className="text-[11px] text-zinc-400 dark:text-zinc-500 truncate max-w-[170px]">
+                {config.celebrantName || 'Aniversário'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            
-            {/* BADGE DE SINCRONIZAÇÃO EM NUVEM (VERCEL POSTGRES) */}
-            <button
-              onClick={handleForceCloudSync}
-              title={cloudSyncStatus === 'synced' ? 'Nuvem Conectada e Sincronizada' : 'Salvar no Vercel Postgres'}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition ${
-                cloudSyncStatus === 'synced'
-                  ? 'border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
-                  : cloudSyncStatus === 'saving'
-                  ? 'border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300'
-                  : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400'
-              }`}
-            >
-              <Cloud className={`w-3.5 h-3.5 ${cloudSyncStatus === 'synced' ? 'text-emerald-500' : cloudSyncStatus === 'saving' ? 'animate-pulse text-amber-500' : 'text-zinc-400'}`} />
-              <span className="hidden md:inline">
-                {cloudSyncStatus === 'synced' ? 'Nuvem Salva' : cloudSyncStatus === 'saving' ? 'Gravando...' : 'Nuvem Offline'}
+          {/* CARD DE RESUMO RÁPIDO DO HORÁRIO E DATA COM BOTÃO DE EDIÇÃO */}
+          <div className={`p-3.5 rounded-2xl border transition-all ${
+            darkMode ? 'bg-zinc-900/60 border-zinc-800/90' : 'bg-zinc-50/80 border-zinc-200/70'
+          }`}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1">
+                <Clock className="w-3 h-3 text-emerald-500" /> Programação
               </span>
-              <RefreshCw className={`w-3 h-3 text-zinc-400 ${cloudSyncStatus === 'saving' ? 'animate-spin' : ''}`} />
-            </button>
-
-            <button
-              onClick={openDiagnostics}
-              title="Backup e Diagnóstico"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
-            >
-              <Database className="w-3.5 h-3.5 text-zinc-500" />
-              <span className="hidden sm:inline">Backup</span>
-            </button>
-
-            <button
-              onClick={() => setRsvpSimModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
-            >
-              <Share2 className="w-3.5 h-3.5 text-zinc-500" />
-              <span className="hidden sm:inline">Link RSVP</span>
-            </button>
-
-            <button
-              onClick={() => handleOpenGuestModal(null)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Convidado</span>
-            </button>
-
-            <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800 mx-1" />
-
-            <button
-              onClick={handleResetDemoData}
-              title="Restaurar dados de teste"
-              className="p-2 rounded-lg text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-            </button>
-
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className="p-2 rounded-lg text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
-            >
-              {darkMode ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5" />}
-            </button>
+              <button
+                onClick={() => setEventEditModalOpen(true)}
+                className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-0.5"
+              >
+                <Edit2 className="w-2.5 h-2.5" /> Editar
+              </button>
+            </div>
+            <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+              {config.date ? new Date(config.date + 'T00:00:00Z').toLocaleDateString('pt-BR', { timeZone: 'UTC', day: '2-digit', month: 'short', year: 'numeric' }) : 'Data a definir'}
+            </p>
+            <div className="flex items-center justify-between text-[11px] text-zinc-500 mt-1">
+              <span>{config.startTime} às {config.endTime}</span>
+              <span className="px-1.5 py-0.2 rounded bg-zinc-200/60 dark:bg-zinc-800 font-medium text-[10px] text-zinc-700 dark:text-zinc-300">
+                {config.durationHours} horas
+              </span>
+            </div>
           </div>
-        </div>
 
-        {/* HORIZONTAL NAVIGATION */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 overflow-x-auto no-scrollbar">
-          <nav className="flex space-x-1 py-1.5">
-            {[
-              { id: 'dashboard', label: 'Visão Geral', icon: Sparkles },
-              { id: 'guests', label: 'Convidados & RSVP', icon: Users, count: stats.confirmedCount },
-              { id: 'menu', label: 'Cardápio & Receitas', icon: BookOpen },
-              { id: 'beverages', label: 'Bebidas Detalhadas', icon: GlassWater },
-              { id: 'rentals', label: 'Locações & Brinquedos', icon: Gamepad2 },
-              { id: 'catering', label: 'Louças & Rechauds', icon: Utensils },
-              { id: 'finance', label: 'Centro de Custos', icon: DollarSign },
-              { id: 'checklist', label: 'Linha do Tempo', icon: CheckSquare, badge: `${stats.checklistProgress}%` },
-              { id: 'config', label: 'Configurações', icon: Building },
-            ].map(tab => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
+          {/* MENU ENXUTO DE 6 SEÇÕES */}
+          <nav className="space-y-1">
+            {navItems.map(item => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
               return (
                 <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-colors ${
+                  key={item.id}
+                  onClick={() => {
+                    setActiveTab(item.id);
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all group ${
                     isActive
-                      ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 shadow-sm'
-                      : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100/70 dark:hover:bg-zinc-900/60'
+                      ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 shadow-sm font-semibold'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-900/60'
                   }`}
                 >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{tab.label}</span>
-                  {tab.count !== undefined && (
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
-                      isActive ? 'bg-zinc-800 text-zinc-200 dark:bg-zinc-200 dark:text-zinc-800' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+                  <div className="flex items-center gap-3">
+                    <Icon className={`w-4 h-4 transition ${isActive ? 'text-emerald-400 dark:text-emerald-600' : 'text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300'}`} />
+                    <div className="text-left">
+                      <span className="block leading-none">{item.label}</span>
+                      {item.subtext && !isActive && (
+                        <span className="text-[10px] text-zinc-400 font-normal leading-tight block mt-0.5">
+                          {item.subtext}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {item.badge !== undefined && (
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                      isActive
+                        ? 'bg-zinc-800 text-zinc-200 dark:bg-zinc-200 dark:text-zinc-800'
+                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
                     }`}>
-                      {tab.count}
-                    </span>
-                  )}
-                  {tab.badge && (
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
-                      isActive ? 'bg-zinc-800 text-zinc-200 dark:bg-zinc-200 dark:text-zinc-800' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
-                    }`}>
-                      {tab.badge}
+                      {item.badge}
                     </span>
                   )}
                 </button>
@@ -1302,1030 +1281,538 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
             })}
           </nav>
         </div>
-      </header>
 
-      {/* MAIN BODY */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24">
+        {/* RODAPÉ DA SIDEBAR: SINCRONIZAÇÃO NUVEM & TEMA */}
+        <div className="pt-4 border-t border-zinc-200/80 dark:border-zinc-800 space-y-3">
+          <div className="flex items-center justify-between text-xs">
+            <button
+              onClick={handleForceCloudSync}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-medium transition w-full justify-between ${
+                cloudSyncStatus === 'synced'
+                  ? 'border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
+                  : cloudSyncStatus === 'saving'
+                  ? 'border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300'
+                  : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400'
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <Cloud className={`w-3.5 h-3.5 ${cloudSyncStatus === 'synced' ? 'text-emerald-500' : 'text-zinc-400'}`} />
+                <span>{cloudSyncStatus === 'synced' ? 'Nuvem Conectada' : cloudSyncStatus === 'saving' ? 'Gravando...' : 'Nuvem Offline'}</span>
+              </div>
+              <RefreshCw className={`w-3 h-3 text-zinc-400 ${cloudSyncStatus === 'saving' ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between gap-2">
+            <button
+              onClick={() => setRsvpSimModalOpen(true)}
+              className="flex-1 py-1.5 px-2 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-[11px] font-medium flex items-center justify-center gap-1.5 text-zinc-600 dark:text-zinc-300"
+            >
+              <Share2 className="w-3.5 h-3.5 text-zinc-400" />
+              <span>Link RSVP</span>
+            </button>
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              title="Alternar Tema"
+            >
+              {darkMode ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* ============================================================ */}
+      {/* 2. ÁREA PRINCIPAL DO APP */}
+      {/* ============================================================ */}
+      <div className="flex-1 flex flex-col min-w-0">
         
-        {/* ============================================================ */}
-        {/* TAB 1: VISÃO GERAL */}
-        {/* ============================================================ */}
-        {activeTab === 'dashboard' && (
-          <div className="space-y-6">
+        {/* HEADER SUPERIOR RESPONSIVO COM BANNER DE HORÁRIO EM 1-CLIQUE */}
+        <header className={`border-b sticky top-0 z-30 backdrop-blur-md transition-colors ${darkMode ? 'bg-zinc-950/80 border-zinc-800/80' : 'bg-white/80 border-zinc-200/80'}`}>
+          <div className="px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
             
-            {/* HERO */}
-            <div className={`rounded-2xl border p-6 transition-all ${
-              darkMode ? 'bg-gradient-to-b from-zinc-900/80 to-zinc-950 border-zinc-800' : 'bg-white border-zinc-200/80 shadow-xs'
-            }`}>
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-semibold tracking-wider uppercase text-zinc-500 dark:text-zinc-400">
-                      Painel do Anfitrião
-                    </span>
-                    <span className="inline-block w-1 h-1 rounded-full bg-zinc-400" />
-                    <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200/50 dark:border-emerald-800/50">
-                      {stats.daysUntilEvent > 0 ? `Faltam ${stats.daysUntilEvent} dias` : stats.daysUntilEvent === 0 ? 'É hoje!' : 'Evento finalizado'}
-                    </span>
-                  </div>
+            {/* LADO ESQUERDO: HAMBURGER NO MOBILE + INFO RÁPIDA */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="lg:hidden p-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300"
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+              </button>
 
-                  <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-                    Aniversário de {config.celebrantName} <span className="text-zinc-400 font-normal">({config.age} anos)</span>
-                  </h2>
-
-                  <div className="flex flex-wrap items-center gap-y-1.5 gap-x-4 text-xs text-zinc-500 dark:text-zinc-400 pt-0.5">
-                    <span className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-zinc-400" />
-                      {config.date}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-zinc-400" />
-                      {config.startTime} - {config.endTime} ({config.durationHours}h)
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-zinc-400" />
-                      {config.locationType === 'home' ? 'Espaço Próprio / Condomínio' : config.venueName} (Salvador - BA)
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Utensils className="w-3.5 h-3.5 text-zinc-400" />
-                      {stats.hotDishesCount} pratos quentes ({calculatedMaterials.rechauds} rechauds)
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2.5 shrink-0">
-                  <button
-                    onClick={() => setActiveTab('finance')}
-                    className="px-3.5 py-2 rounded-xl text-xs font-medium border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
-                  >
-                    Centro de Custos
-                  </button>
-                  <button
-                    onClick={handleExportShoppingList}
-                    className="px-3.5 py-2 rounded-xl text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 shadow-sm transition flex items-center gap-1.5"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Relatório Operacional</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* 4 CARDS */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              
-              <div className={`p-4 rounded-xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
-                <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
-                  <span>Presença Confirmada</span>
-                  <Users className="w-4 h-4 text-zinc-400" />
-                </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-                    {stats.confirmedCount}
-                  </span>
-                  <span className="text-xs text-zinc-500 font-normal">
-                    de {stats.totalGuests} convidados
-                  </span>
-                </div>
-                <div className="mt-3 flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-2 border-t border-zinc-100 dark:border-zinc-800/60">
-                  <span>{stats.confirmedAdults} adultos</span>
-                  <span>•</span>
-                  <span>{stats.confirmedKids611 + stats.confirmedKids05} crianças</span>
-                  <span>•</span>
-                  <span className="font-medium text-emerald-600 dark:text-emerald-400">
-                    {stats.totalGuests > 0 ? Math.round((stats.confirmedCount / stats.totalGuests) * 100) : 0}%
-                  </span>
-                </div>
-              </div>
-
-              <div className={`p-4 rounded-xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
-                <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
-                  <span>Custo Real (Confirmados)</span>
-                  <DollarSign className="w-4 h-4 text-emerald-500" />
-                </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-2xl font-semibold tracking-tight text-emerald-600 dark:text-emerald-400">
-                    R$ {budget.grandTotalConfirmed.toLocaleString('pt-BR')}
-                  </span>
-                </div>
-                <div className="mt-3 flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-2 border-t border-zinc-100 dark:border-zinc-800/60">
-                  <span>R$ {Math.round(budget.costPerConfirmed)} / pessoa</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                    {stats.confirmedEaters.toFixed(1)} cotas
-                  </span>
-                </div>
-              </div>
-
-              <div className={`p-4 rounded-xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
-                <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
-                  <span>Custo se Todos Forem</span>
-                  <Coins className="w-4 h-4 text-amber-500" />
-                </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-                    R$ {budget.grandTotalAll.toLocaleString('pt-BR')}
-                  </span>
-                  <span className="text-xs text-zinc-500 font-normal">(100%)</span>
-                </div>
-                <div className="mt-3 flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-2 border-t border-zinc-100 dark:border-zinc-800/60">
-                  <span>Economia RSVP:</span>
-                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                    R$ {budget.rsvpSavings.toLocaleString('pt-BR')}
-                  </span>
-                </div>
-              </div>
-
-              <div className={`p-4 rounded-xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
-                <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
-                  <span>Prontidão Operacional</span>
-                  <CheckSquare className="w-4 h-4 text-zinc-400" />
-                </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-                    {stats.checklistProgress}%
-                  </span>
-                  <span className="text-xs text-zinc-500 font-normal">
-                    {stats.completedChecklist} de {checklist.length} tarefas
-                  </span>
-                </div>
-                <div className="mt-3 pt-2 border-t border-zinc-100 dark:border-zinc-800/60">
-                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-1 overflow-hidden">
-                    <div 
-                      className="bg-emerald-500 h-1 rounded-full transition-all"
-                      style={{ width: `${stats.checklistProgress}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
-            {/* LOWER GRIDS */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              
-              <div className="lg:col-span-2 space-y-6">
-                
-                {/* RSVP TRACKER */}
-                <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-sm font-semibold tracking-tight">Status de Convites & Presenças</h3>
-                      <p className="text-xs text-zinc-500 mt-0.5">Visão consolidada do retorno dos convidados</p>
-                    </div>
-                    <button
-                      onClick={() => setActiveTab('guests')}
-                      className="text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center gap-1 transition"
-                    >
-                      <span>Gerenciar convidados</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  <div className="w-full h-2.5 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden flex gap-0.5 mb-3">
-                    <div
-                      style={{ width: `${stats.totalGuests > 0 ? (stats.confirmedCount / stats.totalGuests) * 100 : 0}%` }}
-                      className="bg-emerald-500 h-full transition-all"
-                    />
-                    <div
-                      style={{ width: `${stats.totalGuests > 0 ? (stats.pendingCount / stats.totalGuests) * 100 : 0}%` }}
-                      className="bg-amber-400 h-full transition-all"
-                    />
-                    <div
-                      style={{ width: `${stats.totalGuests > 0 ? (stats.declinedCount / stats.totalGuests) * 100 : 0}%` }}
-                      className="bg-zinc-300 dark:bg-zinc-700 h-full transition-all"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 text-xs">
-                    <div className="p-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
-                      <span className="text-[11px] text-zinc-500">Confirmados</span>
-                      <div className="text-base font-semibold mt-0.5">{stats.confirmedCount}</div>
-                    </div>
-                    <div className="p-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
-                      <span className="text-[11px] text-zinc-500">Pendentes</span>
-                      <div className="text-base font-semibold mt-0.5">{stats.pendingCount}</div>
-                    </div>
-                    <div className="p-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
-                      <span className="text-[11px] text-zinc-500">Recusados</span>
-                      <div className="text-base font-semibold mt-0.5">{stats.declinedCount}</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* BUFFET SUMMARY */}
-                <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-sm font-semibold tracking-tight">Síntese de Operação & Cardápio (Referência: Salvador)</h3>
-                      <p className="text-xs text-zinc-500 mt-0.5">Calculado para {stats.confirmedEaters.toFixed(1)} cotas alimentares em {config.durationHours}h</p>
-                    </div>
-                    <button
-                      onClick={() => setActiveTab('menu')}
-                      className="text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center gap-1 transition"
-                    >
-                      <span>Ver receitas</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                    <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
-                      <span className="text-[11px] text-zinc-400 block">Buffet (Receitas)</span>
-                      <strong className="text-sm font-semibold mt-1 block">R$ {budget.foodCostConfirmed.toLocaleString('pt-BR')}</strong>
-                      <span className="text-[10px] text-zinc-500">{calculatedMenu.itemsDetailed.length} pratos</span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
-                      <span className="text-[11px] text-zinc-400 block">Bebidas & Gelo</span>
-                      <strong className="text-sm font-semibold mt-1 block">R$ {budget.beveragesCostConfirmed.toLocaleString('pt-BR')}</strong>
-                      <span className="text-[10px] text-zinc-500">{calculatedBeverages.list.length} tipos</span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
-                      <span className="text-[11px] text-zinc-400 block">Rechauds Inox</span>
-                      <strong className="text-sm font-semibold mt-1 block">{calculatedMaterials.rechauds} cubas</strong>
-                      <span className="text-[10px] text-zinc-500">{calculatedMaterials.fuelPastesNeeded} pastilhas</span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
-                      <span className="text-[11px] text-zinc-400 block">Locações & Brinquedos</span>
-                      <strong className="text-sm font-semibold mt-1 block">R$ {budget.rentalsCost.toLocaleString('pt-BR')}</strong>
-                      <span className="text-[10px] text-zinc-500">{rentals.length} itens</span>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* RIGHT */}
-              <div className="space-y-6">
-                
-                <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold tracking-tight">Distribuição de Gastos</h3>
-                    <button
-                      onClick={() => setActiveTab('finance')}
-                      className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition"
-                    >
-                      Detalhes
-                    </button>
-                  </div>
-
-                  <div className="space-y-3 text-xs">
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-zinc-600 dark:text-zinc-400">Locações & Espaço</span>
-                        <span className="font-medium">R$ {budget.rentalsCost.toLocaleString('pt-BR')}</span>
-                      </div>
-                      <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className="bg-indigo-500 h-1.5 rounded-full"
-                          style={{ width: `${Math.min(100, (budget.rentalsCost / (budget.grandTotalConfirmed || 1)) * 100)}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-zinc-600 dark:text-zinc-400">Cardápio & Alimentos</span>
-                        <span className="font-medium">R$ {budget.foodCostConfirmed.toLocaleString('pt-BR')}</span>
-                      </div>
-                      <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className="bg-emerald-500 h-1.5 rounded-full"
-                          style={{ width: `${Math.min(100, (budget.foodCostConfirmed / (budget.grandTotalConfirmed || 1)) * 100)}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-zinc-600 dark:text-zinc-400">Bebidas Detalhadas</span>
-                        <span className="font-medium">R$ {budget.beveragesCostConfirmed.toLocaleString('pt-BR')}</span>
-                      </div>
-                      <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className="bg-amber-500 h-1.5 rounded-full"
-                          style={{ width: `${Math.min(100, (budget.beveragesCostConfirmed / (budget.grandTotalConfirmed || 1)) * 100)}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-zinc-600 dark:text-zinc-400">Louças & Apoio</span>
-                        <span className="font-medium">R$ {budget.tablewareCostConfirmed.toLocaleString('pt-BR')}</span>
-                      </div>
-                      <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className="bg-blue-500 h-1.5 rounded-full"
-                          style={{ width: `${Math.min(100, (budget.tablewareCostConfirmed / (budget.grandTotalConfirmed || 1)) * 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold tracking-tight">Próximos Passos</h3>
-                    <button
-                      onClick={() => setActiveTab('checklist')}
-                      className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition"
-                    >
-                      Todas
-                    </button>
-                  </div>
-
-                  <div className="space-y-2">
-                    {stats.pendingUrgentTasks.map(task => (
-                      <div
-                        key={task.id}
-                        onClick={() => toggleChecklist(task.id)}
-                        className={`p-2.5 rounded-lg border text-xs flex items-center justify-between cursor-pointer transition ${
-                          darkMode ? 'bg-zinc-900/50 border-zinc-800 hover:border-zinc-700' : 'bg-zinc-50 border-zinc-200/70 hover:border-zinc-300'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5 truncate">
-                          <div className="w-4 h-4 rounded border border-zinc-300 dark:border-zinc-600 flex items-center justify-center shrink-0" />
-                          <span className="truncate text-zinc-800 dark:text-zinc-200">{task.title}</span>
-                        </div>
-                        <span className="text-[10px] text-zinc-400 shrink-0 ml-2">{task.period.split(' ')[0]}</span>
-                      </div>
-                    ))}
-                    {stats.pendingUrgentTasks.length === 0 && (
-                      <div className="text-center py-4 text-xs text-zinc-400 italic">
-                        Todas as tarefas prioritárias concluídas!
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-              </div>
-
-            </div>
-
-          </div>
-        )}
-
-        {/* ============================================================ */}
-        {/* TAB 2: CONVIDADOS & RSVP */}
-        {/* ============================================================ */}
-        {activeTab === 'guests' && (
-          <div className="space-y-6">
-            <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-base font-semibold tracking-tight">Lista de Convidados & Presenças</h2>
-                  <p className="text-xs text-zinc-500 mt-1">
-                    {stats.confirmedCount} confirmados ({stats.confirmedEaters.toFixed(1)} cotas), {stats.pendingCount} pendentes e {stats.declinedCount} recusados
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setRsvpSimModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
-                  >
-                    <Share2 className="w-3.5 h-3.5 text-zinc-500" />
-                    <span>Link RSVP</span>
-                  </button>
-                  <button
-                    onClick={() => handleOpenGuestModal(null)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Novo Convidado</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="mt-5 overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className={`border-b ${darkMode ? 'border-zinc-800 text-zinc-400' : 'border-zinc-200 text-zinc-500'}`}>
-                    <tr>
-                      <th onClick={() => handleSortGuests('name')} className="pb-2.5 font-medium cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100 select-none">
-                        <div className="flex items-center gap-1">
-                          <span>Nome</span>
-                          <ArrowUpDown className="w-3 h-3 text-zinc-400" />
-                        </div>
-                      </th>
-                      <th onClick={() => handleSortGuests('group')} className="pb-2.5 font-medium cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100 select-none">
-                        <div className="flex items-center gap-1">
-                          <span>Grupo</span>
-                          <ArrowUpDown className="w-3 h-3 text-zinc-400" />
-                        </div>
-                      </th>
-                      <th className="pb-2.5 font-medium">Categoria</th>
-                      <th onClick={() => handleSortGuests('status')} className="pb-2.5 font-medium cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100 select-none">
-                        <div className="flex items-center gap-1">
-                          <span>Status</span>
-                          <ArrowUpDown className="w-3 h-3 text-zinc-400" />
-                        </div>
-                      </th>
-                      <th className="pb-2.5 font-medium">Álcool</th>
-                      <th className="pb-2.5 font-medium">Restrições Alimentares</th>
-                      <th className="pb-2.5 font-medium text-right">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
-                    {sortedGuests.map(guest => (
-                      <tr key={guest.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40 transition-colors">
-                        <td className="py-3 font-medium text-zinc-900 dark:text-zinc-100">{guest.name}</td>
-                        <td className="py-3 text-zinc-500">
-                          <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800/80 text-[11px] font-medium text-zinc-700 dark:text-zinc-300">
-                            {guest.group || 'Geral'}
-                          </span>
-                        </td>
-                        <td className="py-3 text-zinc-600 dark:text-zinc-300">
-                          {guest.category === 'adult' ? 'Adulto' : guest.category === 'child_6_11' ? 'Criança (6-11)' : 'Criança (0-5)'}
-                        </td>
-                        <td className="py-3">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                            guest.status === 'confirmed'
-                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/50'
-                              : guest.status === 'pending'
-                              ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/50'
-                              : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
-                          }`}>
-                            {guest.status === 'confirmed' ? 'Confirmado' : guest.status === 'pending' ? 'Pendente' : 'Recusado'}
-                          </span>
-                        </td>
-                        <td className="py-3 text-zinc-500">{guest.drinksAlcohol ? 'Sim' : 'Não'}</td>
-                        <td className="py-3">
-                          <div className="flex flex-wrap gap-1">
-                            {Array.isArray(guest.restrictions) && guest.restrictions.map((r, i) => (
-                              <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-                                {r}
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="py-3 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => handleOpenGuestModal(guest)}
-                              className="p-1 rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
-                              title="Editar"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteGuest(guest.id)}
-                              className="p-1 rounded-md text-zinc-400 hover:text-rose-600"
-                              title="Excluir"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {guests.length === 0 && (
-                      <tr>
-                        <td colSpan={7} className="py-8 text-center text-zinc-400 italic">
-                          Nenhum convidado cadastrado.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ============================================================ */}
-        {/* TAB 3: CARDÁPIO SUGERIDO COM AUTO-CÁLCULO & PREÇOS SALVADOR */}
-        {/* ============================================================ */}
-        {activeTab === 'menu' && (
-          <div className="space-y-6">
-            <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-base font-semibold tracking-tight">Cardápio Sugerido & Ficha Técnica de Receitas</h2>
-                    <span className="text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-200/50">
-                      Salvador Market Engine
-                    </span>
-                  </div>
-                  <p className="text-xs text-zinc-500 mt-1">
-                    Gramaturas calculadas automaticamente por pessoa. Preços médios de Salvador sincronizados em tempo real ao Centro de Custos.
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-xs text-right">
-                    <span className="text-zinc-400 block text-[10px]">Custo Buffet c/ Confirmados</span>
-                    <strong className="text-sm text-emerald-600 dark:text-emerald-400">R$ {budget.foodCostConfirmed.toLocaleString('pt-BR')}</strong>
-                  </div>
-                  <button
-                    onClick={() => handleOpenMenuModal(null)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Adicionar Prato</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* CARD DE TEMPLATES RÁPIDOS REGIONAIS */}
-              <div className="mt-4 p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/40">
-                <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 block mb-2">
-                  Sugestões Rápidas de Pratos com Ficha Pronta:
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">
+                  {config.celebrantName || 'Meu Evento'}
                 </span>
-                <div className="flex flex-wrap gap-2">
-                  {SUGGESTED_DISH_TEMPLATES.map((tpl, i) => (
-                    <button
-                      key={i}
-                      onClick={() => {
-                        const exists = menu.some(m => m.name === tpl.name);
-                        if (!exists) {
-                          setMenu([...menu, { ...tpl, id: 'tpl-' + Date.now() + '-' + i }]);
-                          showToast(`Prato "${tpl.name}" adicionado ao cardápio!`);
-                        } else {
-                          showToast('Este prato já está no cardápio.');
-                        }
-                      }}
-                      className="px-2.5 py-1 rounded-lg text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-emerald-500 dark:hover:border-emerald-500 text-zinc-700 dark:text-zinc-300 transition flex items-center gap-1.5"
-                    >
-                      <Plus className="w-3 h-3 text-emerald-500" />
-                      <span>{tpl.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* LISTA DE PRATOS DO CARDÁPIO */}
-              <div className="mt-6 space-y-4">
-                {calculatedMenu.itemsDetailed.map(item => (
-                  <div key={item.id} className={`p-4 rounded-xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-zinc-50 border-zinc-200/70'}`}>
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-zinc-200/60 dark:border-zinc-800">
-                      <div className="flex items-center gap-2">
-                        <Flame className={`w-4 h-4 ${item.isHot ? 'text-amber-500' : 'text-zinc-400'}`} />
-                        <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">{item.name}</h4>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                          item.isHot ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400' : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
-                        }`}>
-                          {item.isHot ? 'Prato Quente (Rechaud)' : 'Servido Frio'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-4 text-xs">
-                        <span className="text-zinc-500">
-                          Confirmados: <strong className="text-zinc-900 dark:text-zinc-100">R$ {item.itemCostConfirmed.toLocaleString('pt-BR')}</strong>
-                        </span>
-                        <span className="text-zinc-400">
-                          | Se todos: R$ {item.itemCostAll.toLocaleString('pt-BR')}
-                        </span>
-                        <div className="flex items-center gap-1 ml-2">
-                          <button
-                            onClick={() => handleOpenMenuModal(item)}
-                            className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
-                            title="Editar receita"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteMenuItem(item.id)}
-                            className="p-1 rounded text-zinc-400 hover:text-rose-500"
-                            title="Excluir prato"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 overflow-x-auto">
-                      <table className="w-full text-left text-xs">
-                        <thead>
-                          <tr className="text-zinc-400 text-[11px]">
-                            <th className="pb-1.5 font-normal">Ingrediente / Insumo</th>
-                            <th className="pb-1.5 font-normal">Qtd / Pessoa (Auto)</th>
-                            <th className="pb-1.5 font-normal">Preço Unit. (Salvador)</th>
-                            <th className="pb-1.5 font-normal">Total Confirmados ({stats.confirmedEaters.toFixed(1)} cotas)</th>
-                            <th className="pb-1.5 font-normal text-right">Subtotal</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-zinc-200/40 dark:divide-zinc-800/40 text-zinc-600 dark:text-zinc-300">
-                          {(item.ingredients || []).map((ing, idx) => (
-                            <tr key={idx}>
-                              <td className="py-1.5 font-medium text-zinc-800 dark:text-zinc-200">{ing.name}</td>
-                              <td className="py-1.5">{ing.amountPerPerson} {ing.unit}</td>
-                              <td className="py-1.5">R$ {Number(ing.unitCost || 0).toFixed(2)} / {ing.unit}</td>
-                              <td className="py-1.5 font-semibold text-zinc-900 dark:text-zinc-100">{ing.qtyConfirmed} {ing.unit}</td>
-                              <td className="py-1.5 text-right font-medium text-zinc-900 dark:text-zinc-100">R$ {Number(ing.costConfirmed || 0).toFixed(2)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ))}
+                <span className="text-zinc-400 text-xs hidden sm:inline">•</span>
+                
+                {/* BOTÃO CLICÁVEL DO HORÁRIO / PROGRAMAÇÃO DIRETO NO TOPO */}
+                <button
+                  onClick={() => setEventEditModalOpen(true)}
+                  title="Clique para editar data e horário da festa"
+                  className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100/90 dark:bg-zinc-800/80 hover:bg-zinc-200 text-zinc-700 dark:text-zinc-300 text-xs font-medium border border-zinc-200/60 dark:border-zinc-700 transition"
+                >
+                  <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>{config.startTime} às {config.endTime} ({config.durationHours}h)</span>
+                  <Edit2 className="w-2.5 h-2.5 text-zinc-400 ml-0.5" />
+                </button>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* ============================================================ */}
-        {/* TAB 4: BEBIDAS DISCRIMINADAS (TOTALMENTE EDITÁVEL) */}
-        {/* ============================================================ */}
-        {activeTab === 'beverages' && (
-          <div className="space-y-6">
-            <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-base font-semibold tracking-tight">Discriminação de Bebidas, Sucos & Gelo</h2>
-                  <p className="text-xs text-zinc-500 mt-1">
-                    Cálculo individualizado considerando {config.durationHours}h de evento.
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-xs text-right">
-                    <span className="text-zinc-400 block text-[10px]">Custo c/ Confirmados</span>
-                    <strong className="text-sm text-emerald-600 dark:text-emerald-400">R$ {budget.beveragesCostConfirmed.toLocaleString('pt-BR')}</strong>
-                  </div>
-                  <button
-                    onClick={() => handleOpenBeverageModal(null)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Adicionar Bebida</span>
-                  </button>
-                </div>
-              </div>
+            {/* LADO DIREITO: BOTÕES DE AÇÃO RÁPIDA */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setEventEditModalOpen(true)}
+                className="sm:hidden p-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs text-zinc-600 dark:text-zinc-300"
+                title="Editar Horário e Data"
+              >
+                <Clock className="w-4 h-4 text-emerald-600" />
+              </button>
 
-              <div className="mt-5 overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className={`border-b ${darkMode ? 'border-zinc-800 text-zinc-400' : 'border-zinc-200 text-zinc-500'}`}>
-                    <tr>
-                      <th className="pb-2.5 font-medium">Bebida / Insumo</th>
-                      <th className="pb-2.5 font-medium">Consumo / Pessoa / Hora</th>
-                      <th className="pb-2.5 font-medium">Preço / Litro</th>
-                      <th className="pb-2.5 font-medium">Volume (Confirmados)</th>
-                      <th className="pb-2.5 font-medium">Embalagens Sugeridas</th>
-                      <th className="pb-2.5 font-medium">Custo (Confirmados)</th>
-                      <th className="pb-2.5 font-medium text-right">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
-                    {calculatedBeverages.list.map(bev => (
-                      <tr key={bev.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40">
-                        <td className="py-3 font-medium text-zinc-900 dark:text-zinc-100">{bev.name}</td>
-                        <td className="py-3 text-zinc-500">{bev.mlPerPersonPerHour} ml / h</td>
-                        <td className="py-3 text-zinc-500">R$ {Number(bev.unitCostPerLiter || 0).toFixed(2)}</td>
-                        <td className="py-3 font-semibold text-zinc-900 dark:text-zinc-100">{bev.totalLitersConfirmed} L</td>
-                        <td className="py-3 text-zinc-700 dark:text-zinc-300">
-                          <span className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 font-medium">
-                            ~{bev.packagesConfirmed} {bev.unitPackage}
-                          </span>
-                        </td>
-                        <td className="py-3 font-medium text-zinc-900 dark:text-zinc-100">
-                          R$ {bev.totalCostConfirmed.toLocaleString('pt-BR')}
-                        </td>
-                        <td className="py-3 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => handleOpenBeverageModal(bev)}
-                              className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
-                              title="Editar bebida"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteBeverage(bev.id)}
-                              className="p-1 rounded text-zinc-400 hover:text-rose-500"
-                              title="Excluir"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <button
+                onClick={openDiagnostics}
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+              >
+                <Database className="w-3.5 h-3.5 text-zinc-500" />
+                <span>Backup</span>
+              </button>
+
+              <button
+                onClick={() => handleOpenGuestModal(null)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Convidado</span>
+              </button>
             </div>
           </div>
-        )}
 
-        {/* ============================================================ */}
-        {/* TAB 5: LOCAÇÕES, BRINQUEDOS E MOBILIÁRIO */}
-        {/* ============================================================ */}
-        {activeTab === 'rentals' && (
-          <div className="space-y-6">
-            <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-base font-semibold tracking-tight">Locações, Brinquedos e Mobiliário</h2>
-                  <p className="text-xs text-zinc-500 mt-1">Gerencie os equipamentos infantis, espaço físico e móveis contratados.</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-xs text-right">
-                    <span className="text-zinc-400 block text-[10px]">Total de Locações</span>
-                    <strong className="text-sm text-zinc-900 dark:text-zinc-100">R$ {budget.rentalsCost.toLocaleString('pt-BR')}</strong>
-                  </div>
-                  <button
-                    onClick={() => handleOpenRentalModal(null)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Novo Item de Locação</span>
-                  </button>
-                </div>
-              </div>
+          {/* MENU MOBILE EXPANSÍVEL */}
+          {mobileMenuOpen && (
+            <div className="lg:hidden p-4 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 space-y-1">
+              {navItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-medium ${
+                    activeTab === item.id
+                      ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950'
+                      : 'text-zinc-600 dark:text-zinc-400'
+                  }`}
+                >
+                  <span>{item.label}</span>
+                  {item.badge && <span className="text-[10px] opacity-75">{item.badge}</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </header>
 
-              <div className="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {rentals.map(rental => (
-                  <div key={rental.id} className={`p-4 rounded-xl border flex flex-col justify-between ${darkMode ? 'bg-zinc-900/50 border-zinc-800' : 'bg-zinc-50 border-zinc-200/70'}`}>
-                    <div>
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-                            {rental.category === 'toy' ? 'Brinquedo & Recreação' : rental.category === 'furniture' ? 'Mobiliário' : 'Espaço Físico'}
-                          </span>
-                          <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 mt-0.5">{rental.name}</h4>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => handleOpenRentalModal(rental)}
-                            className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
-                            title="Editar locação"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteRental(rental.id)}
-                            className="p-1 rounded text-zinc-400 hover:text-rose-500"
-                            title="Excluir"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                      <p className="text-xs text-zinc-500 mt-1.5">{rental.supplier || 'Fornecedor'}</p>
-                      {rental.notes && <p className="text-[11px] text-zinc-400 mt-1">{rental.notes}</p>}
+        {/* CORPO DE CONTEÚDO PRINCIPAL */}
+        <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24">
+          
+          {/* ============================================================ */}
+          {/* SEÇÃO 1: VISÃO GERAL */}
+          {/* ============================================================ */}
+          {activeTab === 'dashboard' && (
+            <div className="space-y-6">
+              
+              {/* HERO BANNER LIMPO */}
+              <div className={`rounded-3xl border p-6 transition-all ${
+                darkMode ? 'bg-gradient-to-b from-zinc-900/80 to-zinc-950 border-zinc-800' : 'bg-white border-zinc-200/80 shadow-xs'
+              }`}>
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-semibold tracking-wider uppercase text-zinc-500 dark:text-zinc-400">
+                        Painel do Anfitrião
+                      </span>
+                      <span className="inline-block w-1 h-1 rounded-full bg-zinc-400" />
+                      <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200/50">
+                        {stats.daysUntilEvent > 0 ? `Faltam ${stats.daysUntilEvent} dias` : stats.daysUntilEvent === 0 ? 'É hoje!' : 'Evento finalizado'}
+                      </span>
                     </div>
-                    <div className="mt-4 pt-3 border-t border-zinc-200/70 dark:border-zinc-800 flex items-center justify-between text-xs">
-                      <span className="text-zinc-500">{rental.hasMonitor ? 'Monitor incluso' : 'Sem monitor'}</span>
-                      <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-                        R$ {Number(rental.cost || 0).toLocaleString('pt-BR')}
+
+                    <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+                      Aniversário de {config.celebrantName} <span className="text-zinc-400 font-normal">({config.age} anos)</span>
+                    </h2>
+
+                    <div className="flex flex-wrap items-center gap-y-1.5 gap-x-4 text-xs text-zinc-500 dark:text-zinc-400 pt-0.5">
+                      <span className="flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+                        {config.date}
+                      </span>
+                      
+                      {/* GATILHO DIRETO PARA EDITAR HORÁRIO */}
+                      <button
+                        onClick={() => setEventEditModalOpen(true)}
+                        className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium hover:underline cursor-pointer"
+                      >
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>{config.startTime} às {config.endTime} ({config.durationHours}h) - [Editar]</span>
+                      </button>
+
+                      <span className="flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-zinc-400" />
+                        {config.venueName} (Salvador - BA)
                       </span>
                     </div>
                   </div>
-                ))}
+
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    <button
+                      onClick={() => setActiveTab('finance')}
+                      className="px-3.5 py-2 rounded-xl text-xs font-medium border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                    >
+                      Centro de Custos
+                    </button>
+                    <button
+                      onClick={handleExportShoppingList}
+                      className="px-3.5 py-2 rounded-xl text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 shadow-sm transition flex items-center gap-1.5"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Relatório Operacional</span>
+                    </button>
+                  </div>
+                </div>
               </div>
+
+              {/* 4 CARDS DE INDICADORES */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                <div className={`p-4 rounded-2xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
+                  <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
+                    <span>Presença Confirmada</span>
+                    <Users className="w-4 h-4 text-zinc-400" />
+                  </div>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+                      {stats.confirmedCount}
+                    </span>
+                    <span className="text-xs text-zinc-500 font-normal">
+                      de {stats.totalGuests} na lista
+                    </span>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-2 border-t border-zinc-100 dark:border-zinc-800/60">
+                    <span>{stats.confirmedAdults} adultos</span>
+                    <span>•</span>
+                    <span>{stats.confirmedKids611 + stats.confirmedKids05} crianças</span>
+                    <span>•</span>
+                    <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                      {stats.totalGuests > 0 ? Math.round((stats.confirmedCount / stats.totalGuests) * 100) : 0}%
+                    </span>
+                  </div>
+                </div>
+
+                <div className={`p-4 rounded-2xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
+                  <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
+                    <span>Custo c/ Confirmados</span>
+                    <DollarSign className="w-4 h-4 text-emerald-500" />
+                  </div>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+                      R$ {budget.grandTotalConfirmed.toLocaleString('pt-BR')}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-2 border-t border-zinc-100 dark:border-zinc-800/60">
+                    <span>R$ {Math.round(budget.costPerConfirmed)} / pessoa</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                      {stats.confirmedEaters.toFixed(1)} cotas
+                    </span>
+                  </div>
+                </div>
+
+                <div className={`p-4 rounded-2xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
+                  <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
+                    <span>Custo se Todos Forem</span>
+                    <Coins className="w-4 h-4 text-amber-500" />
+                  </div>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+                      R$ {budget.grandTotalAll.toLocaleString('pt-BR')}
+                    </span>
+                    <span className="text-xs text-zinc-500 font-normal">(100%)</span>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-2 border-t border-zinc-100 dark:border-zinc-800/60">
+                    <span>Economia obtida:</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                      R$ {budget.rsvpSavings.toLocaleString('pt-BR')}
+                    </span>
+                  </div>
+                </div>
+
+                <div className={`p-4 rounded-2xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
+                  <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
+                    <span>Prontidão Operacional</span>
+                    <CheckSquare className="w-4 h-4 text-zinc-400" />
+                  </div>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+                      {stats.checklistProgress}%
+                    </span>
+                    <span className="text-xs text-zinc-500 font-normal">
+                      {stats.completedChecklist} de {checklist.length}
+                    </span>
+                  </div>
+                  <div className="mt-3 pt-2 border-t border-zinc-100 dark:border-zinc-800/60">
+                    <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-1 overflow-hidden">
+                      <div 
+                        className="bg-emerald-500 h-1 rounded-full transition-all"
+                        style={{ width: `${stats.checklistProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* SEÇÃO INFERIOR DA VISÃO GERAL */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <div className="lg:col-span-2 space-y-6">
+                  
+                  {/* STATUS DE CONFIRMAÇÃO RSVP */}
+                  <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-sm font-semibold tracking-tight">Status de Convites & Presenças</h3>
+                        <p className="text-xs text-zinc-500 mt-0.5">Visão consolidada do retorno dos convidados</p>
+                      </div>
+                      <button
+                        onClick={() => setActiveTab('guests')}
+                        className="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 transition"
+                      >
+                        <span>Gerenciar convidados</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="w-full h-2.5 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden flex gap-0.5 mb-3">
+                      <div
+                        style={{ width: `${stats.totalGuests > 0 ? (stats.confirmedCount / stats.totalGuests) * 100 : 0}%` }}
+                        className="bg-emerald-500 h-full transition-all"
+                      />
+                      <div
+                        style={{ width: `${stats.totalGuests > 0 ? (stats.pendingCount / stats.totalGuests) * 100 : 0}%` }}
+                        className="bg-amber-400 h-full transition-all"
+                      />
+                      <div
+                        style={{ width: `${stats.totalGuests > 0 ? (stats.declinedCount / stats.totalGuests) * 100 : 0}%` }}
+                        className="bg-zinc-300 dark:bg-zinc-700 h-full transition-all"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
+                        <span className="text-[11px] text-zinc-500">Confirmados</span>
+                        <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{stats.confirmedCount}</div>
+                      </div>
+                      <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
+                        <span className="text-[11px] text-zinc-500">Pendentes</span>
+                        <div className="text-lg font-bold text-amber-500 mt-0.5">{stats.pendingCount}</div>
+                      </div>
+                      <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
+                        <span className="text-[11px] text-zinc-500">Recusados</span>
+                        <div className="text-lg font-bold text-zinc-400 mt-0.5">{stats.declinedCount}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SÍNTESE DO BUFFET & ESTRUTURA */}
+                  <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-sm font-semibold tracking-tight">Síntese de Operação (Mercado Salvador)</h3>
+                        <p className="text-xs text-zinc-500 mt-0.5">Calculado para {stats.confirmedEaters.toFixed(1)} cotas alimentares em {config.durationHours}h</p>
+                      </div>
+                      <button
+                        onClick={() => setActiveTab('catering_hub')}
+                        className="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 transition"
+                      >
+                        <span>Ver Cardápio & Bar</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                      <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
+                        <span className="text-[11px] text-zinc-400 block">Buffet (Receitas)</span>
+                        <strong className="text-sm font-bold mt-1 block">R$ {budget.foodCostConfirmed.toLocaleString('pt-BR')}</strong>
+                        <span className="text-[10px] text-zinc-500">{calculatedMenu.itemsDetailed.length} pratos</span>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
+                        <span className="text-[11px] text-zinc-400 block">Bebidas & Gelo</span>
+                        <strong className="text-sm font-bold mt-1 block">R$ {budget.beveragesCostConfirmed.toLocaleString('pt-BR')}</strong>
+                        <span className="text-[10px] text-zinc-500">{calculatedBeverages.list.length} tipos</span>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
+                        <span className="text-[11px] text-zinc-400 block">Rechauds Inox</span>
+                        <strong className="text-sm font-bold mt-1 block">{calculatedMaterials.rechauds} cubas</strong>
+                        <span className="text-[10px] text-zinc-500">{calculatedMaterials.fuelPastesNeeded} pastilhas</span>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
+                        <span className="text-[11px] text-zinc-400 block">Locações & Móveis</span>
+                        <strong className="text-sm font-bold mt-1 block">R$ {budget.rentalsCost.toLocaleString('pt-BR')}</strong>
+                        <span className="text-[10px] text-zinc-500">{rentals.length} itens</span>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* COLUNA LATERAL DIREITA: PRÓXIMOS PASSOS */}
+                <div className="space-y-6">
+                  <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-semibold tracking-tight">Próximos Passos</h3>
+                      <button
+                        onClick={() => setActiveTab('checklist')}
+                        className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition"
+                      >
+                        Todas
+                      </button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {stats.pendingUrgentTasks.map(task => (
+                        <div
+                          key={task.id}
+                          onClick={() => toggleChecklist(task.id)}
+                          className={`p-2.5 rounded-xl border text-xs flex items-center justify-between cursor-pointer transition ${
+                            darkMode ? 'bg-zinc-900/50 border-zinc-800 hover:border-zinc-700' : 'bg-zinc-50 border-zinc-200/70 hover:border-zinc-300'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 truncate">
+                            <div className="w-4 h-4 rounded border border-zinc-300 dark:border-zinc-600 flex items-center justify-center shrink-0" />
+                            <span className="truncate text-zinc-800 dark:text-zinc-200">{task.title}</span>
+                          </div>
+                          <span className="text-[10px] text-zinc-400 shrink-0 ml-2">{task.period.split(' ')[0]}</span>
+                        </div>
+                      ))}
+                      {stats.pendingUrgentTasks.length === 0 && (
+                        <div className="text-center py-4 text-xs text-zinc-400 italic">
+                          Todas as tarefas prioritárias concluídas!
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
             </div>
-          </div>
-        )}
+          )}
 
-        {/* ============================================================ */}
-        {/* TAB 6: LOUÇAS, RECHAUDS, MOBILIÁRIO E DESCARTÁVEIS */}
-        {/* ============================================================ */}
-        {activeTab === 'catering' && (
-          <div className="space-y-6">
-            <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-base font-semibold tracking-tight">Calculadora de Louças, Rechauds, Mesas & Descartáveis</h2>
-                  <p className="text-xs text-zinc-500 mt-1">
-                    Altere parâmetros de custo unitário, margem de segurança e capacidade por mesa para recalcular tudo.
-                  </p>
-                </div>
-                <div className="flex bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-lg text-xs font-medium">
-                  <button
-                    onClick={() => setConfig({ ...config, materialMode: 'rental' })}
-                    className={`px-3 py-1 rounded-md transition ${config.materialMode === 'rental' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xs' : 'text-zinc-500'}`}
-                  >
-                    Louças / Aluguel
-                  </button>
-                  <button
-                    onClick={() => setConfig({ ...config, materialMode: 'disposable' })}
-                    className={`px-3 py-1 rounded-md transition ${config.materialMode === 'disposable' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xs' : 'text-zinc-500'}`}
-                  >
-                    Descartáveis
-                  </button>
-                </div>
-              </div>
-
-              {/* PAINEL DE PARÂMETROS EDITÁVEIS */}
-              <div className="mt-5 p-4 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-900/40">
-                <h3 className="text-xs font-semibold text-zinc-600 dark:text-zinc-300 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                  <SlidersHorizontal className="w-3.5 h-3.5" /> Parâmetros de Custos e Margem
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          {/* ============================================================ */}
+          {/* SEÇÃO 2: CONVIDADOS & RSVP */}
+          {/* ============================================================ */}
+          {activeTab === 'guests' && (
+            <div className="space-y-6">
+              <div className={`p-5 rounded-3xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <label className="block text-zinc-500 text-[11px] mb-1">Margem de Quebra/Segurança (%)</label>
-                    <input
-                      type="number"
-                      value={config.safetyMarginPct}
-                      onChange={(e) => setConfig({ ...config, safetyMarginPct: Number(e.target.value) })}
-                      className="w-full px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs"
-                    />
+                    <h2 className="text-base font-bold tracking-tight">Lista de Convidados & Presenças</h2>
+                    <p className="text-xs text-zinc-500 mt-1">
+                      {stats.confirmedCount} confirmados ({stats.confirmedEaters.toFixed(1)} cotas), {stats.pendingCount} pendentes e {stats.declinedCount} recusados
+                    </p>
                   </div>
-                  <div>
-                    <label className="block text-zinc-500 text-[11px] mb-1">Lugares por Mesa de Convidado</label>
-                    <input
-                      type="number"
-                      value={config.tableCapacity}
-                      onChange={(e) => setConfig({ ...config, tableCapacity: Number(e.target.value) })}
-                      className="w-full px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-zinc-500 text-[11px] mb-1">
-                      {config.materialMode === 'rental' ? 'Aluguel Louça/Pessoa (R$)' : 'Descartáveis/Pessoa (R$)'}
-                    </label>
-                    <input
-                      type="number"
-                      step="0.10"
-                      value={config.materialMode === 'rental' ? config.rentalUnitCost : config.disposableUnitCost}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value) || 0;
-                        if (config.materialMode === 'rental') {
-                          setConfig({ ...config, rentalUnitCost: val });
-                        } else {
-                          setConfig({ ...config, disposableUnitCost: val });
-                        }
-                      }}
-                      className="w-full px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-zinc-500 text-[11px] mb-1">Aluguel Rechaud Inox (R$/un)</label>
-                    <input
-                      type="number"
-                      step="1.00"
-                      value={config.rechaudRentalCost}
-                      onChange={(e) => setConfig({ ...config, rechaudRentalCost: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* GRIDS DE RESULTADOS */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-                <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-zinc-50 border-zinc-200/70'}`}>
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-4 flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-zinc-400" /> Pratos & Talheres
-                  </h3>
-                  <div className="space-y-3 text-xs">
-                    <div className="flex justify-between py-2 border-b border-zinc-200/60 dark:border-zinc-800">
-                      <span className="text-zinc-600 dark:text-zinc-400">Pratos Refeição (+{config.safetyMarginPct}%)</span>
-                      <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.mainPlates} un</strong>
-                    </div>
-                    <div className="flex justify-between py-2 border-b border-zinc-200/60 dark:border-zinc-800">
-                      <span className="text-zinc-600 dark:text-zinc-400">Pratos Sobremesa / Bolo</span>
-                      <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.dessertPlates} un</strong>
-                    </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-zinc-600 dark:text-zinc-400">Talheres (Garfos e Facas)</span>
-                      <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.forksAndKnives} pares</strong>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setRsvpSimModalOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                    >
+                      <Share2 className="w-3.5 h-3.5 text-zinc-500" />
+                      <span>Link RSVP</span>
+                    </button>
+                    <button
+                      onClick={() => handleOpenGuestModal(null)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Novo Convidado</span>
+                    </button>
                   </div>
                 </div>
 
-                <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-zinc-50 border-zinc-200/70'}`}>
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-4 flex items-center gap-2">
-                    <Wine className="w-4 h-4 text-zinc-400" /> Copos & Taças
-                  </h3>
-                  <div className="space-y-3 text-xs">
-                    <div className="flex justify-between py-2 border-b border-zinc-200/60 dark:border-zinc-800">
-                      <span className="text-zinc-600 dark:text-zinc-400">Copos / Taças de Água</span>
-                      <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.waterGlasses} un</strong>
-                    </div>
-                    <div className="flex justify-between py-2 border-b border-zinc-200/60 dark:border-zinc-800">
-                      <span className="text-zinc-600 dark:text-zinc-400">Tulipas de Chopp</span>
-                      <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.beerTulips} un</strong>
-                    </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-zinc-600 dark:text-zinc-400">Guardanapos</span>
-                      <strong className="text-zinc-900 dark:text-zinc-100">{stats.confirmedCount * 8} folhas</strong>
-                    </div>
-                  </div>
-                </div>
-
-                <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-zinc-50 border-zinc-200/70'}`}>
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-4 flex items-center gap-2">
-                    <Flame className="w-4 h-4 text-zinc-400" /> Rechauds & Mesas
-                  </h3>
-                  <div className="space-y-3 text-xs">
-                    <div className="flex justify-between py-2 border-b border-zinc-200/60 dark:border-zinc-800">
-                      <span className="text-zinc-600 dark:text-zinc-400">Rechauds Inox (Sincronizado)</span>
-                      <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.rechauds} cubas</strong>
-                    </div>
-                    <div className="flex justify-between py-2 border-b border-zinc-200/60 dark:border-zinc-800">
-                      <span className="text-zinc-600 dark:text-zinc-400">Pastilhas Álcool Gel ({config.durationHours}h)</span>
-                      <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.fuelPastesNeeded} un</strong>
-                    </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-zinc-600 dark:text-zinc-400">Jogos de Mesas ({config.tableCapacity} lug.)</span>
-                      <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.guestTablesNeeded} jogos ({calculatedMaterials.guestChairsNeeded} cad.)</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ============================================================ */}
-        {/* TAB 7: CENTRO DE CUSTOS (100% SINCRONIZADO & AUTOMÁTICO) */}
-        {/* ============================================================ */}
-        {activeTab === 'finance' && (
-          <div className="space-y-6">
-            <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-base font-semibold tracking-tight">Centro de Custos Integrado & Sincronizado</h2>
-                  <p className="text-xs text-zinc-500 mt-1">
-                    Custo Real com Confirmados: <strong>R$ {budget.grandTotalConfirmed.toLocaleString('pt-BR')}</strong> | Se Todos Forem: <strong>R$ {budget.grandTotalAll.toLocaleString('pt-BR')}</strong>
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50">
-                    Economia RSVP: <strong>R$ {budget.rsvpSavings.toLocaleString('pt-BR')}</strong>
-                  </span>
-                  <button
-                    onClick={() => handleOpenExpenseModal(null)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Adicionar Despesa Manual</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="mt-5 space-y-4">
-                <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Custos Sincronizados em Tempo Real (Base Salvador):</h4>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
-                  <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800">
-                    <span className="text-zinc-400 block text-[11px]">Locações, Espaço & Brinquedos</span>
-                    <strong className="text-base block mt-1">R$ {budget.rentalsCost.toLocaleString('pt-BR')}</strong>
-                    <span className="text-[10px] text-zinc-500">{rentals.length} itens cadastrados</span>
-                  </div>
-                  <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800">
-                    <span className="text-zinc-400 block text-[11px]">Cardápio (Receitas & Insumos)</span>
-                    <strong className="text-base block mt-1 text-emerald-600 dark:text-emerald-400">R$ {budget.foodCostConfirmed.toLocaleString('pt-BR')}</strong>
-                    <span className="text-[10px] text-zinc-500">Se todos forem: R$ {budget.foodCostAll.toLocaleString('pt-BR')}</span>
-                  </div>
-                  <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800">
-                    <span className="text-zinc-400 block text-[11px]">Bebidas Detalhadas & Gelo</span>
-                    <strong className="text-base block mt-1 text-amber-600 dark:text-amber-400">R$ {budget.beveragesCostConfirmed.toLocaleString('pt-BR')}</strong>
-                    <span className="text-[10px] text-zinc-500">Se todos forem: R$ {budget.beveragesCostAll.toLocaleString('pt-BR')}</span>
-                  </div>
-                  <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800">
-                    <span className="text-zinc-400 block text-[11px]">Louças, Rechauds & Mesas</span>
-                    <strong className="text-base block mt-1">R$ {budget.tablewareCostConfirmed.toLocaleString('pt-BR')}</strong>
-                    <span className="text-[10px] text-zinc-500">{config.materialMode === 'rental' ? 'Modo Aluguel' : 'Descartáveis'}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-4">
-                  <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Despesas Manuais & Contratações Extras:</h4>
-                  <span className="text-xs text-zinc-500 font-medium">Subtotal Manual: R$ {budget.manualTotalActual.toLocaleString('pt-BR')}</span>
-                </div>
-
-                <div className="overflow-x-auto">
+                <div className="mt-5 overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead className={`border-b ${darkMode ? 'border-zinc-800 text-zinc-400' : 'border-zinc-200 text-zinc-500'}`}>
                       <tr>
-                        <th className="pb-2.5 font-medium">Descrição</th>
+                        <th onClick={() => handleSortGuests('name')} className="pb-2.5 font-medium cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100 select-none">
+                          <div className="flex items-center gap-1">
+                            <span>Nome</span>
+                            <ArrowUpDown className="w-3 h-3 text-zinc-400" />
+                          </div>
+                        </th>
+                        <th onClick={() => handleSortGuests('group')} className="pb-2.5 font-medium cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100 select-none">
+                          <div className="flex items-center gap-1">
+                            <span>Grupo</span>
+                            <ArrowUpDown className="w-3 h-3 text-zinc-400" />
+                          </div>
+                        </th>
                         <th className="pb-2.5 font-medium">Categoria</th>
-                        <th className="pb-2.5 font-medium">Previsto</th>
-                        <th className="pb-2.5 font-medium">Real / Pago</th>
-                        <th className="pb-2.5 font-medium">Status</th>
-                        <th className="pb-2.5 font-medium text-right">Ação</th>
+                        <th onClick={() => handleSortGuests('status')} className="pb-2.5 font-medium cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100 select-none">
+                          <div className="flex items-center gap-1">
+                            <span>Status</span>
+                            <ArrowUpDown className="w-3 h-3 text-zinc-400" />
+                          </div>
+                        </th>
+                        <th className="pb-2.5 font-medium">Álcool</th>
+                        <th className="pb-2.5 font-medium">Restrições Alimentares</th>
+                        <th className="pb-2.5 font-medium text-right">Ações</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
-                      {manualExpenses.map(expense => (
-                        <tr key={expense.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40">
-                          <td className="py-3 font-medium text-zinc-900 dark:text-zinc-100">{expense.description}</td>
-                          <td className="py-3 text-zinc-500">{expense.category}</td>
-                          <td className="py-3 text-zinc-600 dark:text-zinc-300">R$ {Number(expense.estimated || 0).toLocaleString('pt-BR')}</td>
-                          <td className="py-3 font-medium text-zinc-900 dark:text-zinc-100">
-                            R$ {Number(expense.actual || expense.estimated || 0).toLocaleString('pt-BR')}
+                      {sortedGuests.map(guest => (
+                        <tr key={guest.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40 transition-colors">
+                          <td className="py-3 font-semibold text-zinc-900 dark:text-zinc-100">{guest.name}</td>
+                          <td className="py-3 text-zinc-500">
+                            <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800/80 text-[11px] font-medium text-zinc-700 dark:text-zinc-300">
+                              {guest.group || 'Geral'}
+                            </span>
+                          </td>
+                          <td className="py-3 text-zinc-600 dark:text-zinc-300">
+                            {guest.category === 'adult' ? 'Adulto' : guest.category === 'child_6_11' ? 'Criança (6-11)' : 'Criança (0-5)'}
                           </td>
                           <td className="py-3">
                             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                              expense.paid ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400'
+                              guest.status === 'confirmed'
+                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/50'
+                                : guest.status === 'pending'
+                                ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/50'
+                                : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
                             }`}>
-                              {expense.paid ? 'Pago' : 'Pendente'}
+                              {guest.status === 'confirmed' ? 'Confirmado' : guest.status === 'pending' ? 'Pendente' : 'Recusado'}
                             </span>
+                          </td>
+                          <td className="py-3 text-zinc-500">{guest.drinksAlcohol ? 'Sim' : 'Não'}</td>
+                          <td className="py-3">
+                            <div className="flex flex-wrap gap-1">
+                              {Array.isArray(guest.restrictions) && guest.restrictions.map((r, i) => (
+                                <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                                  {r}
+                                </span>
+                              ))}
+                            </div>
                           </td>
                           <td className="py-3 text-right">
                             <div className="flex items-center justify-end gap-1.5">
                               <button
-                                onClick={() => handleOpenExpenseModal(expense)}
-                                className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
-                                title="Editar despesa"
+                                onClick={() => handleOpenGuestModal(guest)}
+                                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                title="Editar"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button
-                                onClick={() => handleDeleteExpense(expense.id)}
-                                className="p-1 rounded text-zinc-400 hover:text-rose-600"
+                                onClick={() => handleDeleteGuest(guest.id)}
+                                className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40"
                                 title="Excluir"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -2339,302 +1826,837 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* ============================================================ */}
-        {/* TAB 8: CHECKLIST */}
-        {/* ============================================================ */}
-        {activeTab === 'checklist' && (
-          <div className="space-y-6">
-            <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
-              <h2 className="text-base font-semibold tracking-tight">Linha do Tempo & Tarefas</h2>
-              <p className="text-xs text-zinc-500 mt-1 mb-4">
-                {stats.completedChecklist} de {checklist.length} concluídas ({stats.checklistProgress}%)
-              </p>
-
-              <div className="space-y-2.5">
-                {checklist.map(task => (
-                  <div
-                    key={task.id}
-                    onClick={() => toggleChecklist(task.id)}
-                    className={`p-3 rounded-xl border text-xs flex items-center justify-between cursor-pointer transition ${
-                      task.completed
-                        ? 'bg-zinc-50/60 dark:bg-zinc-900/20 border-zinc-200/50 dark:border-zinc-800/50 opacity-60'
-                        : darkMode
-                        ? 'bg-zinc-900/60 border-zinc-800 hover:border-zinc-700'
-                        : 'bg-white border-zinc-200/80 hover:border-zinc-300'
+          {/* ============================================================ */}
+          {/* SEÇÃO 3: GASTRONOMIA & BAR (UNIFICADO: CARDÁPIO + BEBIDAS) */}
+          {/* ============================================================ */}
+          {activeTab === 'catering_hub' && (
+            <div className="space-y-6">
+              
+              {/* SELETOR DE SUB-ABAS (CARDÁPIO VS. BEBIDAS) */}
+              <div className="flex items-center justify-between pb-2 border-b border-zinc-200/80 dark:border-zinc-800">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCateringSubTab('menu')}
+                    className={`px-4 py-2 rounded-xl text-xs font-semibold transition ${
+                      cateringSubTab === 'menu'
+                        ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
+                        : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-4 h-4 rounded border flex items-center justify-center transition ${
-                        task.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-zinc-300 dark:border-zinc-600'
-                      }`}>
-                        {task.completed && <Check className="w-3 h-3 stroke-[3]" />}
-                      </div>
-                      <span className={`font-medium ${task.completed ? 'line-through text-zinc-400' : 'text-zinc-800 dark:text-zinc-200'}`}>
-                        {task.title}
-                      </span>
-                    </div>
-                    <span className="text-[11px] text-zinc-400 shrink-0 ml-3">{task.period}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ============================================================ */}
-        {/* TAB 9: CONFIGURAÇÕES GERAIS */}
-        {/* ============================================================ */}
-        {activeTab === 'config' && (
-          <div className="space-y-6">
-            <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
-              <h2 className="text-base font-semibold tracking-tight">Parâmetros Gerais do Evento</h2>
-              <p className="text-xs text-zinc-500 mt-1 mb-5">Configure dados do aniversariante e regras do espaço em Salvador</p>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                <div>
-                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Nome do Aniversariante</label>
-                  <input
-                    type="text"
-                    value={config.celebrantName}
-                    onChange={(e) => setConfig({ ...config, celebrantName: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
-                  />
-                </div>
-                <div>
-                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Idade Comemorada</label>
-                  <input
-                    type="number"
-                    value={config.age}
-                    onChange={(e) => setConfig({ ...config, age: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
-                  />
-                </div>
-                <div>
-                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Data da Festa</label>
-                  <input
-                    type="date"
-                    value={config.date}
-                    onChange={(e) => setConfig({ ...config, date: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
-                  />
-                </div>
-                <div>
-                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Duração (horas)</label>
-                  <input
-                    type="number"
-                    value={config.durationHours}
-                    onChange={(e) => setConfig({ ...config, durationHours: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
-                  />
-                </div>
-                <div>
-                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Tipo de Local</label>
-                  <select
-                    value={config.locationType}
-                    onChange={(e) => setConfig({ ...config, locationType: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
-                  >
-                    <option value="home">Espaço Próprio / Condomínio</option>
-                    <option value="rented">Espaço / Salão Locado</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Nome do Salão / Local</label>
-                  <input
-                    type="text"
-                    value={config.venueName}
-                    onChange={(e) => setConfig({ ...config, venueName: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Endereço Completo</label>
-                  <input
-                    type="text"
-                    value={config.venueAddress}
-                    onChange={(e) => setConfig({ ...config, venueAddress: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-      </main>
-
-      {/* ============================================================ */}
-      {/* MODAL 1: EDITAR / ADICIONAR PRATO COM MOTOR DE INSUMOS & SALVADOR */}
-      {/* ============================================================ */}
-      {menuModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className={`w-full max-w-2xl rounded-2xl border p-5 shadow-xl max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Sparkle className="w-4 h-4 text-emerald-500" />
-                <h3 className="text-sm font-semibold">{editingMenuItem ? 'Editar Prato & Ficha Técnica' : 'Novo Prato no Cardápio'}</h3>
-              </div>
-              <button onClick={() => setMenuModalOpen(false)} className="text-zinc-400 hover:text-zinc-600 text-xs">✕</button>
-            </div>
-
-            {/* SELETOR DE TEMPLATES RÁPIDOS */}
-            <div className="mb-4 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700">
-              <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 block mb-1.5">
-                Preencher com um Template Pronto de Salvador:
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {SUGGESTED_DISH_TEMPLATES.map((tpl, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => handleApplyDishTemplate(tpl)}
-                    className="px-2 py-0.5 rounded text-[11px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 hover:border-emerald-500 text-zinc-700 dark:text-zinc-300"
-                  >
-                    {tpl.name}
+                    Cardápio & Receitas Salvador
                   </button>
-                ))}
-              </div>
-            </div>
-
-            <form onSubmit={handleSaveMenuItem} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-zinc-500 mb-1">Nome do Prato</label>
-                  <input
-                    type="text"
-                    name="name"
-                    id="menu-item-name-input"
-                    required
-                    defaultValue={editingMenuItem?.name || ''}
-                    placeholder="Ex: Picanha na Brasa com Alho"
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent font-medium"
-                  />
+                  <button
+                    onClick={() => setCateringSubTab('beverages')}
+                    className={`px-4 py-2 rounded-xl text-xs font-semibold transition ${
+                      cateringSubTab === 'beverages'
+                        ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
+                        : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800'
+                    }`}
+                  >
+                    Bebidas Detalhadas & Gelo
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-zinc-500 mb-1">Categoria do Prato</label>
-                  <select name="category" id="menu-item-category-input" defaultValue={editingMenuItem?.category || 'protein'} className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent">
-                    <option value="protein" className="dark:bg-zinc-900">Proteína / Prato Principal</option>
-                    <option value="side" className="dark:bg-zinc-900">Guarnição / Acompanhamento</option>
-                    <option value="starter" className="dark:bg-zinc-900">Entrada / Salgado / Canapé</option>
-                    <option value="dessert" className="dark:bg-zinc-900">Sobremesa / Bolo / Doces</option>
-                  </select>
+
+                <div className="text-right hidden sm:block">
+                  <span className="text-[10px] text-zinc-400 block uppercase font-medium">Subtotal Alimentação & Bar</span>
+                  <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                    R$ {(budget.foodCostConfirmed + budget.beveragesCostConfirmed).toLocaleString('pt-BR')}
+                  </span>
                 </div>
               </div>
 
-              <div className="flex items-center pt-1">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="isHot"
-                    id="menu-item-ishot-input"
-                    defaultChecked={editingMenuItem ? editingMenuItem.isHot : true}
-                    className="rounded border-zinc-300"
-                  />
-                  <span><strong>Prato servido quente</strong> (adiciona automaticamente rechaud inox e pastilhas de aquecimento)</span>
-                </label>
-              </div>
-
-              {/* LISTA DINÂMICA DE INGREDIENTES COM AUTO-PREENCHIMENTO */}
-              <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                  <div>
-                    <h4 className="font-semibold text-xs flex items-center gap-1.5">
-                      <span>Ingredientes / Insumos</span>
-                      <span className="text-[10px] font-normal text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded border border-emerald-200/50">
-                        Auto-calculado por pessoa
-                      </span>
-                    </h4>
-                    <span className="text-[11px] text-zinc-400">Digite o nome do insumo (ex: picanha, queijo coalho, arroz, camarão) e os valores se ajustam sozinhos.</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleAutoApplySalvadorPricing}
-                      title="Aplicar preços médios de Salvador em todos os itens"
-                      className="px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 font-medium text-[11px] flex items-center gap-1"
-                    >
-                      <Sparkles className="w-3 h-3 text-emerald-600" />
-                      <span>Preços Salvador</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleAddIngredientRow}
-                      className="px-2.5 py-1 rounded bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-700 dark:text-zinc-300 font-medium text-[11px] flex items-center gap-1"
-                    >
-                      <Plus className="w-3 h-3" />
-                      <span>Insumo</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-2 mt-3">
-                  {editingIngredients.map((ing, idx) => (
-                    <div key={idx} className="flex flex-col sm:flex-row items-center gap-2 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-800">
-                      <div className="flex-1 w-full">
-                        <input
-                          type="text"
-                          placeholder="Ex: Picanha Bovina, Camarão, Queijo Coalho..."
-                          value={ing.name}
-                          onChange={(e) => handleUpdateIngredient(idx, 'name', e.target.value)}
-                          className="w-full px-2.5 py-1.5 rounded border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs font-medium"
-                        />
+              {/* CONTEÚDO: CARDÁPIO DE PRATOS */}
+              {cateringSubTab === 'menu' && (
+                <div className={`p-5 rounded-3xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-base font-bold tracking-tight">Fichas Técnicas & Cardápio do Buffet</h2>
+                        <span className="text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-200/50">
+                          Salvador Market Engine
+                        </span>
                       </div>
-                      <div className="w-24">
-                        <label className="text-[9px] text-zinc-400 block sm:hidden">Qtd/pessoa</label>
+                      <p className="text-xs text-zinc-500 mt-1">
+                        Gramaturas automáticas por pessoa. Preços médios de Salvador calibrados com o Centro de Custos.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleOpenMenuModal(null)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Adicionar Prato</span>
+                    </button>
+                  </div>
+
+                  {/* CARDS DE TEMPLATES RÁPIDOS */}
+                  <div className="mt-4 p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/40">
+                    <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 block mb-2">
+                      Sugestões Rápidas de Pratos com Ficha Pronta:
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {SUGGESTED_DISH_TEMPLATES.map((tpl, i) => (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            const exists = menu.some(m => m.name === tpl.name);
+                            if (!exists) {
+                              setMenu([...menu, { ...tpl, id: 'tpl-' + Date.now() + '-' + i }]);
+                              showToast(`Prato "${tpl.name}" adicionado ao cardápio!`);
+                            } else {
+                              showToast('Este prato já está no cardápio.');
+                            }
+                          }}
+                          className="px-2.5 py-1 rounded-lg text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-emerald-500 text-zinc-700 dark:text-zinc-300 transition flex items-center gap-1.5"
+                        >
+                          <Plus className="w-3 h-3 text-emerald-500" />
+                          <span>{tpl.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* LISTA DE PRATOS */}
+                  <div className="mt-6 space-y-4">
+                    {calculatedMenu.itemsDetailed.map(item => (
+                      <div key={item.id} className={`p-4 rounded-2xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-zinc-50 border-zinc-200/70'}`}>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-zinc-200/60 dark:border-zinc-800">
+                          <div className="flex items-center gap-2">
+                            <Flame className={`w-4 h-4 ${item.isHot ? 'text-amber-500' : 'text-zinc-400'}`} />
+                            <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">{item.name}</h4>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                              item.isHot ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400' : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
+                            }`}>
+                              {item.isHot ? 'Prato Quente (Rechaud)' : 'Servido Frio'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4 text-xs">
+                            <span className="text-zinc-500">
+                              Confirmados: <strong className="text-zinc-900 dark:text-zinc-100">R$ {item.itemCostConfirmed.toLocaleString('pt-BR')}</strong>
+                            </span>
+                            <div className="flex items-center gap-1 ml-2">
+                              <button
+                                onClick={() => handleOpenMenuModal(item)}
+                                className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                                title="Editar receita"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteMenuItem(item.id)}
+                                className="p-1 rounded text-zinc-400 hover:text-rose-500"
+                                title="Excluir prato"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 overflow-x-auto">
+                          <table className="w-full text-left text-xs">
+                            <thead>
+                              <tr className="text-zinc-400 text-[11px]">
+                                <th className="pb-1.5 font-normal">Ingrediente / Insumo</th>
+                                <th className="pb-1.5 font-normal">Qtd / Pessoa</th>
+                                <th className="pb-1.5 font-normal">Preço Unit. (Salvador)</th>
+                                <th className="pb-1.5 font-normal">Total ({stats.confirmedEaters.toFixed(1)} cotas)</th>
+                                <th className="pb-1.5 font-normal text-right">Subtotal</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-zinc-200/40 dark:divide-zinc-800/40 text-zinc-600 dark:text-zinc-300">
+                              {(item.ingredients || []).map((ing, idx) => (
+                                <tr key={idx}>
+                                  <td className="py-1.5 font-medium text-zinc-800 dark:text-zinc-200">{ing.name}</td>
+                                  <td className="py-1.5">{ing.amountPerPerson} {ing.unit}</td>
+                                  <td className="py-1.5">R$ {Number(ing.unitCost || 0).toFixed(2)} / {ing.unit}</td>
+                                  <td className="py-1.5 font-semibold text-zinc-900 dark:text-zinc-100">{ing.qtyConfirmed} {ing.unit}</td>
+                                  <td className="py-1.5 text-right font-semibold text-zinc-900 dark:text-zinc-100">R$ {Number(ing.costConfirmed || 0).toFixed(2)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* CONTEÚDO: BEBIDAS DETALHADAS */}
+              {cateringSubTab === 'beverages' && (
+                <div className={`p-5 rounded-3xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-base font-bold tracking-tight">Discriminação de Bebidas, Sucos & Gelo</h2>
+                      <p className="text-xs text-zinc-500 mt-1">
+                        Cálculo proporcional a {config.durationHours}h de duração e consumo em ml por convidado.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleOpenBeverageModal(null)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Adicionar Bebida</span>
+                    </button>
+                  </div>
+
+                  <div className="mt-5 overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className={`border-b ${darkMode ? 'border-zinc-800 text-zinc-400' : 'border-zinc-200 text-zinc-500'}`}>
+                        <tr>
+                          <th className="pb-2.5 font-medium">Bebida / Insumo</th>
+                          <th className="pb-2.5 font-medium">Consumo / Pessoa / Hora</th>
+                          <th className="pb-2.5 font-medium">Preço / Litro</th>
+                          <th className="pb-2.5 font-medium">Volume (Confirmados)</th>
+                          <th className="pb-2.5 font-medium">Embalagens Sugeridas</th>
+                          <th className="pb-2.5 font-medium">Custo (Confirmados)</th>
+                          <th className="pb-2.5 font-medium text-right">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                        {calculatedBeverages.list.map(bev => (
+                          <tr key={bev.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40">
+                            <td className="py-3 font-semibold text-zinc-900 dark:text-zinc-100">{bev.name}</td>
+                            <td className="py-3 text-zinc-500">{bev.mlPerPersonPerHour} ml / h</td>
+                            <td className="py-3 text-zinc-500">R$ {Number(bev.unitCostPerLiter || 0).toFixed(2)}</td>
+                            <td className="py-3 font-bold text-zinc-900 dark:text-zinc-100">{bev.totalLitersConfirmed} L</td>
+                            <td className="py-3 text-zinc-700 dark:text-zinc-300">
+                              <span className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 font-medium">
+                                ~{bev.packagesConfirmed} {bev.unitPackage}
+                              </span>
+                            </td>
+                            <td className="py-3 font-bold text-zinc-900 dark:text-zinc-100">
+                              R$ {bev.totalCostConfirmed.toLocaleString('pt-BR')}
+                            </td>
+                            <td className="py-3 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => handleOpenBeverageModal(bev)}
+                                  className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                                  title="Editar bebida"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteBeverage(bev.id)}
+                                  className="p-1 rounded text-zinc-400 hover:text-rose-500"
+                                  title="Excluir"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          )}
+
+          {/* ============================================================ */}
+          {/* SEÇÃO 4: ESTRUTURA & LOCAÇÕES (UNIFICADO: MÓVEIS + LOUÇAS) */}
+          {/* ============================================================ */}
+          {activeTab === 'structure_hub' && (
+            <div className="space-y-6">
+              
+              {/* SELETOR DE SUB-ABAS (LOCAÇÕES VS. LOUÇAS) */}
+              <div className="flex items-center justify-between pb-2 border-b border-zinc-200/80 dark:border-zinc-800">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setStructureSubTab('rentals')}
+                    className={`px-4 py-2 rounded-xl text-xs font-semibold transition ${
+                      structureSubTab === 'rentals'
+                        ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
+                        : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800'
+                    }`}
+                  >
+                    Locações de Brinquedos, Espaço & Móveis
+                  </button>
+                  <button
+                    onClick={() => setStructureSubTab('tableware')}
+                    className={`px-4 py-2 rounded-xl text-xs font-semibold transition ${
+                      structureSubTab === 'tableware'
+                        ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
+                        : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800'
+                    }`}
+                  >
+                    Calculadora de Louças, Rechauds & Mesas
+                  </button>
+                </div>
+
+                <div className="text-right hidden sm:block">
+                  <span className="text-[10px] text-zinc-400 block uppercase font-medium">Subtotal Estrutura</span>
+                  <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                    R$ {(budget.rentalsCost + budget.tablewareCostConfirmed).toLocaleString('pt-BR')}
+                  </span>
+                </div>
+              </div>
+
+              {/* CONTEÚDO: LOCAÇÕES E BRINQUEDOS */}
+              {structureSubTab === 'rentals' && (
+                <div className={`p-5 rounded-3xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-base font-bold tracking-tight">Locações, Brinquedos e Mobiliário</h2>
+                      <p className="text-xs text-zinc-500 mt-1">Gerencie os equipamentos infantis, espaço físico e móveis contratados.</p>
+                    </div>
+                    <button
+                      onClick={() => handleOpenRentalModal(null)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Novo Item de Locação</span>
+                    </button>
+                  </div>
+
+                  <div className="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {rentals.map(rental => (
+                      <div key={rental.id} className={`p-4 rounded-2xl border flex flex-col justify-between ${darkMode ? 'bg-zinc-900/50 border-zinc-800' : 'bg-zinc-50 border-zinc-200/70'}`}>
+                        <div>
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+                                {rental.category === 'toy' ? 'Brinquedo & Recreação' : rental.category === 'furniture' ? 'Mobiliário' : 'Espaço Físico'}
+                              </span>
+                              <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 mt-0.5">{rental.name}</h4>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => handleOpenRentalModal(rental)}
+                                className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                                title="Editar locação"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteRental(rental.id)}
+                                className="p-1 rounded text-zinc-400 hover:text-rose-500"
+                                title="Excluir"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                          <p className="text-xs text-zinc-500 mt-1.5">{rental.supplier || 'Fornecedor'}</p>
+                          {rental.notes && <p className="text-[11px] text-zinc-400 mt-1">{rental.notes}</p>}
+                        </div>
+                        <div className="mt-4 pt-3 border-t border-zinc-200/70 dark:border-zinc-800 flex items-center justify-between text-xs">
+                          <span className="text-zinc-500">{rental.hasMonitor ? 'Monitor incluso' : 'Sem monitor'}</span>
+                          <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                            R$ {Number(rental.cost || 0).toLocaleString('pt-BR')}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* CONTEÚDO: LOUÇAS, RECHAUDS E DESCARTÁVEIS */}
+              {structureSubTab === 'tableware' && (
+                <div className={`p-5 rounded-3xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-base font-bold tracking-tight">Calculadora de Louças, Rechauds, Mesas & Descartáveis</h2>
+                      <p className="text-xs text-zinc-500 mt-1">
+                        Dimensionamento técnico de pratos, talheres, taças e pastilhas de queima para rechauds inox.
+                      </p>
+                    </div>
+                    <div className="flex bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-xl text-xs font-medium">
+                      <button
+                        onClick={() => setConfig({ ...config, materialMode: 'rental' })}
+                        className={`px-3 py-1 rounded-lg transition ${config.materialMode === 'rental' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xs font-semibold' : 'text-zinc-500'}`}
+                      >
+                        Louças / Aluguel
+                      </button>
+                      <button
+                        onClick={() => setConfig({ ...config, materialMode: 'disposable' })}
+                        className={`px-3 py-1 rounded-lg transition ${config.materialMode === 'disposable' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xs font-semibold' : 'text-zinc-500'}`}
+                      >
+                        Descartáveis
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* PARÂMETROS EDITÁVEIS */}
+                  <div className="mt-5 p-4 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-900/40">
+                    <h3 className="text-xs font-semibold text-zinc-600 dark:text-zinc-300 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      <SlidersHorizontal className="w-3.5 h-3.5" /> Parâmetros de Custos e Margem
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                      <div>
+                        <label className="block text-zinc-500 text-[11px] mb-1">Margem de Segurança (%)</label>
                         <input
                           type="number"
-                          step="0.005"
-                          placeholder="Qtd/pess"
-                          value={ing.amountPerPerson}
-                          onChange={(e) => handleUpdateIngredient(idx, 'amountPerPerson', e.target.value)}
-                          className="w-full px-2.5 py-1.5 rounded border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs"
+                          value={config.safetyMarginPct}
+                          onChange={(e) => setConfig({ ...config, safetyMarginPct: Number(e.target.value) })}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs"
                         />
                       </div>
-                      <div className="w-20">
-                        <select
-                          value={ing.unit}
-                          onChange={(e) => handleUpdateIngredient(idx, 'unit', e.target.value)}
-                          className="w-full px-2 py-1.5 rounded border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs"
-                        >
-                          <option value="kg" className="dark:bg-zinc-900">kg</option>
-                          <option value="L" className="dark:bg-zinc-900">L</option>
-                          <option value="un" className="dark:bg-zinc-900">un</option>
-                          <option value="pct" className="dark:bg-zinc-900">pct</option>
-                        </select>
+                      <div>
+                        <label className="block text-zinc-500 text-[11px] mb-1">Lugares por Mesa</label>
+                        <input
+                          type="number"
+                          value={config.tableCapacity}
+                          onChange={(e) => setConfig({ ...config, tableCapacity: Number(e.target.value) })}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs"
+                        />
                       </div>
-                      <div className="w-28">
-                        <label className="text-[9px] text-zinc-400 block sm:hidden">R$ Salvador</label>
+                      <div>
+                        <label className="block text-zinc-500 text-[11px] mb-1">
+                          {config.materialMode === 'rental' ? 'Louça/Pessoa (R$)' : 'Descartáveis/Pessoa (R$)'}
+                        </label>
                         <input
                           type="number"
                           step="0.10"
-                          placeholder="R$ Preço/un"
-                          value={ing.unitCost}
-                          onChange={(e) => handleUpdateIngredient(idx, 'unitCost', e.target.value)}
-                          className="w-full px-2.5 py-1.5 rounded border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs font-semibold text-emerald-600 dark:text-emerald-400"
+                          value={config.materialMode === 'rental' ? config.rentalUnitCost : config.disposableUnitCost}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            if (config.materialMode === 'rental') {
+                              setConfig({ ...config, rentalUnitCost: val });
+                            } else {
+                              setConfig({ ...config, disposableUnitCost: val });
+                            }
+                          }}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs"
                         />
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveIngredientRow(idx)}
-                        className="p-1.5 text-zinc-400 hover:text-rose-500"
-                        title="Remover insumo"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div>
+                        <label className="block text-zinc-500 text-[11px] mb-1">Aluguel Rechaud (R$/un)</label>
+                        <input
+                          type="number"
+                          step="1.00"
+                          value={config.rechaudRentalCost}
+                          onChange={(e) => setConfig({ ...config, rechaudRentalCost: parseFloat(e.target.value) || 0 })}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CARDS DE QUANTIDADES */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                    <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-zinc-50 border-zinc-200/70'}`}>
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-4 flex items-center gap-2">
+                        <Layers className="w-4 h-4 text-zinc-400" /> Pratos & Talheres
+                      </h3>
+                      <div className="space-y-3 text-xs">
+                        <div className="flex justify-between py-2 border-b border-zinc-200/60 dark:border-zinc-800">
+                          <span className="text-zinc-600 dark:text-zinc-400">Pratos Refeição (+{config.safetyMarginPct}%)</span>
+                          <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.mainPlates} un</strong>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-zinc-200/60 dark:border-zinc-800">
+                          <span className="text-zinc-600 dark:text-zinc-400">Pratos Sobremesa / Bolo</span>
+                          <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.dessertPlates} un</strong>
+                        </div>
+                        <div className="flex justify-between py-2">
+                          <span className="text-zinc-600 dark:text-zinc-400">Talheres (Garfos e Facas)</span>
+                          <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.forksAndKnives} pares</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-zinc-50 border-zinc-200/70'}`}>
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-4 flex items-center gap-2">
+                        <Wine className="w-4 h-4 text-zinc-400" /> Copos & Taças
+                      </h3>
+                      <div className="space-y-3 text-xs">
+                        <div className="flex justify-between py-2 border-b border-zinc-200/60 dark:border-zinc-800">
+                          <span className="text-zinc-600 dark:text-zinc-400">Copos / Taças de Água</span>
+                          <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.waterGlasses} un</strong>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-zinc-200/60 dark:border-zinc-800">
+                          <span className="text-zinc-600 dark:text-zinc-400">Tulipas de Chopp</span>
+                          <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.beerTulips} un</strong>
+                        </div>
+                        <div className="flex justify-between py-2">
+                          <span className="text-zinc-600 dark:text-zinc-400">Guardanapos</span>
+                          <strong className="text-zinc-900 dark:text-zinc-100">{stats.confirmedCount * 8} folhas</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-zinc-50 border-zinc-200/70'}`}>
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-4 flex items-center gap-2">
+                        <Flame className="w-4 h-4 text-zinc-400" /> Rechauds & Mesas
+                      </h3>
+                      <div className="space-y-3 text-xs">
+                        <div className="flex justify-between py-2 border-b border-zinc-200/60 dark:border-zinc-800">
+                          <span className="text-zinc-600 dark:text-zinc-400">Rechauds Inox (Sincronizado)</span>
+                          <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.rechauds} cubas</strong>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-zinc-200/60 dark:border-zinc-800">
+                          <span className="text-zinc-600 dark:text-zinc-400">Pastilhas Álcool Gel ({config.durationHours}h)</span>
+                          <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.fuelPastesNeeded} un</strong>
+                        </div>
+                        <div className="flex justify-between py-2">
+                          <span className="text-zinc-600 dark:text-zinc-400">Jogos de Mesas ({config.tableCapacity} lug.)</span>
+                          <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.guestTablesNeeded} jogos</strong>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          )}
+
+          {/* ============================================================ */}
+          {/* SEÇÃO 5: CENTRO DE CUSTOS */}
+          {/* ============================================================ */}
+          {activeTab === 'finance' && (
+            <div className="space-y-6">
+              <div className={`p-5 rounded-3xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-base font-bold tracking-tight">Centro de Custos Integrado & Sincronizado</h2>
+                    <p className="text-xs text-zinc-500 mt-1">
+                      Custo Real com Confirmados: <strong>R$ {budget.grandTotalConfirmed.toLocaleString('pt-BR')}</strong> | Se Todos Forem: <strong>R$ {budget.grandTotalAll.toLocaleString('pt-BR')}</strong>
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50">
+                      Economia RSVP: <strong>R$ {budget.rsvpSavings.toLocaleString('pt-BR')}</strong>
+                    </span>
+                    <button
+                      onClick={() => handleOpenExpenseModal(null)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Adicionar Despesa Manual</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-5 space-y-4">
+                  <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Custos Sincronizados em Tempo Real (Base Salvador):</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+                    <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800">
+                      <span className="text-zinc-400 block text-[11px]">Locações & Espaço</span>
+                      <strong className="text-base block mt-1">R$ {budget.rentalsCost.toLocaleString('pt-BR')}</strong>
+                      <span className="text-[10px] text-zinc-500">{rentals.length} itens cadastrados</span>
+                    </div>
+                    <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800">
+                      <span className="text-zinc-400 block text-[11px]">Buffet (Receitas & Carnes)</span>
+                      <strong className="text-base block mt-1 text-emerald-600 dark:text-emerald-400">R$ {budget.foodCostConfirmed.toLocaleString('pt-BR')}</strong>
+                      <span className="text-[10px] text-zinc-500">Se todos forem: R$ {budget.foodCostAll.toLocaleString('pt-BR')}</span>
+                    </div>
+                    <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800">
+                      <span className="text-zinc-400 block text-[11px]">Bebidas Detalhadas & Gelo</span>
+                      <strong className="text-base block mt-1 text-amber-600 dark:text-amber-400">R$ {budget.beveragesCostConfirmed.toLocaleString('pt-BR')}</strong>
+                      <span className="text-[10px] text-zinc-500">Se todos forem: R$ {budget.beveragesCostAll.toLocaleString('pt-BR')}</span>
+                    </div>
+                    <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800">
+                      <span className="text-zinc-400 block text-[11px]">Louças, Rechauds & Mesas</span>
+                      <strong className="text-base block mt-1">R$ {budget.tablewareCostConfirmed.toLocaleString('pt-BR')}</strong>
+                      <span className="text-[10px] text-zinc-500">{config.materialMode === 'rental' ? 'Modo Aluguel' : 'Descartáveis'}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-4">
+                    <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Despesas Manuais & Contratações Extras:</h4>
+                    <span className="text-xs text-zinc-500 font-medium">Subtotal Manual: R$ {budget.manualTotalActual.toLocaleString('pt-BR')}</span>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className={`border-b ${darkMode ? 'border-zinc-800 text-zinc-400' : 'border-zinc-200 text-zinc-500'}`}>
+                        <tr>
+                          <th className="pb-2.5 font-medium">Descrição</th>
+                          <th className="pb-2.5 font-medium">Categoria</th>
+                          <th className="pb-2.5 font-medium">Previsto</th>
+                          <th className="pb-2.5 font-medium">Real / Pago</th>
+                          <th className="pb-2.5 font-medium">Status</th>
+                          <th className="pb-2.5 font-medium text-right">Ação</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                        {manualExpenses.map(expense => (
+                          <tr key={expense.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40">
+                            <td className="py-3 font-semibold text-zinc-900 dark:text-zinc-100">{expense.description}</td>
+                            <td className="py-3 text-zinc-500">{expense.category}</td>
+                            <td className="py-3 text-zinc-600 dark:text-zinc-300">R$ {Number(expense.estimated || 0).toLocaleString('pt-BR')}</td>
+                            <td className="py-3 font-bold text-zinc-900 dark:text-zinc-100">
+                              R$ {Number(expense.actual || expense.estimated || 0).toLocaleString('pt-BR')}
+                            </td>
+                            <td className="py-3">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                                expense.paid ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400'
+                              }`}>
+                                {expense.paid ? 'Pago' : 'Pendente'}
+                              </span>
+                            </td>
+                            <td className="py-3 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => handleOpenExpenseModal(expense)}
+                                  className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                                  title="Editar despesa"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteExpense(expense.id)}
+                                  className="p-1 rounded text-zinc-400 hover:text-rose-600"
+                                  title="Excluir"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ============================================================ */}
+          {/* SEÇÃO 6: CHECKLIST & LINHA DO TEMPO */}
+          {/* ============================================================ */}
+          {activeTab === 'checklist' && (
+            <div className="space-y-6">
+              <div className={`p-5 rounded-3xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
+                <h2 className="text-base font-bold tracking-tight">Linha do Tempo & Tarefas</h2>
+                <p className="text-xs text-zinc-500 mt-1 mb-4">
+                  {stats.completedChecklist} de {checklist.length} concluídas ({stats.checklistProgress}%)
+                </p>
+
+                <div className="space-y-2.5">
+                  {checklist.map(task => (
+                    <div
+                      key={task.id}
+                      onClick={() => toggleChecklist(task.id)}
+                      className={`p-3 rounded-2xl border text-xs flex items-center justify-between cursor-pointer transition ${
+                        task.completed
+                          ? 'bg-zinc-50/60 dark:bg-zinc-900/20 border-zinc-200/50 dark:border-zinc-800/50 opacity-60'
+                          : darkMode
+                          ? 'bg-zinc-900/60 border-zinc-800 hover:border-zinc-700'
+                          : 'bg-white border-zinc-200/80 hover:border-zinc-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center transition ${
+                          task.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-zinc-300 dark:border-zinc-600'
+                        }`}>
+                          {task.completed && <Check className="w-3 h-3 stroke-[3]" />}
+                        </div>
+                        <span className={`font-medium ${task.completed ? 'line-through text-zinc-400' : 'text-zinc-800 dark:text-zinc-200'}`}>
+                          {task.title}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-zinc-400 shrink-0 ml-3">{task.period}</span>
                     </div>
                   ))}
-                  {editingIngredients.length === 0 && (
-                    <p className="text-[11px] text-zinc-400 italic py-2 text-center">Nenhum ingrediente adicionado. Clique no botão acima para incluir.</p>
-                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ============================================================ */}
+          {/* SEÇÃO 7: CONFIGURAÇÕES DO EVENTO */}
+          {/* ============================================================ */}
+          {activeTab === 'config' && (
+            <div className="space-y-6">
+              <div className={`p-5 rounded-3xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-base font-bold tracking-tight">Parâmetros Gerais do Evento</h2>
+                    <p className="text-xs text-zinc-500 mt-0.5">Configure aniversariante, local e regras da festa</p>
+                  </div>
+                  <button
+                    onClick={() => setEventEditModalOpen(true)}
+                    className="px-3 py-1.5 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium flex items-center gap-1.5"
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Ajustar Horário & Data</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Nome do Aniversariante</label>
+                    <input
+                      type="text"
+                      value={config.celebrantName}
+                      onChange={(e) => setConfig({ ...config, celebrantName: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Idade Comemorada</label>
+                    <input
+                      type="number"
+                      value={config.age}
+                      onChange={(e) => setConfig({ ...config, age: Number(e.target.value) })}
+                      className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Data da Festa</label>
+                    <input
+                      type="date"
+                      value={config.date}
+                      onChange={(e) => setConfig({ ...config, date: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Duração Total (horas)</label>
+                    <input
+                      type="number"
+                      value={config.durationHours}
+                      onChange={(e) => setConfig({ ...config, durationHours: Number(e.target.value) })}
+                      className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Tipo de Local</label>
+                    <select
+                      value={config.locationType}
+                      onChange={(e) => setConfig({ ...config, locationType: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                    >
+                      <option value="home">Espaço Próprio / Condomínio</option>
+                      <option value="rented">Espaço / Salão Locado</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Nome do Salão / Local</label>
+                    <input
+                      type="text"
+                      value={config.venueName}
+                      onChange={(e) => setConfig({ ...config, venueName: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Endereço Completo</label>
+                    <input
+                      type="text"
+                      value={config.venueAddress}
+                      onChange={(e) => setConfig({ ...config, venueAddress: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+        </main>
+      </div>
+
+      {/* ============================================================ */}
+      {/* MODAL ESPECIAL: EDIÇÃO RÁPIDA DE HORÁRIO E DATA DA FESTA */}
+      {/* ============================================================ */}
+      {eventEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className={`w-full max-w-md rounded-3xl border p-6 shadow-2xl ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-emerald-500" />
+                <h3 className="text-sm font-bold">Editar Programação & Horário</h3>
+              </div>
+              <button onClick={() => setEventEditModalOpen(false)} className="text-zinc-400 hover:text-zinc-600 text-xs">✕</button>
+            </div>
+
+            <p className="text-xs text-zinc-500 mb-4">
+              Os horários calculam automaticamente a duração do evento, ajustando o volume de cerveja, gelo e queima das pastilhas de rechaud.
+            </p>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const form = e.target;
+              const startTime = form.startTime.value;
+              const endTime = form.endTime.value;
+              const date = form.date.value;
+
+              // Calcula a duração em horas automaticamente com base nos horários
+              let duration = Number(config.durationHours) || 5;
+              try {
+                const [startH, startM] = startTime.split(':').map(Number);
+                const [endH, endM] = endTime.split(':').map(Number);
+                let diff = (endH + endM / 60) - (startH + startM / 60);
+                if (diff <= 0) diff += 24; // caso passe da meia-noite
+                duration = Math.round(diff * 10) / 10;
+              } catch (_) {}
+
+              setConfig({
+                ...config,
+                date,
+                startTime,
+                endTime,
+                durationHours: duration
+              });
+              setEventEditModalOpen(false);
+              showToast(`Horário atualizado para ${startTime} às ${endTime} (${duration}h de festa)!`);
+            }} className="space-y-4 text-xs">
+              
+              <div>
+                <label className="block text-zinc-500 mb-1">Data da Comemoração</label>
+                <input
+                  type="date"
+                  name="date"
+                  defaultValue={config.date}
+                  required
+                  className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs font-semibold"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-zinc-500 mb-1">Início da Festa</label>
+                  <input
+                    type="time"
+                    name="startTime"
+                    defaultValue={config.startTime}
+                    required
+                    className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-500 mb-1">Término da Festa</label>
+                  <input
+                    type="time"
+                    name="endTime"
+                    defaultValue={config.endTime}
+                    required
+                    className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs font-semibold"
+                  />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-800">
-                <button type="button" onClick={() => setMenuModalOpen(false)} className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700">Cancelar</button>
-                <button type="submit" className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium">Salvar Prato</button>
+              <div className="p-3 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/60 text-[11px] text-emerald-800 dark:text-emerald-300">
+                ✨ Dica: Ao alterar o horário de término, o consumo estimado de bebidas, água de coco, chopp e os rechauds aquecidos são recalculados automaticamente!
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setEventEditModalOpen(false)}
+                  className="px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold"
+                >
+                  Salvar Programação
+                </button>
               </div>
             </form>
           </div>
