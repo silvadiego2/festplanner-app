@@ -329,9 +329,44 @@ export default function App() {
   const [backupModalOpen, setBackupModalOpen] = useState(false);
   const [rawLocalStorageDump, setRawLocalStorageDump] = useState([]);
 
+  // PROTEÇÃO DE ACESSO AO PAINEL DO ANFITRIÃO (PIN DE SEGURANÇA)
+  const [hostPin, setHostPin] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('festplanner_host_pin') || '1234';
+    }
+    return '1234';
+  });
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('festplanner_auth') === 'true';
+    }
+    return false;
+  });
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState(false);
+
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleVerifyPin = (e) => {
+    e.preventDefault();
+    if (pinInput.trim() === hostPin) {
+      setIsAuthenticated(true);
+      sessionStorage.setItem('festplanner_auth', 'true');
+      setPinError(false);
+      showToast('Acesso de anfitrião liberado!');
+    } else {
+      setPinError(true);
+      setPinInput('');
+    }
+  };
+
+  const handleLogoutHost = () => {
+    setIsAuthenticated(false);
+    sessionStorage.removeItem('festplanner_auth');
+    showToast('Painel bloqueado com sucesso.');
   };
 
   // Carregamento do Postgres com fallback em localStorage
@@ -1032,6 +1067,61 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
         <div className="flex items-center gap-2 text-zinc-500 text-sm">
           <Cake className="w-5 h-5 animate-spin text-emerald-600" />
           <span>Carregando FestPlanner Pro Salvador...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // TELA DE BLOQUEIO CASO O CONVIDADO APAGUE /rsvp DA URL
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
+        <div className="w-full max-w-sm rounded-3xl border border-zinc-800 bg-zinc-900/90 backdrop-blur-md p-6 sm:p-8 text-center shadow-2xl">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <Cake className="w-6 h-6 text-white" />
+          </div>
+          <h2 className="text-base font-bold text-white tracking-tight">Painel Exclusivo do Anfitrião</h2>
+          <p className="text-xs text-zinc-400 mt-1 mb-5">
+            Área restrita de gestão de custos e convidados. Insira seu PIN para acessar:
+          </p>
+
+          <form onSubmit={handleVerifyPin} className="space-y-3">
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={8}
+              autoFocus
+              value={pinInput}
+              onChange={(e) => {
+                setPinInput(e.target.value);
+                setPinError(false);
+              }}
+              placeholder="Digite o PIN (Padrão: 1234)"
+              className={`w-full px-4 py-2.5 rounded-xl bg-zinc-950 border text-center text-sm font-mono tracking-widest text-white outline-none transition ${
+                pinError ? 'border-rose-500 text-rose-300' : 'border-zinc-800 focus:border-emerald-500'
+              }`}
+            />
+            {pinError && (
+              <p className="text-[11px] text-rose-400 font-medium animate-shake">
+                PIN incorreto. Tente novamente.
+              </p>
+            )}
+            <button
+              type="submit"
+              className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-md"
+            >
+              Acessar Painel
+            </button>
+          </form>
+
+          <div className="mt-6 pt-4 border-t border-zinc-800/80">
+            <a
+              href="/rsvp"
+              className="text-xs text-zinc-400 hover:text-emerald-400 transition underline"
+            >
+              É um convidado? Clique aqui para o Convite & RSVP
+            </a>
+          </div>
         </div>
       </div>
     );
@@ -1971,17 +2061,42 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-zinc-500 mb-1">Tema / Estilo da Festa</label>
+                  <label className="block text-zinc-500 mb-1">Título da Comemoração / Subtítulo do Convite</label>
                   <input
                     type="text"
                     value={config.theme}
-                    placeholder="Ex: Sunset Chic & Boteco Moderno"
+                    placeholder="Ex: Aniversário de 36 anos, B-Day Sunset, Boteco do Diego..."
                     onChange={(e) => setConfig({ ...config, theme: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent font-medium text-emerald-600 dark:text-emerald-400"
                   />
                   <span className="text-[10px] text-zinc-400 mt-0.5 block">
-                    Este texto aparece com destaque no cartão do convite digital que o convidado acessa.
+                    Este texto aparece com destaque logo abaixo do seu nome no convite digital (/rsvp).
                   </span>
+                </div>
+                <div>
+                  <label className="block text-zinc-500 mb-1">PIN de Proteção do Painel (Senha de Acesso)</label>
+                  <input
+                    type="text"
+                    value={hostPin}
+                    onChange={(e) => {
+                      setHostPin(e.target.value);
+                      localStorage.setItem('festplanner_host_pin', e.target.value);
+                    }}
+                    placeholder="Ex: 1234"
+                    className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent font-mono tracking-widest text-emerald-600 dark:text-emerald-400"
+                  />
+                  <span className="text-[10px] text-zinc-400 mt-0.5 block">
+                    Bloqueia convidados curiosos que apagarem /rsvp da URL.
+                  </span>
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={handleLogoutHost}
+                    type="button"
+                    className="w-full py-2 px-3 rounded-xl border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-medium transition"
+                  >
+                    Bloquear Painel Agora (Testar PIN)
+                  </button>
                 </div>
                 <div>
                   <label className="block text-zinc-500 mb-1">Nome do Espaço</label>
