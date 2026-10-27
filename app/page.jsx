@@ -2991,22 +2991,66 @@ Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')
       {rsvpSimModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className={`w-full max-w-sm rounded-2xl border p-5 shadow-xl ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
-            <h3 className="text-sm font-semibold mb-1">Link de RSVP</h3>
-            <p className="text-xs text-zinc-500 mb-4">Compartilhe o endereço com seus convidados.</p>
-            <div className="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 text-[11px] font-mono break-all mb-4">
-              https://festplanner.app/rsvp/{encodeURIComponent((config.celebrantName || 'festa').toLowerCase().replace(/\s+/g, '-'))}
-            </div>
-            <div className="flex justify-end gap-2">
+            <h3 className="text-sm font-semibold mb-1">Link de RSVP para Convidados</h3>
+            <p className="text-xs text-zinc-500 mb-3">
+              Envie este link para seus convidados no WhatsApp ou redes sociais para que eles confirmem presença diretamente pelo celular:
+            </p>
+
+            {/* URL DINÂMICA REAL (VERCEL OU LOCALHOST) */}
+            {(() => {
+              const currentUrl = typeof window !== 'undefined'
+                ? `${window.location.origin}/rsvp`
+                : 'https://seu-app.vercel.app/rsvp';
+
+              return (
+                <div className="space-y-3 mb-4">
+                  <div className="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 text-[11px] font-mono break-all select-all text-emerald-600 dark:text-emerald-400 font-semibold">
+                    {currentUrl}
+                  </div>
+
+                  <div className="flex justify-center p-3 bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(currentUrl)}`}
+                      alt="QR Code do RSVP"
+                      className="w-32 h-32 rounded-lg"
+                    />
+                  </div>
+                  <span className="block text-[10px] text-zinc-400 text-center">
+                    Aponte a câmera do celular para testar ou imprimir no convite!
+                  </span>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                          navigator.clipboard.writeText(currentUrl);
+                          showToast('Link copiado para a área de transferência!');
+                        }
+                      }}
+                      className="flex-1 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium"
+                    >
+                      Copiar Link
+                    </button>
+                    <a
+                      href={currentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 text-xs font-medium flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    >
+                      Abrir Página
+                    </a>
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div className="flex justify-end pt-2 border-t border-zinc-100 dark:border-zinc-800">
               <button
-                onClick={() => {
-                  showToast('Link copiado!');
-                  setRsvpSimModalOpen(false);
-                }}
-                className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium"
+                onClick={() => setRsvpSimModalOpen(false)}
+                className="px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 text-xs"
               >
-                Copiar Link
+                Fechar
               </button>
-              <button onClick={() => setRsvpSimModalOpen(false)} className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 text-xs">Fechar</button>
             </div>
           </div>
         </div>
