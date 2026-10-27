@@ -27,8 +27,33 @@ import {
   TrendingUp,
   Building,
   Cake,
-  Boxes
+  ArrowUpDown,
+  BookOpen,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
+
+// --- OPÇÕES PREDEFINIDAS DE GRUPOS E RESTRIÇÕES ---
+const PRESET_GROUPS = [
+  'Família',
+  'Amigos Próximos',
+  'Trabalho / Colegas',
+  'Esposa / Marido / Cônjuge',
+  'Acompanhante / Namorado(a)',
+  'Vizinhos',
+  'Crianças / Filhos de Amigos'
+];
+
+const PRESET_RESTRICTIONS = [
+  'Sem restrições',
+  'Vegetariano',
+  'Vegano',
+  'Sem glúten (Celíaco)',
+  'Sem lactose',
+  'Sem frutos do mar',
+  'Não consome carne vermelha',
+  'Não consome carne de porco'
+];
 
 // --- DADOS INICIAIS DE DEMONSTRAÇÃO ---
 const INITIAL_EVENT_CONFIG = {
@@ -51,7 +76,6 @@ const INITIAL_EVENT_CONFIG = {
   venueMapUrl: "https://maps.google.com",
   venueContact: "(71) 98765-4321 - Paula",
   serviceType: "buffet", // 'buffet' | 'alacarte' | 'churrasco' | 'fingerfood'
-  hotDishesCount: 4,
   servesBeer: true,
   servesWine: true,
   safetyMarginPct: 15,
@@ -59,19 +83,32 @@ const INITIAL_EVENT_CONFIG = {
   tableCapacity: 4
 };
 
+const INITIAL_MENU = [
+  { id: '1', name: 'Dadinhos de Tapioca com Geléia de Pimenta', category: 'starter', isHot: true },
+  { id: '2', name: 'Mini Coxinhas e Quibes Artesanais', category: 'starter', isHot: true },
+  { id: '3', name: 'Costela Suína com Barbecue de Goiabada', category: 'main', isHot: true },
+  { id: '4', name: 'Filé Mignon ao Molho Madeira e Champignon', category: 'main', isHot: true },
+  { id: '5', name: 'Arroz Biro-Biro Especial', category: 'side', isHot: true },
+  { id: '6', name: 'Farofa Crocante de Castanhas', category: 'side', isHot: false },
+  { id: '7', name: 'Mix de Folhas com Redução Balsâmica', category: 'side', isHot: false },
+  { id: '8', name: 'Bolo Trufado Red Velvet', category: 'dessert', isHot: false },
+  { id: '9', name: 'Brigadeiros Gourmet e Beijinhos de Coco', category: 'dessert', isHot: false },
+  { id: '10', name: 'Chopp Pilsen Artesanal e Caipirinhas', category: 'drink', isHot: false }
+];
+
 const INITIAL_GUESTS = [
-  { id: '1', name: 'Carlos Eduardo', group: 'Amigos', category: 'adult', status: 'confirmed', drinksAlcohol: true, restrictions: 'Sem restrições' },
-  { id: '2', name: 'Fernanda Lima', group: 'Família', category: 'adult', status: 'confirmed', drinksAlcohol: false, restrictions: 'Vegetariana' },
-  { id: '3', name: 'Lucas Lima (Filho)', group: 'Família', category: 'child_6_11', status: 'confirmed', drinksAlcohol: false, restrictions: 'Sem restrições' },
-  { id: '4', name: 'Beatriz Costa', group: 'Trabalho', category: 'adult', status: 'confirmed', drinksAlcohol: true, restrictions: 'Sem glúten' },
-  { id: '5', name: 'Rodrigo Alves', group: 'Amigos', category: 'adult', status: 'pending', drinksAlcohol: true, restrictions: 'Sem restrições' },
-  { id: '6', name: 'Juliana Pires', group: 'Amigos', category: 'adult', status: 'declined', drinksAlcohol: true, restrictions: 'Sem restrições' },
-  { id: '7', name: 'Gabriel Pires (Bebê)', group: 'Amigos', category: 'child_0_5', status: 'confirmed', drinksAlcohol: false, restrictions: 'Sem restrições' }
+  { id: '1', name: 'Carlos Eduardo', group: 'Amigos Próximos', category: 'adult', status: 'confirmed', drinksAlcohol: true, restrictions: ['Sem restrições'] },
+  { id: '2', name: 'Fernanda Lima', group: 'Família', category: 'adult', status: 'confirmed', drinksAlcohol: false, restrictions: ['Vegetariana', 'Sem lactose'] },
+  { id: '3', name: 'Lucas Lima (Filho)', group: 'Família', category: 'child_6_11', status: 'confirmed', drinksAlcohol: false, restrictions: ['Sem restrições'] },
+  { id: '4', name: 'Beatriz Costa', group: 'Trabalho / Colegas', category: 'adult', status: 'confirmed', drinksAlcohol: true, restrictions: ['Sem glúten (Celíaco)'] },
+  { id: '5', name: 'Rodrigo Alves', group: 'Amigos Próximos', category: 'adult', status: 'pending', drinksAlcohol: true, restrictions: ['Sem restrições'] },
+  { id: '6', name: 'Juliana Pires', group: 'Esposa / Marido / Cônjuge', category: 'adult', status: 'declined', drinksAlcohol: true, restrictions: ['Não consome frutos do mar'] },
+  { id: '7', name: 'Gabriel Pires (Bebê)', group: 'Crianças / Filhos de Amigos', category: 'child_0_5', status: 'confirmed', drinksAlcohol: false, restrictions: ['Sem restrições'] }
 ];
 
 const INITIAL_EXPENSES = [
   { id: '1', description: 'Locação Salão Villa Verde', category: 'Locação Espaço', estimated: 2800, actual: 2800, paid: true },
-  { id: '2', description: 'Carnes e Proteínas Nobres', category: 'Buffet & Comidas', estimated: 1400, actual: 1250, paid: true },
+  { id: '2', description: 'Carnes e Proteínas Nobres (Filé e Costela)', category: 'Buffet & Comidas', estimated: 1400, actual: 1250, paid: true },
   { id: '3', description: 'Chopp Artesanal & Cervejas', category: 'Bebidas & Gelo', estimated: 950, actual: 920, paid: true },
   { id: '4', description: 'Bolo Decorado & Docinhos Finos', category: 'Confeitaria', estimated: 650, actual: 650, paid: false },
   { id: '5', description: 'Aluguel de Rechauds e Louças', category: 'Aluguel Materiais', estimated: 420, actual: 400, paid: true },
@@ -82,18 +119,19 @@ const INITIAL_RENTALS = [
   { id: '1', name: 'Salão Villa Verde', category: 'venue', cost: 2800, supplier: 'Espaço Villa Verde', notes: 'Incluso limpeza pós-evento' },
   { id: '2', name: 'Cama Elástica 3,05m', category: 'toy', cost: 350, supplier: 'Tio Pipoca Festas', hasMonitor: true, notes: 'Montagem 1h antes com monitor' },
   { id: '3', name: '10 Jogos de Mesas e Cadeiras', category: 'furniture', cost: 220, supplier: 'LocMóveis Eventos', notes: 'Entrega na sexta-feira à tarde' },
-  { id: '4', name: 'Kit 4 Rechauds Inox com Cubas', category: 'furniture', cost: 180, supplier: 'LocMóveis Eventos', notes: 'Devolução limpo' }
+  { id: '4', name: 'Kit Rechauds Inox com Cubas', category: 'furniture', cost: 180, supplier: 'LocMóveis Eventos', notes: 'Devolução limpo' }
 ];
 
 const INITIAL_CHECKLIST = [
   { id: '1', title: 'Definir tema, estilo e data oficial', period: '45 dias antes', completed: true },
   { id: '2', title: 'Reservar local ou salão de festas', period: '45 dias antes', completed: true },
-  { id: '3', title: 'Contratar brinquedos infláveis e monitores', period: '20 dias antes', completed: true },
-  { id: '4', title: 'Disparar convites e link de RSVP', period: '20 dias antes', completed: true },
-  { id: '5', title: 'Fechar aluguel de louças, taças e rechauds', period: '15 dias antes', completed: false },
-  { id: '6', title: 'Comprar bebidas não perecíveis e descartáveis', period: '7 dias antes', completed: false },
-  { id: '7', title: 'Confirmar entrega de gelo filtrado e carnes', period: '3 dias antes', completed: false },
-  { id: '8', title: 'Montar buffet e testar acendimento dos rechauds', period: 'No dia da festa', completed: false }
+  { id: '3', title: 'Estruturar o cardápio e pratos quentes', period: '30 dias antes', completed: true },
+  { id: '4', title: 'Contratar brinquedos infláveis e monitores', period: '20 dias antes', completed: true },
+  { id: '5', title: 'Disparar convites e link de RSVP', period: '20 dias antes', completed: true },
+  { id: '6', title: 'Fechar aluguel de louças, taças e rechauds', period: '15 dias antes', completed: false },
+  { id: '7', title: 'Comprar bebidas não perecíveis e descartáveis', period: '7 dias antes', completed: false },
+  { id: '8', title: 'Confirmar entrega de gelo filtrado e carnes', period: '3 dias antes', completed: false },
+  { id: '9', title: 'Montar buffet e testar acendimento dos rechauds', period: 'No dia da festa', completed: false }
 ];
 
 export default function App() {
@@ -102,6 +140,12 @@ export default function App() {
     if (typeof window === 'undefined') return INITIAL_EVENT_CONFIG;
     const saved = localStorage.getItem('festplanner_config');
     return saved ? JSON.parse(saved) : INITIAL_EVENT_CONFIG;
+  });
+
+  const [menu, setMenu] = useState(() => {
+    if (typeof window === 'undefined') return INITIAL_MENU;
+    const saved = localStorage.getItem('festplanner_menu');
+    return saved ? JSON.parse(saved) : INITIAL_MENU;
   });
 
   const [guests, setGuests] = useState(() => {
@@ -132,17 +176,34 @@ export default function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
-  // Modais
+  // Ordenação de convidados
+  const [guestSortField, setGuestSortField] = useState('name');
+  const [guestSortAsc, setGuestSortAsc] = useState(true);
+
+  // Modais de Criação & Edição
   const [guestModalOpen, setGuestModalOpen] = useState(false);
   const [editingGuest, setEditingGuest] = useState(null);
+  const [selectedRestrictions, setSelectedRestrictions] = useState(['Sem restrições']);
+
   const [rsvpSimModalOpen, setRsvpSimModalOpen] = useState(false);
+
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState(null);
+
   const [rentalModalOpen, setRentalModalOpen] = useState(false);
+  const [editingRental, setEditingRental] = useState(null);
+
+  const [menuModalOpen, setMenuModalOpen] = useState(false);
+  const [editingMenuItem, setEditingMenuItem] = useState(null);
 
   // Salvar no localStorage
   useEffect(() => {
     localStorage.setItem('festplanner_config', JSON.stringify(config));
   }, [config]);
+
+  useEffect(() => {
+    localStorage.setItem('festplanner_menu', JSON.stringify(menu));
+  }, [menu]);
 
   useEffect(() => {
     localStorage.setItem('festplanner_guests', JSON.stringify(guests));
@@ -165,7 +226,7 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // --- CÁLCULOS PRINCIPAIS BASEADOS EM CONFIRMADOS ---
+  // --- CÁLCULOS PRINCIPAIS BASEADOS EM CONFIRMADOS & CARDÁPIO ---
   const stats = useMemo(() => {
     const totalGuests = guests.length;
     const confirmedList = guests.filter(g => g.status === 'confirmed');
@@ -203,6 +264,9 @@ export default function App() {
     const diffTime = eventDate - today;
     const daysUntilEvent = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
+    // Cardápio & Pratos Quentes
+    const hotDishesInMenu = menu.filter(item => item.isHot).length;
+
     return {
       totalGuests,
       confirmedCount: confirmedList.length,
@@ -220,19 +284,21 @@ export default function App() {
       checklistProgress,
       pendingUrgentTasks,
       daysUntilEvent,
-      categoryTotals
+      categoryTotals,
+      hotDishesInMenu
     };
-  }, [guests, expenses, checklist, config.date]);
+  }, [guests, expenses, checklist, config.date, menu]);
 
-  // Cálculos de Comidas e Bebidas
+  // Cálculos de Comidas e Bebidas integrados ao cardápio
   const calculatedFoodAndBeverages = useMemo(() => {
     const eaters = stats.weightedEaters;
     const drinkers = stats.alcoholDrinkers;
     const hours = Number(config.durationHours) || 5;
 
+    // Se o serviço for churrasco ou fingerfood ajustamos a cota
     const meatPerPersonKg = config.serviceType === 'churrasco' ? 0.38 : 0.25;
     const totalMeatKg = Math.round(eaters * meatPerPersonKg * 10) / 10;
-    const sidesKg = Math.round(eaters * 0.2 * 10) / 10;
+    const sidesKg = Math.round(eaters * 0.22 * 10) / 10;
     const totalSalgados = Math.round(eaters * (config.serviceType === 'fingerfood' ? 20 : 12));
     const cakeKg = Math.round(stats.confirmedCount * 0.1 * 10) / 10;
     const docinhos = Math.round(stats.confirmedCount * 5);
@@ -262,7 +328,7 @@ export default function App() {
     };
   }, [stats, config.durationHours, config.serviceType]);
 
-  // Cálculos de Louças, Rechauds e Mobiliário
+  // Cálculos de Louças, Rechauds (baseados nos pratos quentes do menu) e Mobiliário
   const calculatedMaterials = useMemo(() => {
     const confirmed = stats.confirmedCount;
     const safety = 1 + ((Number(config.safetyMarginPct) || 15) / 100);
@@ -274,9 +340,11 @@ export default function App() {
     const waterGlasses = Math.ceil(confirmed * 1.5 * safety);
     const beerTulips = Math.ceil(stats.alcoholDrinkers * 2 * safety);
 
-    const rechauds = Number(config.hotDishesCount) || 4;
+    // Rechauds determinados dinamicamente pelo número de pratos quentes no cardápio
+    const rechauds = Math.max(1, stats.hotDishesInMenu || 4);
     const durationHours = Number(config.durationHours) || 5;
-    const fuelPastesNeeded = Math.ceil(rechauds * (durationHours / 2.5));
+    // Cada pastilha de álcool gel dura cerca de 2h a 2.5h
+    const fuelPastesNeeded = Math.ceil(rechauds * (durationHours / 2));
 
     const capacity = Number(config.tableCapacity) || 4;
     const guestTablesNeeded = Math.ceil(confirmed / capacity);
@@ -294,24 +362,92 @@ export default function App() {
       guestTablesNeeded,
       guestChairsNeeded
     };
-  }, [stats.confirmedCount, stats.alcoholDrinkers, config.safetyMarginPct, config.hotDishesCount, config.durationHours, config.tableCapacity]);
+  }, [stats.confirmedCount, stats.alcoholDrinkers, stats.hotDishesInMenu, config.safetyMarginPct, config.durationHours, config.tableCapacity]);
 
-  // --- HANDLERS ---
+  // Lista ordenada de convidados
+  const sortedGuests = useMemo(() => {
+    return [...guests].sort((a, b) => {
+      let valA = a[guestSortField];
+      let valB = b[guestSortField];
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
+
+      if (valA < valB) return guestSortAsc ? -1 : 1;
+      if (valA > valB) return guestSortAsc ? 1 : -1;
+      return 0;
+    });
+  }, [guests, guestSortField, guestSortAsc]);
+
+  const handleSortToggle = (field) => {
+    if (guestSortField === field) {
+      setGuestSortAsc(!guestSortAsc);
+    } else {
+      setGuestSortField(field);
+      setGuestSortAsc(true);
+    }
+  };
+
+  // --- HANDLERS DE CONVIDADOS ---
+  const openGuestModal = (guest = null) => {
+    setEditingGuest(guest);
+    if (guest) {
+      const rest = Array.isArray(guest.restrictions) 
+        ? guest.restrictions 
+        : typeof guest.restrictions === 'string' 
+        ? [guest.restrictions] 
+        : ['Sem restrições'];
+      setSelectedRestrictions(rest);
+    } else {
+      setSelectedRestrictions(['Sem restrições']);
+    }
+    setGuestModalOpen(true);
+  };
+
+  const handleToggleRestriction = (r) => {
+    if (r === 'Sem restrições') {
+      setSelectedRestrictions(['Sem restrições']);
+      return;
+    }
+    let updated = selectedRestrictions.filter(item => item !== 'Sem restrições');
+    if (updated.includes(r)) {
+      updated = updated.filter(item => item !== r);
+      if (updated.length === 0) updated = ['Sem restrições'];
+    } else {
+      updated.push(r);
+    }
+    setSelectedRestrictions(updated);
+  };
+
   const handleSaveGuest = (e) => {
     e.preventDefault();
     const form = e.target;
     const name = form.name.value.trim();
     if (!name) return;
 
-    const group = form.group.value.trim() || 'Geral';
+    const group = form.group.value.trim() || 'Família';
     const category = form.category.value;
     const status = form.status.value;
     const drinksAlcohol = form.drinksAlcohol.checked;
-    const restrictions = form.restrictions.value.trim() || 'Sem restrições';
+    const customRestriction = form.customRestriction?.value?.trim();
+
+    let finalRestrictions = [...selectedRestrictions];
+    if (customRestriction) {
+      finalRestrictions = finalRestrictions.filter(item => item !== 'Sem restrições');
+      finalRestrictions.push(customRestriction);
+    }
+    if (finalRestrictions.length === 0) finalRestrictions = ['Sem restrições'];
 
     if (editingGuest) {
-      setGuests(guests.map(g => g.id === editingGuest.id ? { ...g, name, group, category, status, drinksAlcohol, restrictions } : g));
-      showToast('Convidado atualizado!');
+      setGuests(guests.map(g => g.id === editingGuest.id ? {
+        ...g,
+        name,
+        group,
+        category,
+        status,
+        drinksAlcohol,
+        restrictions: finalRestrictions
+      } : g));
+      showToast('Convidado atualizado com sucesso!');
     } else {
       const newGuest = {
         id: Date.now().toString(),
@@ -320,10 +456,10 @@ export default function App() {
         category,
         status,
         drinksAlcohol,
-        restrictions
+        restrictions: finalRestrictions
       };
       setGuests([...guests, newGuest]);
-      showToast('Convidado adicionado!');
+      showToast('Convidado adicionado à lista!');
     }
 
     setGuestModalOpen(false);
@@ -335,27 +471,86 @@ export default function App() {
     showToast('Convidado removido.');
   };
 
-  const handleAddExpense = (e) => {
+  // --- HANDLERS DO CARDÁPIO ---
+  const openMenuModal = (item = null) => {
+    setEditingMenuItem(item);
+    setMenuModalOpen(true);
+  };
+
+  const handleSaveMenuItem = (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const name = form.name.value.trim();
+    const category = form.category.value;
+    const isHot = form.isHot.checked;
+
+    if (!name) return;
+
+    if (editingMenuItem) {
+      setMenu(menu.map(m => m.id === editingMenuItem.id ? { ...m, name, category, isHot } : m));
+      showToast('Item do cardápio atualizado!');
+    } else {
+      const newItem = {
+        id: Date.now().toString(),
+        name,
+        category,
+        isHot
+      };
+      setMenu([...menu, newItem]);
+      showToast('Prato adicionado ao cardápio!');
+    }
+
+    setMenuModalOpen(false);
+    setEditingMenuItem(null);
+  };
+
+  const handleDeleteMenuItem = (id) => {
+    setMenu(menu.filter(m => m.id !== id));
+    showToast('Item removido do cardápio.');
+  };
+
+  // --- HANDLERS DO CENTRO DE CUSTOS (CRIAR E EDITAR) ---
+  const openExpenseModal = (expense = null) => {
+    setEditingExpense(expense);
+    setExpenseModalOpen(true);
+  };
+
+  const handleSaveExpense = (e) => {
     e.preventDefault();
     const form = e.target;
     const description = form.description.value.trim();
     const category = form.category.value;
     const estimated = parseFloat(form.estimated.value) || 0;
+    const actual = parseFloat(form.actual.value) || 0;
+    const paid = form.paid.checked;
 
     if (!description) return;
 
-    const newExpense = {
-      id: Date.now().toString(),
-      description,
-      category,
-      estimated,
-      actual: 0,
-      paid: false
-    };
+    if (editingExpense) {
+      setExpenses(expenses.map(exp => exp.id === editingExpense.id ? {
+        ...exp,
+        description,
+        category,
+        estimated,
+        actual,
+        paid
+      } : exp));
+      showToast('Despesa atualizada com sucesso!');
+    } else {
+      const newExpense = {
+        id: Date.now().toString(),
+        description,
+        category,
+        estimated,
+        actual,
+        paid
+      };
+      setExpenses([...expenses, newExpense]);
+      showToast('Despesa cadastrada!');
+    }
 
-    setExpenses([...expenses, newExpense]);
     setExpenseModalOpen(false);
-    showToast('Despesa registrada!');
+    setEditingExpense(null);
   };
 
   const handleDeleteExpense = (id) => {
@@ -363,30 +558,51 @@ export default function App() {
     showToast('Despesa removida.');
   };
 
-  const handleAddRental = (e) => {
+  // --- HANDLERS DE LOCAÇÕES & MOBILIÁRIO (CRIAR E EDITAR) ---
+  const openRentalModal = (rental = null) => {
+    setEditingRental(rental);
+    setRentalModalOpen(true);
+  };
+
+  const handleSaveRental = (e) => {
     e.preventDefault();
     const form = e.target;
     const name = form.name.value.trim();
     const category = form.category.value;
     const cost = parseFloat(form.cost.value) || 0;
     const supplier = form.supplier.value.trim();
+    const notes = form.notes.value.trim();
     const hasMonitor = form.hasMonitor ? form.hasMonitor.checked : false;
 
     if (!name) return;
 
-    const newRental = {
-      id: Date.now().toString(),
-      name,
-      category,
-      cost,
-      supplier,
-      hasMonitor,
-      notes: ''
-    };
+    if (editingRental) {
+      setRentals(rentals.map(r => r.id === editingRental.id ? {
+        ...r,
+        name,
+        category,
+        cost,
+        supplier,
+        notes,
+        hasMonitor
+      } : r));
+      showToast('Item de locação atualizado!');
+    } else {
+      const newRental = {
+        id: Date.now().toString(),
+        name,
+        category,
+        cost,
+        supplier,
+        notes,
+        hasMonitor
+      };
+      setRentals([...rentals, newRental]);
+      showToast('Item de locação cadastrado!');
+    }
 
-    setRentals([...rentals, newRental]);
     setRentalModalOpen(false);
-    showToast('Item de locação salvo!');
+    setEditingRental(null);
   };
 
   const handleDeleteRental = (id) => {
@@ -400,6 +616,7 @@ export default function App() {
 
   const handleResetDemoData = () => {
     setConfig(INITIAL_EVENT_CONFIG);
+    setMenu(INITIAL_MENU);
     setGuests(INITIAL_GUESTS);
     setExpenses(INITIAL_EXPENSES);
     setRentals(INITIAL_RENTALS);
@@ -415,7 +632,12 @@ Data: ${config.date} | Duração: ${config.durationHours}h
 Confirmados: ${stats.confirmedCount} pessoas (${stats.weightedEaters.toFixed(1)} cotas alimentares)
 
 ========================================
-1. ALIMENTOS & BUFFET
+1. CARDÁPIO SUGERIDO E PRATOS
+========================================
+${menu.map(m => `- [${m.category.toUpperCase()}] ${m.name} ${m.isHot ? '(Requer Rechaud/Aquecimento)' : ''}`).join('\n')}
+
+========================================
+2. ALIMENTOS & BUFFET (CÁLCULO TOTAL)
 ========================================
 - Carnes/Proteínas: ${calculatedFoodAndBeverages.totalMeatKg} kg
 - Guarnições (arroz/massas/farofas): ${calculatedFoodAndBeverages.sidesKg} kg
@@ -424,7 +646,7 @@ Confirmados: ${stats.confirmedCount} pessoas (${stats.weightedEaters.toFixed(1)}
 - Docinhos Gourmet: ${calculatedFoodAndBeverages.docinhos} un
 
 ========================================
-2. BEBIDAS & GELO
+3. BEBIDAS & GELO
 ========================================
 - Água Mineral: ${calculatedFoodAndBeverages.waterLiters} Litros
 - Refrigerantes e Sucos: ${calculatedFoodAndBeverages.sodaJuiceLiters} Litros
@@ -432,15 +654,15 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
 - Gelo para tina/coolers: ${calculatedFoodAndBeverages.coolerIceBags} sacos de 5kg
 
 ========================================
-3. LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁVEIS'})
+4. LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁVEIS'})
 ========================================
 - Pratos Principais: ${calculatedMaterials.mainPlates} un
 - Pratos de Sobremesa: ${calculatedMaterials.dessertPlates} un
 - Garfos e Facas de Mesa: ${calculatedMaterials.forksAndKnives} pares
 - Copos/Taças de Água: ${calculatedMaterials.waterGlasses} un
 - Tulipas/Copos de Chopp: ${calculatedMaterials.beerTulips} un
-- Rechauds Inox com Banho-Maria: ${calculatedMaterials.rechauds} cubas
-- Pastilhas de Álcool Gel: ${calculatedMaterials.fuelPastesNeeded} un
+- Rechauds Inox com Banho-Maria: ${calculatedMaterials.rechauds} cubas (Para ${stats.hotDishesInMenu} pratos quentes)
+- Pastilhas de Álcool Gel: ${calculatedMaterials.fuelPastesNeeded} un (Para ${config.durationHours}h de evento)
 - Mesas de Convidados: ${calculatedMaterials.guestTablesNeeded} jogos (${calculatedMaterials.guestChairsNeeded} cadeiras)
 `.trim();
 
@@ -494,10 +716,7 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
               <span className="hidden sm:inline">Link RSVP</span>
             </button>
             <button
-              onClick={() => {
-                setEditingGuest(null);
-                setGuestModalOpen(true);
-              }}
+              onClick={() => openGuestModal()}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -526,9 +745,10 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
             {[
               { id: 'dashboard', label: 'Visão Geral', icon: Sparkles },
               { id: 'guests', label: 'Convidados & RSVP', icon: Users, count: stats.confirmedCount },
+              { id: 'menu', label: 'Cardápio Sugerido', icon: BookOpen, count: menu.length },
               { id: 'catering', label: 'Buffet & Louças', icon: Utensils },
-              { id: 'rentals', label: 'Locações & Espaço', icon: Gamepad2 },
-              { id: 'finance', label: 'Centro de Custos', icon: DollarSign },
+              { id: 'rentals', label: 'Locações & Espaço', icon: Gamepad2, count: rentals.length },
+              { id: 'finance', label: 'Centro de Custos', icon: DollarSign, count: expenses.length },
               { id: 'checklist', label: 'Cronograma', icon: CheckSquare, badge: `${stats.checklistProgress}%` },
               { id: 'config', label: 'Configurações', icon: Building },
             ].map(tab => {
@@ -571,7 +791,7 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24">
         
         {/* ============================================================ */}
-        {/* ABA 1: DASHBOARD MINIMALISTA E MODERNO */}
+        {/* ABA 1: DASHBOARD */}
         {/* ============================================================ */}
         {activeTab === 'dashboard' && (
           <div className="space-y-6">
@@ -612,18 +832,18 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                       {config.locationType === 'home' ? 'Espaço Próprio' : config.venueName}
                     </span>
                     <span className="flex items-center gap-1.5">
-                      <Utensils className="w-3.5 h-3.5 text-zinc-400" />
-                      {config.serviceType === 'buffet' ? 'Buffet & Rechauds' : config.serviceType === 'churrasco' ? 'Churrasco' : config.serviceType === 'fingerfood' ? 'Finger Foods' : 'À la Carte'}
+                      <BookOpen className="w-3.5 h-3.5 text-zinc-400" />
+                      {menu.length} pratos no cardápio ({stats.hotDishesInMenu} rechauds necessários)
                     </span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2.5 shrink-0">
                   <button
-                    onClick={() => setActiveTab('catering')}
+                    onClick={() => setActiveTab('menu')}
                     className="px-3.5 py-2 rounded-xl text-xs font-medium border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
                   >
-                    Calculadora Buffet
+                    Ver Cardápio
                   </button>
                   <button
                     onClick={handleExportShoppingList}
@@ -636,10 +856,9 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
               </div>
             </div>
 
-            {/* 4 CARDS DE INDICADORES (KPIS) */}
+            {/* 4 CARDS DE KPIS */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               
-              {/* Confirmados */}
               <div className={`p-4 rounded-xl border transition-all ${
                 darkMode ? 'bg-zinc-900/40 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'
               }`}>
@@ -666,7 +885,6 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                 </div>
               </div>
 
-              {/* Orçamento */}
               <div className={`p-4 rounded-xl border transition-all ${
                 darkMode ? 'bg-zinc-900/40 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'
               }`}>
@@ -698,7 +916,6 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                 </div>
               </div>
 
-              {/* Custo por pessoa */}
               <div className={`p-4 rounded-xl border transition-all ${
                 darkMode ? 'bg-zinc-900/40 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'
               }`}>
@@ -713,48 +930,44 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                   <span className="text-xs text-zinc-500 font-normal">/ pessoa</span>
                 </div>
                 <div className="mt-3 flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-2 border-t border-zinc-100 dark:border-zinc-800/60">
-                  <span>Base alimentar:</span>
+                  <span>Cota alimentar:</span>
                   <span className="font-medium text-zinc-700 dark:text-zinc-300">
                     {stats.weightedEaters.toFixed(1)} cotas
                   </span>
                 </div>
               </div>
 
-              {/* Checklist */}
               <div className={`p-4 rounded-xl border transition-all ${
                 darkMode ? 'bg-zinc-900/40 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'
               }`}>
                 <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
-                  <span>Prontidão Geral</span>
-                  <CheckSquare className="w-4 h-4 text-zinc-400" />
+                  <span>Cardápio & Rechauds</span>
+                  <Flame className="w-4 h-4 text-zinc-400" />
                 </div>
                 <div className="mt-2 flex items-baseline gap-2">
                   <span className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-                    {stats.checklistProgress}%
+                    {stats.hotDishesInMenu}
                   </span>
                   <span className="text-xs text-zinc-500 font-normal">
-                    {stats.completedChecklist} de {checklist.length} tarefas
+                    pratos quentes
                   </span>
                 </div>
-                <div className="mt-3 pt-2 border-t border-zinc-100 dark:border-zinc-800/60">
-                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-1 overflow-hidden">
-                    <div 
-                      className="bg-emerald-500 h-1 rounded-full transition-all"
-                      style={{ width: `${stats.checklistProgress}%` }}
-                    />
-                  </div>
+                <div className="mt-3 flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-2 border-t border-zinc-100 dark:border-zinc-800/60">
+                  <span>Rechauds necessários:</span>
+                  <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                    {calculatedMaterials.rechauds} cubas ({calculatedMaterials.fuelPastesNeeded} pastilhas)
+                  </span>
                 </div>
               </div>
 
             </div>
 
-            {/* GRID PRINCIPAL DO DASHBOARD */}
+            {/* SEÇÃO PRINCIPAL */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
-              {/* COLUNA ESQUERDA: RSVP E BUFFET RÁPIDO */}
               <div className="lg:col-span-2 space-y-6">
                 
-                {/* STATUS DOS CONVITES */}
+                {/* RSVP TRACKER */}
                 <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -811,34 +1024,20 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                       <div className="text-base font-semibold mt-1">{stats.declinedCount}</div>
                     </div>
                   </div>
-
-                  <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800/60 flex items-center justify-between text-xs">
-                    <span className="text-zinc-500">Restrições apontadas:</span>
-                    <div className="flex flex-wrap gap-1.5 justify-end">
-                      {Array.from(new Set(guests.filter(g => g.status === 'confirmed' && g.restrictions !== 'Sem restrições').map(g => g.restrictions))).slice(0, 3).map((r, i) => (
-                        <span key={i} className="text-[11px] px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium">
-                          {r}
-                        </span>
-                      ))}
-                      {guests.filter(g => g.status === 'confirmed' && g.restrictions !== 'Sem restrições').length === 0 && (
-                        <span className="text-zinc-400 text-xs italic">Nenhuma restrição registrada.</span>
-                      )}
-                    </div>
-                  </div>
                 </div>
 
-                {/* RESUMO RÁPIDO DO BUFFET */}
+                {/* RESUMO DO BUFFET & CARDÁPIO */}
                 <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h3 className="text-sm font-semibold tracking-tight">Cálculo Essencial de Buffet & Estrutura</h3>
-                      <p className="text-xs text-zinc-500 mt-0.5">Para {stats.confirmedCount} confirmados em {config.durationHours}h de evento</p>
+                      <p className="text-xs text-zinc-500 mt-0.5">Calculado para {stats.confirmedCount} confirmados em {config.durationHours}h</p>
                     </div>
                     <button
                       onClick={() => setActiveTab('catering')}
                       className="text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center gap-1 transition"
                     >
-                      <span>Ver calculadora completa</span>
+                      <span>Calculadora detalhada</span>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -865,19 +1064,18 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                     </div>
 
                     <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
-                      <span className="text-[11px] text-zinc-400 block">Mesas & Cadeiras</span>
-                      <strong className="text-sm font-semibold mt-1 block">{calculatedMaterials.guestTablesNeeded} jogos</strong>
-                      <span className="text-[10px] text-zinc-500">{calculatedMaterials.guestChairsNeeded} assentos</span>
+                      <span className="text-[11px] text-zinc-400 block">Rechauds & Pastilhas</span>
+                      <strong className="text-sm font-semibold mt-1 block">{calculatedMaterials.rechauds} cubas</strong>
+                      <span className="text-[10px] text-zinc-500">{calculatedMaterials.fuelPastesNeeded} pastilhas</span>
                     </div>
                   </div>
                 </div>
 
               </div>
 
-              {/* COLUNA DIREITA: GASTOS E TAREFAS */}
               <div className="space-y-6">
                 
-                {/* DISTRIBUIÇÃO DE GASTOS */}
+                {/* GASTOS */}
                 <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold tracking-tight">Distribuição de Gastos</h3>
@@ -885,7 +1083,7 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                       onClick={() => setActiveTab('finance')}
                       className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition"
                     >
-                      Detalhes
+                      Editar
                     </button>
                   </div>
 
@@ -912,13 +1110,10 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                   </div>
                 </div>
 
-                {/* PRÓXIMOS PASSOS PRIORITÁRIOS */}
+                {/* TAREFAS */}
                 <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
                   <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-sm font-semibold tracking-tight">Próximos Passos</h3>
-                      <p className="text-xs text-zinc-500 mt-0.5">Tarefas prioritárias pendentes</p>
-                    </div>
+                    <h3 className="text-sm font-semibold tracking-tight">Próximos Passos</h3>
                     <button
                       onClick={() => setActiveTab('checklist')}
                       className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition"
@@ -943,11 +1138,6 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                         <span className="text-[10px] text-zinc-400 shrink-0 ml-2">{task.period.split(' ')[0]}</span>
                       </div>
                     ))}
-                    {stats.pendingUrgentTasks.length === 0 && (
-                      <div className="text-center py-4 text-xs text-zinc-400 italic">
-                        Todas as tarefas prioritárias concluídas!
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -959,7 +1149,7 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
         )}
 
         {/* ============================================================ */}
-        {/* ABA 2: GESTÃO DE CONVIDADOS & RSVP */}
+        {/* ABA 2: GESTÃO DE CONVIDADOS COM ORDENAÇÃO E PRESETS */}
         {/* ============================================================ */}
         {activeTab === 'guests' && (
           <div className="space-y-6">
@@ -980,10 +1170,7 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                     <span>Link RSVP</span>
                   </button>
                   <button
-                    onClick={() => {
-                      setEditingGuest(null);
-                      setGuestModalOpen(true);
-                    }}
+                    onClick={() => openGuestModal()}
                     className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -992,25 +1179,44 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                 </div>
               </div>
 
-              {/* Tabela de Convidados */}
+              {/* Tabela de Convidados com Ordenação */}
               <div className="mt-5 overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className={`border-b ${darkMode ? 'border-zinc-800 text-zinc-400' : 'border-zinc-200 text-zinc-500'}`}>
                     <tr>
-                      <th className="pb-2.5 font-medium">Nome</th>
-                      <th className="pb-2.5 font-medium">Grupo</th>
+                      <th className="pb-2.5 font-medium cursor-pointer select-none" onClick={() => handleSortToggle('name')}>
+                        <div className="flex items-center gap-1.5 hover:text-zinc-900 dark:hover:text-zinc-100 transition">
+                          <span>Nome</span>
+                          <ArrowUpDown className={`w-3.5 h-3.5 ${guestSortField === 'name' ? 'text-zinc-900 dark:text-zinc-100' : 'opacity-40'}`} />
+                        </div>
+                      </th>
+                      <th className="pb-2.5 font-medium cursor-pointer select-none" onClick={() => handleSortToggle('group')}>
+                        <div className="flex items-center gap-1.5 hover:text-zinc-900 dark:hover:text-zinc-100 transition">
+                          <span>Grupo / Vínculo</span>
+                          <ArrowUpDown className={`w-3.5 h-3.5 ${guestSortField === 'group' ? 'text-zinc-900 dark:text-zinc-100' : 'opacity-40'}`} />
+                        </div>
+                      </th>
                       <th className="pb-2.5 font-medium">Categoria</th>
-                      <th className="pb-2.5 font-medium">Status</th>
+                      <th className="pb-2.5 font-medium cursor-pointer select-none" onClick={() => handleSortToggle('status')}>
+                        <div className="flex items-center gap-1.5 hover:text-zinc-900 dark:hover:text-zinc-100 transition">
+                          <span>Status</span>
+                          <ArrowUpDown className={`w-3.5 h-3.5 ${guestSortField === 'status' ? 'text-zinc-900 dark:text-zinc-100' : 'opacity-40'}`} />
+                        </div>
+                      </th>
                       <th className="pb-2.5 font-medium">Álcool</th>
-                      <th className="pb-2.5 font-medium">Restrições</th>
+                      <th className="pb-2.5 font-medium">Restrições Selecionadas</th>
                       <th className="pb-2.5 font-medium text-right">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
-                    {guests.map(guest => (
+                    {sortedGuests.map(guest => (
                       <tr key={guest.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40 transition-colors">
                         <td className="py-3 font-medium text-zinc-900 dark:text-zinc-100">{guest.name}</td>
-                        <td className="py-3 text-zinc-500">{guest.group || 'Geral'}</td>
+                        <td className="py-3">
+                          <span className="inline-block px-2 py-0.5 rounded-md text-[11px] bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
+                            {guest.group || 'Família'}
+                          </span>
+                        </td>
                         <td className="py-3 text-zinc-600 dark:text-zinc-300">
                           {guest.category === 'adult' ? 'Adulto' : guest.category === 'child_6_11' ? 'Criança (6-11 anos)' : 'Criança (0-5 anos)'}
                         </td>
@@ -1026,14 +1232,23 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                           </span>
                         </td>
                         <td className="py-3 text-zinc-500">{guest.drinksAlcohol ? 'Sim' : 'Não'}</td>
-                        <td className="py-3 text-zinc-500">{guest.restrictions || 'Sem restrições'}</td>
+                        <td className="py-3">
+                          <div className="flex flex-wrap gap-1">
+                            {(Array.isArray(guest.restrictions) ? guest.restrictions : [guest.restrictions || 'Sem restrições']).map((r, i) => (
+                              <span key={i} className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                r === 'Sem restrições'
+                                  ? 'text-zinc-400'
+                                  : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200/40'
+                              }`}>
+                                {r}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
                         <td className="py-3 text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             <button
-                              onClick={() => {
-                                setEditingGuest(guest);
-                                setGuestModalOpen(true);
-                              }}
+                              onClick={() => openGuestModal(guest)}
                               className="p-1 rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                               title="Editar"
                             >
@@ -1050,13 +1265,6 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                         </td>
                       </tr>
                     ))}
-                    {guests.length === 0 && (
-                      <tr>
-                        <td colSpan={7} className="py-8 text-center text-zinc-400 italic">
-                          Nenhum convidado cadastrado.
-                        </td>
-                      </tr>
-                    )}
                   </tbody>
                 </table>
               </div>
@@ -1065,7 +1273,90 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
         )}
 
         {/* ============================================================ */}
-        {/* ABA 3: CALCULADORA DE BUFFET, BEBIDAS & LOUÇAS */}
+        {/* ABA NOVA: CARDÁPIO SUGERIDO & PRATOS QUENTES (COM RECHAUDS) */}
+        {/* ============================================================ */}
+        {activeTab === 'menu' && (
+          <div className="space-y-6">
+            <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-base font-semibold tracking-tight">Cardápio Sugerido do Evento</h2>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Cadastre os pratos do menu. Itens marcados como <strong>quentes</strong> alimentam automaticamente o cálculo de rechauds e pastilhas de aquecimento.
+                  </p>
+                </div>
+                <button
+                  onClick={() => openMenuModal()}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Novo Prato / Item</span>
+                </button>
+              </div>
+
+              {/* Categorias do Menu */}
+              <div className="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {['starter', 'main', 'side', 'dessert', 'drink'].map(cat => {
+                  const catLabel = cat === 'starter' ? 'Entradas & Canapés' : cat === 'main' ? 'Pratos Principais' : cat === 'side' ? 'Guarnições & Saladas' : cat === 'dessert' ? 'Sobremesas & Doces' : 'Bebidas Oficiais';
+                  const items = menu.filter(m => m.category === cat);
+
+                  return (
+                    <div key={cat} className={`p-4 rounded-xl border flex flex-col justify-between ${darkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-zinc-50 border-zinc-200/70'}`}>
+                      <div>
+                        <div className="flex items-center justify-between pb-2 border-b border-zinc-200 dark:border-zinc-800 mb-3">
+                          <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-300">
+                            {catLabel}
+                          </h4>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-medium">
+                            {items.length}
+                          </span>
+                        </div>
+
+                        <div className="space-y-2">
+                          {items.map(item => (
+                            <div key={item.id} className="p-2 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs">
+                              <div>
+                                <span className="font-medium text-zinc-800 dark:text-zinc-200">{item.name}</span>
+                                {item.isHot && (
+                                  <div className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
+                                    <Flame className="w-3 h-3" />
+                                    <span>Servido quente (Rechaud)</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0 ml-2">
+                                <button
+                                  onClick={() => openMenuModal(item)}
+                                  className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                                >
+                                  <Edit2 className="w-3 h-3" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteMenuItem(item.id)}
+                                  className="p-1 rounded text-zinc-400 hover:text-rose-500"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                          {items.length === 0 && (
+                            <div className="py-4 text-center text-xs text-zinc-400 italic">
+                              Nenhum item adicionado nesta categoria.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* ABA 3: CALCULADORA DE BUFFET & LOUÇAS */}
         {/* ============================================================ */}
         {activeTab === 'catering' && (
           <div className="space-y-6">
@@ -1075,7 +1366,7 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                 <div>
                   <h2 className="text-base font-semibold tracking-tight">Calculadora de Suprimentos & Materiais</h2>
                   <p className="text-xs text-zinc-500 mt-1">
-                    Cálculos baseados em <strong>{stats.confirmedCount} confirmados</strong> ({stats.weightedEaters.toFixed(1)} cotas alimentares) e <strong>{config.durationHours}h de duração</strong>.
+                    Cálculos baseados em <strong>{stats.confirmedCount} confirmados</strong> ({stats.weightedEaters.toFixed(1)} cotas alimentares), <strong>{stats.hotDishesInMenu} pratos quentes do cardápio</strong> e <strong>{config.durationHours}h de duração</strong>.
                   </p>
                 </div>
 
@@ -1105,7 +1396,6 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
               </div>
             </div>
 
-            {/* Grid dos Cálculos */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               
               {/* COMIDAS */}
@@ -1170,7 +1460,7 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                 </div>
               </div>
 
-              {/* LOUÇAS E RECHAUDS */}
+              {/* LOUÇAS E RECHAUDS VINCULADOS AO MENU */}
               <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-4 flex items-center gap-2">
                   <Layers className="w-4 h-4 text-zinc-400" /> Louças & Equipamentos
@@ -1189,8 +1479,12 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                     <span className="font-semibold text-zinc-900 dark:text-zinc-100">{calculatedMaterials.waterGlasses + calculatedMaterials.beerTulips} un</span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800">
-                    <span className="text-zinc-600 dark:text-zinc-400">Rechauds Inox (Banho-Maria)</span>
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{calculatedMaterials.rechauds} cubas ({calculatedMaterials.fuelPastesNeeded} pastilhas)</span>
+                    <span className="text-zinc-600 dark:text-zinc-400">Rechauds Inox ({stats.hotDishesInMenu} pratos quentes)</span>
+                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{calculatedMaterials.rechauds} cubas</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800">
+                    <span className="text-zinc-600 dark:text-zinc-400">Pastilhas de Álcool Gel ({config.durationHours}h)</span>
+                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{calculatedMaterials.fuelPastesNeeded} un</span>
                   </div>
                   <div className="flex justify-between items-center py-2">
                     <span className="text-zinc-600 dark:text-zinc-400">Mesas & Cadeiras</span>
@@ -1205,7 +1499,7 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
         )}
 
         {/* ============================================================ */}
-        {/* ABA 4: LOCAÇÕES (ESPAÇO, MÓVEIS E BRINQUEDOS) */}
+        {/* ABA 4: LOCAÇÕES COM EDIÇÃO COMPLETA */}
         {/* ============================================================ */}
         {activeTab === 'rentals' && (
           <div className="space-y-6">
@@ -1213,10 +1507,10 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h2 className="text-base font-semibold tracking-tight">Locações, Brinquedos e Mobiliário</h2>
-                  <p className="text-xs text-zinc-500 mt-1">Gerencie os equipamentos infantis, espaço físico e móveis contratados</p>
+                  <p className="text-xs text-zinc-500 mt-1">Gerencie e edite os equipamentos infantis, espaço físico e móveis contratados</p>
                 </div>
                 <button
-                  onClick={() => setRentalModalOpen(true)}
+                  onClick={() => openRentalModal()}
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -1231,17 +1525,26 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                       <div className="flex items-start justify-between">
                         <div>
                           <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-                            {rental.category === 'toy' ? 'Brinquedo & Recreação' : rental.category === 'furniture' ? 'Mobiliário' : 'Estrutura'}
+                            {rental.category === 'toy' ? 'Brinquedo & Recreação' : rental.category === 'furniture' ? 'Mobiliário' : 'Estrutura / Espaço'}
                           </span>
                           <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 mt-0.5">{rental.name}</h4>
                         </div>
-                        <button
-                          onClick={() => handleDeleteRental(rental.id)}
-                          className="text-zinc-400 hover:text-rose-500 transition"
-                          title="Excluir"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => openRentalModal(rental)}
+                            className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                            title="Editar Item"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRental(rental.id)}
+                            className="p-1 rounded text-zinc-400 hover:text-rose-500"
+                            title="Excluir"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                       <p className="text-xs text-zinc-500 mt-1.5">{rental.supplier || 'Fornecedor padrão'}</p>
                       {rental.notes && <p className="text-[11px] text-zinc-400 mt-1">{rental.notes}</p>}
@@ -1254,18 +1557,13 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                     </div>
                   </div>
                 ))}
-                {rentals.length === 0 && (
-                  <div className="col-span-full py-8 text-center text-xs text-zinc-400 italic">
-                    Nenhum item de locação cadastrado.
-                  </div>
-                )}
               </div>
             </div>
           </div>
         )}
 
         {/* ============================================================ */}
-        {/* ABA 5: FINANCEIRO & CENTRO DE CUSTOS */}
+        {/* ABA 5: CENTRO DE CUSTOS COM EDIÇÃO COMPLETA */}
         {/* ============================================================ */}
         {activeTab === 'finance' && (
           <div className="space-y-6">
@@ -1278,7 +1576,7 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                   </p>
                 </div>
                 <button
-                  onClick={() => setExpenseModalOpen(true)}
+                  onClick={() => openExpenseModal()}
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -1290,12 +1588,12 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                 <table className="w-full text-left text-xs">
                   <thead className={`border-b ${darkMode ? 'border-zinc-800 text-zinc-400' : 'border-zinc-200 text-zinc-500'}`}>
                     <tr>
-                      <th className="pb-2.5 font-medium">Item</th>
+                      <th className="pb-2.5 font-medium">Item / Descrição</th>
                       <th className="pb-2.5 font-medium">Categoria</th>
                       <th className="pb-2.5 font-medium">Previsto</th>
                       <th className="pb-2.5 font-medium">Realizado</th>
                       <th className="pb-2.5 font-medium">Status</th>
-                      <th className="pb-2.5 font-medium text-right">Ação</th>
+                      <th className="pb-2.5 font-medium text-right">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
@@ -1317,23 +1615,25 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                           </span>
                         </td>
                         <td className="py-3 text-right">
-                          <button
-                            onClick={() => handleDeleteExpense(expense.id)}
-                            className="p-1 rounded-md text-zinc-400 hover:text-rose-600 transition"
-                            title="Excluir"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => openExpenseModal(expense)}
+                              className="p-1 rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                              title="Editar Despesa"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteExpense(expense.id)}
+                              className="p-1 rounded-md text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                              title="Excluir"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
-                    {expenses.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className="py-8 text-center text-zinc-400 italic">
-                          Nenhum lançamento financeiro registrado.
-                        </td>
-                      </tr>
-                    )}
                   </tbody>
                 </table>
               </div>
@@ -1342,7 +1642,7 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
         )}
 
         {/* ============================================================ */}
-        {/* ABA 6: LINHA DO TEMPO & CHECKLIST */}
+        {/* ABA 6: CRONOGRAMA */}
         {/* ============================================================ */}
         {activeTab === 'checklist' && (
           <div className="space-y-6">
@@ -1388,7 +1688,7 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
         )}
 
         {/* ============================================================ */}
-        {/* ABA 7: CONFIGURAÇÕES DO EVENTO */}
+        {/* ABA 7: CONFIGURAÇÕES */}
         {/* ============================================================ */}
         {activeTab === 'config' && (
           <div className="space-y-6">
@@ -1458,20 +1758,20 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Pratos Quentes (Rechauds)</label>
-                  <input
-                    type="number"
-                    value={config.hotDishesCount}
-                    onChange={(e) => setConfig({ ...config, hotDishesCount: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
-                  />
-                </div>
-                <div>
                   <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Capacidade por Mesa (Lugares)</label>
                   <input
                     type="number"
                     value={config.tableCapacity}
                     onChange={(e) => setConfig({ ...config, tableCapacity: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Margem de Segurança de Louças (%)</label>
+                  <input
+                    type="number"
+                    value={config.safetyMarginPct}
+                    onChange={(e) => setConfig({ ...config, safetyMarginPct: Number(e.target.value) })}
                     className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
@@ -1483,89 +1783,115 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
       </main>
 
       {/* ============================================================ */}
-      {/* MODAL: CONVIDADO (CRIAR / EDITAR) */}
+      {/* MODAL: CONVIDADO COM GRUPOS PREDEFINIDOS E RESTRIÇÕES EM CHIPS */}
       {/* ============================================================ */}
       {guestModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className={`w-full max-w-md rounded-2xl border p-5 shadow-xl ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
+          <div className={`w-full max-w-lg rounded-2xl border p-5 shadow-xl max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
             <h3 className="text-sm font-semibold mb-4">
               {editingGuest ? 'Editar Convidado' : 'Novo Convidado'}
             </h3>
-            <form onSubmit={handleSaveGuest} className="space-y-3 text-xs">
+            <form onSubmit={handleSaveGuest} className="space-y-4 text-xs">
               <div>
-                <label className="block text-zinc-500 mb-1">Nome Completo</label>
+                <label className="block text-zinc-500 mb-1 font-medium">Nome Completo</label>
                 <input
                   type="text"
                   required
                   defaultValue={editingGuest?.name || ''}
                   name="name"
+                  placeholder="Ex: Carlos Eduardo ou Esposa do Carlos"
                   className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
                 />
               </div>
+
+              {/* SELEÇÃO DE GRUPO COM PRESETS */}
+              <div>
+                <label className="block text-zinc-500 mb-1 font-medium">Grupo / Vínculo</label>
+                <select
+                  name="group"
+                  defaultValue={editingGuest?.group || 'Família'}
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent dark:bg-zinc-900"
+                >
+                  {PRESET_GROUPS.map(grp => (
+                    <option key={grp} value={grp} className="dark:bg-zinc-900">{grp}</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-zinc-500 mb-1">Grupo</label>
-                  <input
-                    type="text"
-                    defaultValue={editingGuest?.group || 'Família'}
-                    name="group"
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-zinc-500 mb-1">Categoria</label>
+                  <label className="block text-zinc-500 mb-1 font-medium">Faixa Etária</label>
                   <select
                     name="category"
                     defaultValue={editingGuest?.category || 'adult'}
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent dark:bg-zinc-900"
                   >
                     <option value="adult" className="dark:bg-zinc-900">Adulto</option>
-                    <option value="child_6_11" className="dark:bg-zinc-900">Criança (6-11)</option>
-                    <option value="child_0_5" className="dark:bg-zinc-900">Criança (0-5)</option>
+                    <option value="child_6_11" className="dark:bg-zinc-900">Criança (6-11 anos - meia cota)</option>
+                    <option value="child_0_5" className="dark:bg-zinc-900">Criança (0-5 anos - isento)</option>
                   </select>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-zinc-500 mb-1">Confirmação</label>
+                  <label className="block text-zinc-500 mb-1 font-medium">Confirmação (RSVP)</label>
                   <select
                     name="status"
                     defaultValue={editingGuest?.status || 'pending'}
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent dark:bg-zinc-900"
                   >
                     <option value="confirmed" className="dark:bg-zinc-900">Confirmado</option>
                     <option value="pending" className="dark:bg-zinc-900">Pendente</option>
                     <option value="declined" className="dark:bg-zinc-900">Recusado</option>
                   </select>
                 </div>
-                <div className="flex items-center pt-5">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="drinksAlcohol"
-                      defaultChecked={editingGuest ? editingGuest.drinksAlcohol : true}
-                      className="rounded border-zinc-300"
-                    />
-                    <span>Consome Álcool</span>
-                  </label>
-                </div>
               </div>
+
+              <div className="pt-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="drinksAlcohol"
+                    defaultChecked={editingGuest ? editingGuest.drinksAlcohol : true}
+                    className="rounded border-zinc-300"
+                  />
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300">Consome bebidas alcoólicas (Chopp / Cerveja / Vinho)</span>
+                </label>
+              </div>
+
+              {/* SELEÇÃO DE RESTRIÇÕES ALIMENTARES COM CHIPS */}
               <div>
-                <label className="block text-zinc-500 mb-1">Restrições Alimentares</label>
+                <label className="block text-zinc-500 mb-1.5 font-medium">Restrições Alimentares (clique para selecionar):</label>
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {PRESET_RESTRICTIONS.map(r => {
+                    const isSelected = selectedRestrictions.includes(r);
+                    return (
+                      <button
+                        type="button"
+                        key={r}
+                        onClick={() => handleToggleRestriction(r)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition border ${
+                          isSelected
+                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 border-zinc-900 dark:border-zinc-100'
+                            : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700 hover:border-zinc-400'
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    );
+                  })}
+                </div>
                 <input
                   type="text"
-                  placeholder="Ex: Vegetariano, Sem glúten..."
-                  defaultValue={editingGuest?.restrictions || ''}
-                  name="restrictions"
-                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                  name="customRestriction"
+                  placeholder="Ou digite outra restrição específica..."
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-3">
+              <div className="flex justify-end gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-800">
                 <button
                   type="button"
                   onClick={() => setGuestModalOpen(false)}
-                  className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  className="px-3.5 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 >
                   Cancelar
                 </button>
@@ -1573,7 +1899,267 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                   type="submit"
                   className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium"
                 >
-                  Salvar
+                  {editingGuest ? 'Salvar Alterações' : 'Adicionar Convidado'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* MODAL: ITEM DO CARDÁPIO (CRIAR / EDITAR) */}
+      {/* ============================================================ */}
+      {menuModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className={`w-full max-w-md rounded-2xl border p-5 shadow-xl ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
+            <h3 className="text-sm font-semibold mb-4">
+              {editingMenuItem ? 'Editar Prato / Item' : 'Novo Prato no Cardápio'}
+            </h3>
+            <form onSubmit={handleSaveMenuItem} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-zinc-500 mb-1">Nome do Prato / Bebida</label>
+                <input
+                  type="text"
+                  required
+                  defaultValue={editingMenuItem?.name || ''}
+                  name="name"
+                  placeholder="Ex: Risoto de Alho Poró com Parmesão"
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-zinc-500 mb-1">Categoria do Menu</label>
+                <select
+                  name="category"
+                  defaultValue={editingMenuItem?.category || 'main'}
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent dark:bg-zinc-900"
+                >
+                  <option value="starter" className="dark:bg-zinc-900">Entradas & Canapés</option>
+                  <option value="main" className="dark:bg-zinc-900">Prato Principal</option>
+                  <option value="side" className="dark:bg-zinc-900">Guarnição / Salada</option>
+                  <option value="dessert" className="dark:bg-zinc-900">Sobremesa & Doces</option>
+                  <option value="drink" className="dark:bg-zinc-900">Bebida</option>
+                </select>
+              </div>
+              <div className="pt-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="isHot"
+                    defaultChecked={editingMenuItem ? editingMenuItem.isHot : true}
+                    className="rounded border-zinc-300"
+                  />
+                  <div>
+                    <span className="font-medium text-zinc-800 dark:text-zinc-200">Prato quente (Requer Rechaud com Banho-Maria)</span>
+                    <p className="text-[10px] text-zinc-400">Gera automaticamente cálculo de cuba e pastilha de combustível.</p>
+                  </div>
+                </label>
+              </div>
+              <div className="flex justify-end gap-2 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setMenuModalOpen(false)}
+                  className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium"
+                >
+                  Salvar Prato
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* MODAL: DESPESA (CRIAR / EDITAR) */}
+      {/* ============================================================ */}
+      {expenseModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className={`w-full max-w-md rounded-2xl border p-5 shadow-xl ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
+            <h3 className="text-sm font-semibold mb-4">
+              {editingExpense ? 'Editar Lançamento' : 'Novo Lançamento Financeiro'}
+            </h3>
+            <form onSubmit={handleSaveExpense} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-zinc-500 mb-1">Descrição</label>
+                <input
+                  type="text"
+                  name="description"
+                  required
+                  defaultValue={editingExpense?.description || ''}
+                  placeholder="Ex: Barril de Chopp 50L"
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-zinc-500 mb-1">Categoria</label>
+                <select
+                  name="category"
+                  defaultValue={editingExpense?.category || 'Bebidas & Gelo'}
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent dark:bg-zinc-900"
+                >
+                  <option value="Locação Espaço" className="dark:bg-zinc-900">Locação Espaço</option>
+                  <option value="Buffet & Comidas" className="dark:bg-zinc-900">Buffet & Comidas</option>
+                  <option value="Bebidas & Gelo" className="dark:bg-zinc-900">Bebidas & Gelo</option>
+                  <option value="Aluguel Materiais" className="dark:bg-zinc-900">Aluguel Materiais</option>
+                  <option value="Brinquedos" className="dark:bg-zinc-900">Brinquedos</option>
+                  <option value="Confeitaria" className="dark:bg-zinc-900">Confeitaria</option>
+                  <option value="Outros" className="dark:bg-zinc-900">Outros</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-zinc-500 mb-1">Valor Previsto (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="estimated"
+                    required
+                    defaultValue={editingExpense?.estimated || ''}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-500 mb-1">Valor Realizado (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="actual"
+                    defaultValue={editingExpense?.actual || ''}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                  />
+                </div>
+              </div>
+              <div className="pt-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="paid"
+                    defaultChecked={editingExpense ? editingExpense.paid : false}
+                    className="rounded border-zinc-300"
+                  />
+                  <span>Despesa já foi paga</span>
+                </label>
+              </div>
+              <div className="flex justify-end gap-2 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setExpenseModalOpen(false)}
+                  className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium"
+                >
+                  {editingExpense ? 'Salvar Alterações' : 'Adicionar Despesa'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* MODAL: LOCAÇÕES E BRINQUEDOS (CRIAR / EDITAR) */}
+      {/* ============================================================ */}
+      {rentalModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className={`w-full max-w-md rounded-2xl border p-5 shadow-xl ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
+            <h3 className="text-sm font-semibold mb-4">
+              {editingRental ? 'Editar Item de Locação' : 'Adicionar Item de Locação'}
+            </h3>
+            <form onSubmit={handleSaveRental} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-zinc-500 mb-1">Nome do Item</label>
+                <input
+                  type="text"
+                  name="name"
+                  required
+                  defaultValue={editingRental?.name || ''}
+                  placeholder="Ex: Cama Elástica 3,05m ou 10 Mesas Bistrô"
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-zinc-500 mb-1">Categoria</label>
+                  <select
+                    name="category"
+                    defaultValue={editingRental?.category || 'toy'}
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent dark:bg-zinc-900"
+                  >
+                    <option value="toy" className="dark:bg-zinc-900">Brinquedo Infantil</option>
+                    <option value="furniture" className="dark:bg-zinc-900">Mobiliário</option>
+                    <option value="venue" className="dark:bg-zinc-900">Espaço Físico</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-zinc-500 mb-1">Custo Total (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="cost"
+                    required
+                    defaultValue={editingRental?.cost || ''}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-zinc-500 mb-1">Fornecedor / Contato</label>
+                <input
+                  type="text"
+                  name="supplier"
+                  defaultValue={editingRental?.supplier || ''}
+                  placeholder="Ex: Tio Pipoca Festas - (71) 99999-0000"
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-zinc-500 mb-1">Observações de Entrega/Montagem</label>
+                <input
+                  type="text"
+                  name="notes"
+                  defaultValue={editingRental?.notes || ''}
+                  placeholder="Ex: Montagem até 14h, monitor incluso"
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                />
+              </div>
+              <div className="flex items-center pt-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="hasMonitor"
+                    defaultChecked={editingRental ? editingRental.hasMonitor : false}
+                    className="rounded border-zinc-300"
+                  />
+                  <span>Inclui monitor / operador infantil</span>
+                </label>
+              </div>
+              <div className="flex justify-end gap-2 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setRentalModalOpen(false)}
+                  className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium"
+                >
+                  {editingRental ? 'Salvar Alterações' : 'Adicionar Locação'}
                 </button>
               </div>
             </form>
@@ -1609,143 +2195,6 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                 Fechar
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================ */}
-      {/* MODAL: NOVA DESPESA */}
-      {/* ============================================================ */}
-      {expenseModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className={`w-full max-w-md rounded-2xl border p-5 shadow-xl ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
-            <h3 className="text-sm font-semibold mb-4">Adicionar Lançamento</h3>
-            <form onSubmit={handleAddExpense} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-zinc-500 mb-1">Descrição</label>
-                <input
-                  type="text"
-                  name="description"
-                  required
-                  placeholder="Ex: Barril de Chopp 50L"
-                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-zinc-500 mb-1">Categoria</label>
-                  <select name="category" className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent">
-                    <option value="Bebidas & Gelo" className="dark:bg-zinc-900">Bebidas & Gelo</option>
-                    <option value="Buffet & Comidas" className="dark:bg-zinc-900">Buffet & Comidas</option>
-                    <option value="Locação Espaço" className="dark:bg-zinc-900">Locação Espaço</option>
-                    <option value="Aluguel Materiais" className="dark:bg-zinc-900">Aluguel Materiais</option>
-                    <option value="Brinquedos" className="dark:bg-zinc-900">Brinquedos</option>
-                    <option value="Confeitaria" className="dark:bg-zinc-900">Confeitaria</option>
-                    <option value="Outros" className="dark:bg-zinc-900">Outros</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-zinc-500 mb-1">Valor Estimado (R$)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    name="estimated"
-                    required
-                    placeholder="0.00"
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setExpenseModalOpen(false)}
-                  className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium"
-                >
-                  Adicionar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================ */}
-      {/* MODAL: ITEM DE LOCAÇÃO */}
-      {/* ============================================================ */}
-      {rentalModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className={`w-full max-w-md rounded-2xl border p-5 shadow-xl ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
-            <h3 className="text-sm font-semibold mb-4">Adicionar Item de Locação</h3>
-            <form onSubmit={handleAddRental} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-zinc-500 mb-1">Nome do Item</label>
-                <input
-                  type="text"
-                  name="name"
-                  required
-                  placeholder="Ex: Cama Elástica 3,05m"
-                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-zinc-500 mb-1">Categoria</label>
-                  <select name="category" className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent">
-                    <option value="toy" className="dark:bg-zinc-900">Brinquedo Infantil</option>
-                    <option value="furniture" className="dark:bg-zinc-900">Mobiliário</option>
-                    <option value="venue" className="dark:bg-zinc-900">Espaço Físico</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-zinc-500 mb-1">Custo Total (R$)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    name="cost"
-                    required
-                    placeholder="0.00"
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-zinc-500 mb-1">Fornecedor / Contato</label>
-                <input
-                  type="text"
-                  name="supplier"
-                  placeholder="Ex: Tio Pipoca Festas"
-                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
-                />
-              </div>
-              <div className="flex items-center pt-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" name="hasMonitor" className="rounded border-zinc-300" />
-                  <span>Inclui monitor / operador</span>
-                </label>
-              </div>
-              <div className="flex justify-end gap-2 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setRentalModalOpen(false)}
-                  className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium"
-                >
-                  Salvar
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}
