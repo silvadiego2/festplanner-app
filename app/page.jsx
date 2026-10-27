@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Calendar,
   Clock,
@@ -31,10 +31,13 @@ import {
   GlassWater,
   Coins,
   Database,
-  Upload
+  Upload,
+  Settings2,
+  SlidersHorizontal,
+  X
 } from 'lucide-react';
 
-// --- INITIAL MOCK DATA ---
+// --- DADOS INICIAIS ---
 const INITIAL_EVENT_CONFIG = {
   celebrantName: "Mariana Souza",
   age: 30,
@@ -56,8 +59,12 @@ const INITIAL_EVENT_CONFIG = {
   venueContact: "(71) 98765-4321 - Paula",
   serviceType: "buffet",
   safetyMarginPct: 15,
-  materialMode: "rental",
-  tableCapacity: 4
+  materialMode: "rental", // 'rental' | 'disposable'
+  tableCapacity: 4,
+  rentalUnitCost: 4.50, // Custo médio por pessoa para aluguel de louças
+  disposableUnitCost: 1.80, // Custo médio por pessoa para descartáveis
+  rechaudRentalCost: 45.00, // Custo de locação por rechaud
+  fuelPasteCost: 8.00 // Custo por pastilha de álcool gel
 };
 
 const INITIAL_GUESTS = [
@@ -73,12 +80,12 @@ const INITIAL_GUESTS = [
 const INITIAL_MENU = [
   {
     id: 'm1',
-    name: 'Picanha Grelhada em Fatias Finas',
+    name: 'Picanha Fatiada na Brasa',
     category: 'protein',
     isHot: true,
     ingredients: [
       { name: 'Picanha Bovina Resfriada', amountPerPerson: 0.18, unit: 'kg', unitCost: 78.00 },
-      { name: 'Sal Grosso com Alho e Ervas', amountPerPerson: 0.01, unit: 'kg', unitCost: 15.00 }
+      { name: 'Sal Grosso com Alho & Especiarias', amountPerPerson: 0.01, unit: 'kg', unitCost: 15.00 }
     ]
   },
   {
@@ -99,7 +106,7 @@ const INITIAL_MENU = [
     ingredients: [
       { name: 'Arroz Arbóreo', amountPerPerson: 0.07, unit: 'kg', unitCost: 22.00 },
       { name: 'Queijo Parmesão Ralado', amountPerPerson: 0.03, unit: 'kg', unitCost: 95.00 },
-      { name: 'Alho Poró e Manteiga', amountPerPerson: 0.02, unit: 'kg', unitCost: 35.00 }
+      { name: 'Manteiga e Alho Poró', amountPerPerson: 0.02, unit: 'kg', unitCost: 35.00 }
     ]
   },
   {
@@ -114,7 +121,7 @@ const INITIAL_MENU = [
   },
   {
     id: 'm5',
-    name: 'Mesa de Canapés & Salgados Finos',
+    name: 'Mini Salgados & Canapés Finos',
     category: 'starter',
     isHot: false,
     ingredients: [
@@ -123,11 +130,11 @@ const INITIAL_MENU = [
   },
   {
     id: 'm6',
-    name: 'Bolo Festivo de Chocolate com Frutas Vermelhas',
+    name: 'Bolo Decorado de Frutas Vermelhas',
     category: 'dessert',
     isHot: false,
     ingredients: [
-      { name: 'Bolo Artesanal Decorado', amountPerPerson: 0.10, unit: 'kg', unitCost: 75.00 }
+      { name: 'Bolo Artesanal Recheado', amountPerPerson: 0.10, unit: 'kg', unitCost: 75.00 }
     ]
   },
   {
@@ -144,12 +151,12 @@ const INITIAL_MENU = [
 const INITIAL_BEVERAGE_TYPES = [
   { id: 'b1', name: 'Refrigerante Cola (Coca-Cola / Zero)', category: 'soda', mlPerPersonPerHour: 90, unitCostPerLiter: 5.50, unitPackage: 'Garrafa 2L', packageVolume: 2.0 },
   { id: 'b2', name: 'Refrigerante Guaraná (Antarctica)', category: 'soda', mlPerPersonPerHour: 60, unitCostPerLiter: 5.00, unitPackage: 'Garrafa 2L', packageVolume: 2.0 },
-  { id: 'b3', name: 'Suco de Uva Integral', category: 'juice', mlPerPersonPerHour: 40, unitCostPerLiter: 11.00, unitPackage: 'Garrafa 1,5L', packageVolume: 1.5 },
+  { id: 'b3', name: 'Suco de Uva Integral', category: 'juice', mlPerPersonPerHour: 40, unitCostPerLiter: 11.00, unitPackage: 'Garrafa 1.5L', packageVolume: 1.5 },
   { id: 'b4', name: 'Sucos Variados (Laranja / Maracujá)', category: 'juice', mlPerPersonPerHour: 50, unitCostPerLiter: 8.50, unitPackage: 'Garrafa 1L', packageVolume: 1.0 },
   { id: 'b5', name: 'Água de Coco Natural', category: 'juice', mlPerPersonPerHour: 40, unitCostPerLiter: 7.80, unitPackage: 'Garrafa 1L', packageVolume: 1.0 },
   { id: 'b6', name: 'Água Mineral sem Gás', category: 'water', mlPerPersonPerHour: 80, unitCostPerLiter: 2.20, unitPackage: 'Garrafão 5L', packageVolume: 5.0 },
   { id: 'b7', name: 'Água Mineral com Gás', category: 'water', mlPerPersonPerHour: 40, unitCostPerLiter: 3.50, unitPackage: 'Garrafa 500ml', packageVolume: 0.5 },
-  { id: 'b8', name: 'Chopp Artesanal / Cerveja Puro Malte', category: 'alcohol', mlPerPersonPerHour: 320, unitCostPerLiter: 14.00, unitPackage: 'Barril 50L ou Fardo Lata', packageVolume: 0.35 },
+  { id: 'b8', name: 'Chopp Artesanal / Cerveja Puro Malte', category: 'alcohol', mlPerPersonPerHour: 320, unitCostPerLiter: 14.00, unitPackage: 'Barril 50L ou Lata', packageVolume: 0.35 },
   { id: 'b9', name: 'Vinho / Espumante Brut', category: 'alcohol', mlPerPersonPerHour: 60, unitCostPerLiter: 48.00, unitPackage: 'Garrafa 750ml', packageVolume: 0.75 },
   { id: 'b10', name: 'Gelo Filtrado (Consumo)', category: 'ice', mlPerPersonPerHour: 80, unitCostPerLiter: 3.00, unitPackage: 'Saco 5kg', packageVolume: 5.0 },
   { id: 'b11', name: 'Gelo em Cubos/Barra (Tina & Coolers)', category: 'ice', mlPerPersonPerHour: 100, unitCostPerLiter: 2.20, unitPackage: 'Saco 10kg', packageVolume: 10.0 }
@@ -203,7 +210,7 @@ const PRESET_RESTRICTIONS = [
 export default function App() {
   const [mounted, setMounted] = useState(false);
 
-  // States
+  // States principais
   const [config, setConfig] = useState(INITIAL_EVENT_CONFIG);
   const [menu, setMenu] = useState(INITIAL_MENU);
   const [beverages, setBeverages] = useState(INITIAL_BEVERAGE_TYPES);
@@ -216,44 +223,54 @@ export default function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
-  // Sorting
+  // Ordenação de convidados
   const [guestSortField, setGuestSortField] = useState('name');
   const [guestSortAsc, setGuestSortAsc] = useState(true);
 
-  // Modals
+  // Modais de Controle
   const [guestModalOpen, setGuestModalOpen] = useState(false);
   const [editingGuest, setEditingGuest] = useState(null);
   const [selectedRestrictions, setSelectedRestrictions] = useState(['Sem restrições']);
-  const [rsvpSimModalOpen, setRsvpSimModalOpen] = useState(false);
-  const [expenseModalOpen, setExpenseModalOpen] = useState(false);
-  const [editingExpense, setEditingExpense] = useState(null);
+
+  const [menuModalOpen, setMenuModalOpen] = useState(false);
+  const [editingMenuItem, setEditingMenuItem] = useState(null);
+  const [editingIngredients, setEditingIngredients] = useState([]);
+
+  const [beverageModalOpen, setBeverageModalOpen] = useState(false);
+  const [editingBeverage, setEditingBeverage] = useState(null);
+
   const [rentalModalOpen, setRentalModalOpen] = useState(false);
   const [editingRental, setEditingRental] = useState(null);
+
+  const [expenseModalOpen, setExpenseModalOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState(null);
+
+  const [rsvpSimModalOpen, setRsvpSimModalOpen] = useState(false);
   const [backupModalOpen, setBackupModalOpen] = useState(false);
   const [rawLocalStorageDump, setRawLocalStorageDump] = useState([]);
 
-  // Safe client-side loader
+  // Carregamento e Migração Segura no Cliente
   useEffect(() => {
     try {
-      const savedConfig = localStorage.getItem('festplanner_config_v2') || localStorage.getItem('festplanner_config');
+      const savedConfig = localStorage.getItem('festplanner_config_v3') || localStorage.getItem('festplanner_config_v2') || localStorage.getItem('festplanner_config');
       if (savedConfig) setConfig(JSON.parse(savedConfig));
 
-      const savedGuests = localStorage.getItem('festplanner_guests_v2') || localStorage.getItem('festplanner_guests');
+      const savedGuests = localStorage.getItem('festplanner_guests_v3') || localStorage.getItem('festplanner_guests_v2') || localStorage.getItem('festplanner_guests');
       if (savedGuests) setGuests(JSON.parse(savedGuests));
 
-      const savedMenu = localStorage.getItem('festplanner_menu_v2') || localStorage.getItem('festplanner_menu');
+      const savedMenu = localStorage.getItem('festplanner_menu_v3') || localStorage.getItem('festplanner_menu_v2') || localStorage.getItem('festplanner_menu');
       if (savedMenu) setMenu(JSON.parse(savedMenu));
 
-      const savedBeverages = localStorage.getItem('festplanner_beverages_v2') || localStorage.getItem('festplanner_beverages');
+      const savedBeverages = localStorage.getItem('festplanner_beverages_v3') || localStorage.getItem('festplanner_beverages_v2') || localStorage.getItem('festplanner_beverages');
       if (savedBeverages) setBeverages(JSON.parse(savedBeverages));
 
-      const savedRentals = localStorage.getItem('festplanner_rentals_v2') || localStorage.getItem('festplanner_rentals');
+      const savedRentals = localStorage.getItem('festplanner_rentals_v3') || localStorage.getItem('festplanner_rentals_v2') || localStorage.getItem('festplanner_rentals');
       if (savedRentals) setRentals(JSON.parse(savedRentals));
 
-      const savedExpenses = localStorage.getItem('festplanner_manual_expenses_v2') || localStorage.getItem('festplanner_expenses');
+      const savedExpenses = localStorage.getItem('festplanner_manual_expenses_v3') || localStorage.getItem('festplanner_manual_expenses_v2') || localStorage.getItem('festplanner_expenses');
       if (savedExpenses) setManualExpenses(JSON.parse(savedExpenses));
 
-      const savedChecklist = localStorage.getItem('festplanner_checklist_v2') || localStorage.getItem('festplanner_checklist');
+      const savedChecklist = localStorage.getItem('festplanner_checklist_v3') || localStorage.getItem('festplanner_checklist_v2') || localStorage.getItem('festplanner_checklist');
       if (savedChecklist) setChecklist(JSON.parse(savedChecklist));
     } catch (e) {
       console.warn("Storage sync warning:", e);
@@ -261,26 +278,27 @@ export default function App() {
     setMounted(true);
   }, []);
 
-  // Safe client-side persistence
+  // Persistência contínua após montagem
   useEffect(() => {
     if (!mounted) return;
     try {
+      localStorage.setItem('festplanner_config_v3', JSON.stringify(config));
       localStorage.setItem('festplanner_config_v2', JSON.stringify(config));
-      localStorage.setItem('festplanner_config', JSON.stringify(config));
     } catch (_) {}
   }, [config, mounted]);
 
   useEffect(() => {
     if (!mounted) return;
     try {
+      localStorage.setItem('festplanner_guests_v3', JSON.stringify(guests));
       localStorage.setItem('festplanner_guests_v2', JSON.stringify(guests));
-      localStorage.setItem('festplanner_guests', JSON.stringify(guests));
     } catch (_) {}
   }, [guests, mounted]);
 
   useEffect(() => {
     if (!mounted) return;
     try {
+      localStorage.setItem('festplanner_menu_v3', JSON.stringify(menu));
       localStorage.setItem('festplanner_menu_v2', JSON.stringify(menu));
     } catch (_) {}
   }, [menu, mounted]);
@@ -288,6 +306,7 @@ export default function App() {
   useEffect(() => {
     if (!mounted) return;
     try {
+      localStorage.setItem('festplanner_beverages_v3', JSON.stringify(beverages));
       localStorage.setItem('festplanner_beverages_v2', JSON.stringify(beverages));
     } catch (_) {}
   }, [beverages, mounted]);
@@ -295,6 +314,7 @@ export default function App() {
   useEffect(() => {
     if (!mounted) return;
     try {
+      localStorage.setItem('festplanner_rentals_v3', JSON.stringify(rentals));
       localStorage.setItem('festplanner_rentals_v2', JSON.stringify(rentals));
     } catch (_) {}
   }, [rentals, mounted]);
@@ -302,6 +322,7 @@ export default function App() {
   useEffect(() => {
     if (!mounted) return;
     try {
+      localStorage.setItem('festplanner_manual_expenses_v3', JSON.stringify(manualExpenses));
       localStorage.setItem('festplanner_manual_expenses_v2', JSON.stringify(manualExpenses));
     } catch (_) {}
   }, [manualExpenses, mounted]);
@@ -309,6 +330,7 @@ export default function App() {
   useEffect(() => {
     if (!mounted) return;
     try {
+      localStorage.setItem('festplanner_checklist_v3', JSON.stringify(checklist));
       localStorage.setItem('festplanner_checklist_v2', JSON.stringify(checklist));
     } catch (_) {}
   }, [checklist, mounted]);
@@ -318,7 +340,7 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Stats calculation
+  // --- ESTATÍSTICAS E COTAS DE CONSUMO ---
   const stats = useMemo(() => {
     const totalGuests = guests.length;
     const confirmedList = guests.filter(g => g.status === 'confirmed');
@@ -369,7 +391,7 @@ export default function App() {
     };
   }, [guests, menu, checklist, config.date]);
 
-  // Menu engine
+  // --- MOTOR 1: CARDÁPIO & INGREDIENTES (CONFIRMADOS VS. TODOS) ---
   const calculatedMenu = useMemo(() => {
     let totalCostConfirmed = 0;
     let totalCostAll = 0;
@@ -400,7 +422,7 @@ export default function App() {
     return { itemsDetailed, totalCostConfirmed: Math.round(totalCostConfirmed), totalCostAll: Math.round(totalCostAll) };
   }, [menu, stats.confirmedEaters, stats.allPotentialEaters]);
 
-  // Beverages engine
+  // --- MOTOR 2: BEBIDAS & GELO (CONFIRMADOS VS. TODOS) ---
   const calculatedBeverages = useMemo(() => {
     const hours = Number(config.durationHours) || 5;
     let totalBeveragesCostConfirmed = 0;
@@ -429,7 +451,7 @@ export default function App() {
     return { list, totalCostConfirmed: Math.round(totalBeveragesCostConfirmed), totalCostAll: Math.round(totalBeveragesCostAll) };
   }, [beverages, config.durationHours, stats.confirmedCount, stats.confirmedDrinkers, stats.totalGuests, stats.allPotentialDrinkers]);
 
-  // Materials & tableware
+  // --- MOTOR 3: LOUÇAS, RECHAUDS, MOBILIÁRIO E DESCARTÁVEIS ---
   const calculatedMaterials = useMemo(() => {
     const confirmed = stats.confirmedCount;
     const all = stats.totalGuests;
@@ -441,6 +463,7 @@ export default function App() {
     const waterGlasses = Math.ceil(confirmed * 1.5 * safety);
     const beerTulips = Math.ceil(stats.confirmedDrinkers * 2 * safety);
 
+    // Rechauds sincronizados com pratos quentes do cardápio
     const rechauds = Math.max(1, stats.hotDishesCount);
     const durationHours = Number(config.durationHours) || 5;
     const fuelPastesNeeded = Math.ceil(rechauds * (durationHours / 2.5));
@@ -449,36 +472,102 @@ export default function App() {
     const guestTablesNeeded = Math.ceil(confirmed / capacity);
     const guestChairsNeeded = guestTablesNeeded * capacity;
 
-    const unitMaterialCost = config.materialMode === 'rental' ? 4.50 : 1.80;
-    const tablewareCostConfirmed = Math.round((confirmed * unitMaterialCost) + (rechauds * 45) + (fuelPastesNeeded * 8));
-    const tablewareCostAll = Math.round((all * unitMaterialCost) + (rechauds * 45) + (fuelPastesNeeded * 8));
+    const allTablesNeeded = Math.ceil(all / capacity);
+    const allChairsNeeded = allTablesNeeded * capacity;
 
-    return { mainPlates, dessertPlates, forksAndKnives, waterGlasses, beerTulips, rechauds, fuelPastesNeeded, guestTablesNeeded, guestChairsNeeded, tablewareCostConfirmed, tablewareCostAll };
-  }, [stats.confirmedCount, stats.totalGuests, stats.confirmedDrinkers, stats.hotDishesCount, config.safetyMarginPct, config.durationHours, config.tableCapacity, config.materialMode]);
+    // Custos configuráveis
+    const unitMaterialCost = config.materialMode === 'rental' 
+      ? (Number(config.rentalUnitCost) || 4.50) 
+      : (Number(config.disposableUnitCost) || 1.80);
 
-  // Master budget
+    const rechaudUnitCost = Number(config.rechaudRentalCost) || 45.00;
+    const pasteUnitCost = Number(config.fuelPasteCost) || 8.00;
+
+    const equipmentBaseCost = (rechauds * rechaudUnitCost) + (fuelPastesNeeded * pasteUnitCost);
+    const tablewareCostConfirmed = Math.round((confirmed * unitMaterialCost) + equipmentBaseCost);
+    const tablewareCostAll = Math.round((all * unitMaterialCost) + equipmentBaseCost);
+
+    return {
+      mainPlates,
+      dessertPlates,
+      forksAndKnives,
+      waterGlasses,
+      beerTulips,
+      rechauds,
+      fuelPastesNeeded,
+      guestTablesNeeded,
+      guestChairsNeeded,
+      allTablesNeeded,
+      allChairsNeeded,
+      unitMaterialCost,
+      rechaudUnitCost,
+      pasteUnitCost,
+      equipmentBaseCost,
+      tablewareCostConfirmed,
+      tablewareCostAll
+    };
+  }, [
+    stats.confirmedCount,
+    stats.totalGuests,
+    stats.confirmedDrinkers,
+    stats.hotDishesCount,
+    config.safetyMarginPct,
+    config.durationHours,
+    config.tableCapacity,
+    config.materialMode,
+    config.rentalUnitCost,
+    config.disposableUnitCost,
+    config.rechaudRentalCost,
+    config.fuelPasteCost
+  ]);
+
+  // --- MOTOR 4: CENTRO DE CUSTOS INTEGRADO E SINCRONIZADO ---
   const budget = useMemo(() => {
+    // Locações (espaço, brinquedos, mobiliário)
     const rentalsCost = rentals.reduce((acc, curr) => acc + (Number(curr.cost) || 0), 0);
+
+    // Buffet & Receitas
     const foodCostConfirmed = calculatedMenu.totalCostConfirmed;
     const foodCostAll = calculatedMenu.totalCostAll;
+
+    // Bebidas & Gelo
     const beveragesCostConfirmed = calculatedBeverages.totalCostConfirmed;
     const beveragesCostAll = calculatedBeverages.totalCostAll;
+
+    // Louças & Apoio
     const tablewareCostConfirmed = calculatedMaterials.tablewareCostConfirmed;
     const tablewareCostAll = calculatedMaterials.tablewareCostAll;
 
+    // Despesas Manuais
     const manualTotalEstimated = manualExpenses.reduce((acc, curr) => acc + (Number(curr.estimated) || 0), 0);
     const manualTotalActual = manualExpenses.reduce((acc, curr) => acc + (Number(curr.actual) || Number(curr.estimated) || 0), 0);
 
+    // Totais Consolidados
     const grandTotalConfirmed = rentalsCost + foodCostConfirmed + beveragesCostConfirmed + tablewareCostConfirmed + manualTotalActual;
     const grandTotalAll = rentalsCost + foodCostAll + beveragesCostAll + tablewareCostAll + manualTotalEstimated;
     const rsvpSavings = Math.max(0, grandTotalAll - grandTotalConfirmed);
     const costPerConfirmed = stats.confirmedCount > 0 ? (grandTotalConfirmed / stats.confirmedCount) : 0;
     const costPerAll = stats.totalGuests > 0 ? (grandTotalAll / stats.totalGuests) : 0;
 
-    return { rentalsCost, foodCostConfirmed, foodCostAll, beveragesCostConfirmed, beveragesCostAll, tablewareCostConfirmed, tablewareCostAll, manualTotalActual, manualTotalEstimated, grandTotalConfirmed, grandTotalAll, rsvpSavings, costPerConfirmed, costPerAll };
+    return {
+      rentalsCost,
+      foodCostConfirmed,
+      foodCostAll,
+      beveragesCostConfirmed,
+      beveragesCostAll,
+      tablewareCostConfirmed,
+      tablewareCostAll,
+      manualTotalActual,
+      manualTotalEstimated,
+      grandTotalConfirmed,
+      grandTotalAll,
+      rsvpSavings,
+      costPerConfirmed,
+      costPerAll
+    };
   }, [rentals, calculatedMenu, calculatedBeverages, calculatedMaterials, manualExpenses, stats.confirmedCount, stats.totalGuests]);
 
-  // Sorted guests
+  // Ordenação de Convidados
   const sortedGuests = useMemo(() => {
     return [...guests].sort((a, b) => {
       let valA = a[guestSortField] || '';
@@ -500,7 +589,7 @@ export default function App() {
     }
   };
 
-  // CRUD Handlers
+  // --- CRUD 1: CONVIDADOS ---
   const handleSaveGuest = (e) => {
     e.preventDefault();
     const form = e.target;
@@ -547,6 +636,136 @@ export default function App() {
     showToast('Convidado removido.');
   };
 
+  // --- CRUD 2: CARDÁPIO & RECEITAS ---
+  const handleOpenMenuModal = (item = null) => {
+    setEditingMenuItem(item);
+    if (item && Array.isArray(item.ingredients)) {
+      setEditingIngredients(JSON.parse(JSON.stringify(item.ingredients)));
+    } else {
+      setEditingIngredients([
+        { name: '', amountPerPerson: 0.15, unit: 'kg', unitCost: 35.00 }
+      ]);
+    }
+    setMenuModalOpen(true);
+  };
+
+  const handleAddIngredientRow = () => {
+    setEditingIngredients([
+      ...editingIngredients,
+      { name: '', amountPerPerson: 0.1, unit: 'kg', unitCost: 20.00 }
+    ]);
+  };
+
+  const handleRemoveIngredientRow = (idx) => {
+    setEditingIngredients(editingIngredients.filter((_, i) => i !== idx));
+  };
+
+  const handleUpdateIngredient = (idx, field, value) => {
+    const updated = [...editingIngredients];
+    updated[idx] = { ...updated[idx], [field]: value };
+    setEditingIngredients(updated);
+  };
+
+  const handleSaveMenuItem = (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const name = form.name.value.trim();
+    const category = form.category.value;
+    const isHot = form.isHot.checked;
+
+    if (!name) return;
+
+    const validIngredients = editingIngredients
+      .filter(ing => ing.name && ing.name.trim().length > 0)
+      .map(ing => ({
+        name: ing.name.trim(),
+        amountPerPerson: parseFloat(ing.amountPerPerson) || 0.1,
+        unit: ing.unit || 'kg',
+        unitCost: parseFloat(ing.unitCost) || 0
+      }));
+
+    if (editingMenuItem) {
+      setMenu(menu.map(m => m.id === editingMenuItem.id ? { ...m, name, category, isHot, ingredients: validIngredients } : m));
+      showToast('Prato atualizado e custos recalculados!');
+    } else {
+      const newItem = {
+        id: 'm-' + Date.now(),
+        name,
+        category,
+        isHot,
+        ingredients: validIngredients
+      };
+      setMenu([...menu, newItem]);
+      showToast('Novo prato adicionado ao cardápio!');
+    }
+
+    setMenuModalOpen(false);
+    setEditingMenuItem(null);
+  };
+
+  const handleDeleteMenuItem = (id) => {
+    setMenu(menu.filter(m => m.id !== id));
+    showToast('Prato removido do cardápio.');
+  };
+
+  // --- CRUD 3: BEBIDAS ---
+  const handleOpenBeverageModal = (bev = null) => {
+    setEditingBeverage(bev);
+    setBeverageModalOpen(true);
+  };
+
+  const handleSaveBeverage = (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const name = form.name.value.trim();
+    const category = form.category.value;
+    const mlPerPersonPerHour = parseFloat(form.mlPerPersonPerHour.value) || 50;
+    const unitCostPerLiter = parseFloat(form.unitCostPerLiter.value) || 5.0;
+    const unitPackage = form.unitPackage.value.trim() || 'Garrafa';
+    const packageVolume = parseFloat(form.packageVolume.value) || 1.0;
+
+    if (!name) return;
+
+    if (editingBeverage) {
+      setBeverages(beverages.map(b => b.id === editingBeverage.id ? {
+        ...b,
+        name,
+        category,
+        mlPerPersonPerHour,
+        unitCostPerLiter,
+        unitPackage,
+        packageVolume
+      } : b));
+      showToast('Bebida atualizada!');
+    } else {
+      const newBev = {
+        id: 'b-' + Date.now(),
+        name,
+        category,
+        mlPerPersonPerHour,
+        unitCostPerLiter,
+        unitPackage,
+        packageVolume
+      };
+      setBeverages([...beverages, newBev]);
+      showToast('Nova bebida adicionada!');
+    }
+
+    setBeverageModalOpen(false);
+    setEditingBeverage(null);
+  };
+
+  const handleDeleteBeverage = (id) => {
+    setBeverages(beverages.filter(b => b.id !== id));
+    showToast('Bebida removida.');
+  };
+
+  // --- CRUD 4: LOCAÇÕES, BRINQUEDOS E MOBILIÁRIO ---
+  const handleOpenRentalModal = (rental = null) => {
+    setEditingRental(rental);
+    setRentalModalOpen(true);
+  };
+
   const handleSaveRental = (e) => {
     e.preventDefault();
     const form = e.target;
@@ -561,11 +780,11 @@ export default function App() {
 
     if (editingRental) {
       setRentals(rentals.map(r => r.id === editingRental.id ? { ...r, name, category, cost, supplier, notes, hasMonitor } : r));
-      showToast('Locação atualizada!');
+      showToast('Locação atualizada e sincronizada!');
     } else {
       const newRental = { id: Date.now().toString(), name, category, cost, supplier, notes, hasMonitor };
       setRentals([...rentals, newRental]);
-      showToast('Locação adicionada!');
+      showToast('Locação adicionada ao centro de custos!');
     }
 
     setRentalModalOpen(false);
@@ -574,7 +793,13 @@ export default function App() {
 
   const handleDeleteRental = (id) => {
     setRentals(rentals.filter(r => r.id !== id));
-    showToast('Item de locação removido.');
+    showToast('Locação removida.');
+  };
+
+  // --- CRUD 5: DESPESAS MANUAIS ---
+  const handleOpenExpenseModal = (exp = null) => {
+    setEditingExpense(exp);
+    setExpenseModalOpen(true);
   };
 
   const handleSaveExpense = (e) => {
@@ -622,7 +847,7 @@ export default function App() {
   };
 
   const handleExportBackup = () => {
-    const backupData = { version: '2.0', timestamp: new Date().toISOString(), config, guests, menu, beverages, rentals, manualExpenses, checklist };
+    const backupData = { version: '3.0', timestamp: new Date().toISOString(), config, guests, menu, beverages, rentals, manualExpenses, checklist };
     const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -696,50 +921,62 @@ export default function App() {
 FESTPLANNER PRO - RELATÓRIO OPERACIONAL & LISTA DE COMPRAS
 Evento: Aniversário de ${config.celebrantName} (${config.age} anos)
 Data: ${config.date} | Duração: ${config.durationHours}h
-Confirmados: ${stats.confirmedCount} pessoas (${stats.confirmedEaters.toFixed(1)} cotas alimentares)
-Total na Lista: ${stats.totalGuests} convidados
+Confirmados: ${stats.confirmedCount} pessoas (${stats.confirmedEaters.toFixed(1)} cotas de consumo)
+Total na Lista Geral: ${stats.totalGuests} convidados (${stats.allPotentialEaters.toFixed(1)} cotas)
 
 ============================================================
-COMPARATIVO FINANCEIRO
+COMPARATIVO FINANCEIRO SINCRONIZADO
 ============================================================
 - Custo com CONFIRMADOS: R$ ${budget.grandTotalConfirmed.toLocaleString('pt-BR')} (R$ ${Math.round(budget.costPerConfirmed)} / pessoa)
 - Custo se TODOS FOREM:   R$ ${budget.grandTotalAll.toLocaleString('pt-BR')} (R$ ${Math.round(budget.costPerAll)} / pessoa)
 - Economia obtida (RSVP): R$ ${budget.rsvpSavings.toLocaleString('pt-BR')}
 
 ============================================================
-CARDÁPIO SUGERIDO & RECEITAS
+CARDÁPIO SUGERIDO & FICHA TÉCNICA (RECEITAS)
 ============================================================
 ${calculatedMenu.itemsDetailed.map(item => `
 * ${item.name} (${item.isHot ? 'Prato Quente - Rechaud' : 'Servido Frio'})
-  Subtotal Estimado: R$ ${item.itemCostConfirmed.toLocaleString('pt-BR')}
-  Ingredientes necessários:
-${item.ingredients.map(ing => `    - ${ing.name}: ${ing.qtyConfirmed} ${ing.unit} x R$ ${ing.unitCost.toFixed(2)} = R$ ${ing.costConfirmed.toFixed(2)}`).join('\n')}
+  Subtotal Estimado (Confirmados): R$ ${item.itemCostConfirmed.toLocaleString('pt-BR')}
+  Subtotal se Todos Forem:       R$ ${item.itemCostAll.toLocaleString('pt-BR')}
+  Ingredientes calculados:
+${item.ingredients.map(ing => `    - ${ing.name}: ${ing.qtyConfirmed} ${ing.unit} x R$ ${ing.unitCost.toFixed(2)} = R$ ${ing.costConfirmed.toFixed(2)} (Se todos: ${ing.qtyAll} ${ing.unit})`).join('\n')}
 `).join('')}
+Subtotal do Buffet: R$ ${budget.foodCostConfirmed.toLocaleString('pt-BR')} (Se todos: R$ ${budget.foodCostAll.toLocaleString('pt-BR')})
 
 ============================================================
-BEBIDAS & GELO
+BEBIDAS DISCRIMINADAS & GELO
 ============================================================
 ${calculatedBeverages.list.map(bev => `
-- ${bev.name}: ${bev.totalLitersConfirmed} L (~${bev.packagesConfirmed} ${bev.unitPackage}) | Custo: R$ ${bev.totalCostConfirmed.toLocaleString('pt-BR')}
+- ${bev.name}: 
+    * Com Confirmados: ${bev.totalLitersConfirmed} L (~${bev.packagesConfirmed} ${bev.unitPackage}) | Custo: R$ ${bev.totalCostConfirmed.toLocaleString('pt-BR')}
+    * Se Todos Forem:   ${bev.totalLitersAll} L (~${bev.packagesAll} ${bev.unitPackage}) | Custo: R$ ${bev.totalCostAll.toLocaleString('pt-BR')}
 `).join('')}
+Subtotal de Bebidas & Gelo: R$ ${budget.beveragesCostConfirmed.toLocaleString('pt-BR')}
 
 ============================================================
-LOCAÇÕES & BRINQUEDOS
+LOCAÇÕES, BRINQUEDOS E MOBILIÁRIO
 ============================================================
-${rentals.map(r => `- ${r.name} (${r.category}): R$ ${Number(r.cost).toLocaleString('pt-BR')} - Fornecedor: ${r.supplier}`).join('\n')}
+${rentals.map(r => `- ${r.name} (${r.category}): R$ ${Number(r.cost).toLocaleString('pt-BR')} | Fornecedor: ${r.supplier || 'N/A'}${r.hasMonitor ? ' (Com Monitor)' : ''}`).join('\n')}
 Total em Locações: R$ ${budget.rentalsCost.toLocaleString('pt-BR')}
 
 ============================================================
-ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁVEIS'})
+ESTRUTURA DE LOUÇAS & MESAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁVEIS'})
 ============================================================
 - Pratos Principais: ${calculatedMaterials.mainPlates} un
 - Pratos de Sobremesa: ${calculatedMaterials.dessertPlates} un
 - Talheres: ${calculatedMaterials.forksAndKnives} pares
-- Taças / Copos: ${calculatedMaterials.waterGlasses} un
+- Copos / Taças de Água: ${calculatedMaterials.waterGlasses} un
 - Tulipas de Chopp: ${calculatedMaterials.beerTulips} un
-- Rechauds Inox Necessários: ${calculatedMaterials.rechauds} cubas quentes
-- Pastilhas de Álcool Gel: ${calculatedMaterials.fuelPastesNeeded} un
+- Rechauds Inox (Sincronizado c/ pratos quentes): ${calculatedMaterials.rechauds} cubas quentes
+- Pastilhas de Álcool Gel (${config.durationHours}h de queima): ${calculatedMaterials.fuelPastesNeeded} un
 - Mesas e Cadeiras: ${calculatedMaterials.guestTablesNeeded} jogos (${calculatedMaterials.guestChairsNeeded} assentos)
+Subtotal de Louças & Estrutura: R$ ${budget.tablewareCostConfirmed.toLocaleString('pt-BR')}
+
+============================================================
+DESPESAS MANUAIS / EXTRAS
+============================================================
+${manualExpenses.map(e => `- ${e.description} (${e.category}): Previsto R$ ${Number(e.estimated).toLocaleString('pt-BR')} | Real R$ ${Number(e.actual || e.estimated).toLocaleString('pt-BR')} [${e.paid ? 'Pago' : 'Pendente'}]`).join('\n')}
+Subtotal Despesas Manuais: R$ ${budget.manualTotalActual.toLocaleString('pt-BR')}
 `.trim();
 
     const element = document.createElement("a");
@@ -887,7 +1124,9 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
       {/* MAIN BODY */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24">
         
+        {/* ============================================================ */}
         {/* TAB 1: VISÃO GERAL */}
+        {/* ============================================================ */}
         {activeTab === 'dashboard' && (
           <div className="space-y-6">
             
@@ -1246,7 +1485,9 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
           </div>
         )}
 
+        {/* ============================================================ */}
         {/* TAB 2: CONVIDADOS & RSVP */}
+        {/* ============================================================ */}
         {activeTab === 'guests' && (
           <div className="space-y-6">
             <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
@@ -1254,7 +1495,7 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
                 <div>
                   <h2 className="text-base font-semibold tracking-tight">Lista de Convidados & Presenças</h2>
                   <p className="text-xs text-zinc-500 mt-1">
-                    {stats.confirmedCount} confirmados, {stats.pendingCount} pendentes e {stats.declinedCount} recusados
+                    {stats.confirmedCount} confirmados ({stats.confirmedEaters.toFixed(1)} cotas), {stats.pendingCount} pendentes e {stats.declinedCount} recusados
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1370,20 +1611,31 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
           </div>
         )}
 
-        {/* TAB 3: CARDÁPIO */}
+        {/* ============================================================ */}
+        {/* TAB 3: CARDÁPIO SUGERIDO & FICHA TÉCNICA (TOTALMENTE EDITÁVEL) */}
+        {/* ============================================================ */}
         {activeTab === 'menu' && (
           <div className="space-y-6">
             <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-base font-semibold tracking-tight">Cardápio Sugerido & Ficha Técnica</h2>
+                  <h2 className="text-base font-semibold tracking-tight">Cardápio Sugerido & Ficha Técnica de Receitas</h2>
                   <p className="text-xs text-zinc-500 mt-1">
-                    Cálculo exato de ingredientes e insumos baseado em <strong>{stats.confirmedEaters.toFixed(1)} cotas alimentares</strong>.
+                    Custos calculados dinamicamente com base nos ingredientes por pessoa e sincronizados ao Centro de Custos.
                   </p>
                 </div>
-                <div className="text-xs text-right">
-                  <span className="text-zinc-400 block text-[10px]">Custo Total do Buffet</span>
-                  <strong className="text-sm text-emerald-600 dark:text-emerald-400">R$ {budget.foodCostConfirmed.toLocaleString('pt-BR')}</strong>
+                <div className="flex items-center gap-3">
+                  <div className="text-xs text-right">
+                    <span className="text-zinc-400 block text-[10px]">Custo c/ Confirmados</span>
+                    <strong className="text-sm text-emerald-600 dark:text-emerald-400">R$ {budget.foodCostConfirmed.toLocaleString('pt-BR')}</strong>
+                  </div>
+                  <button
+                    onClick={() => handleOpenMenuModal(null)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Adicionar Prato</span>
+                  </button>
                 </div>
               </div>
 
@@ -1401,8 +1653,28 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
                         </span>
                       </div>
                       <div className="flex items-center gap-4 text-xs">
-                        <span className="text-zinc-500">Confirmados: <strong className="text-zinc-900 dark:text-zinc-100">R$ {item.itemCostConfirmed.toLocaleString('pt-BR')}</strong></span>
-                        <span className="text-zinc-400">| Se todos: R$ {item.itemCostAll.toLocaleString('pt-BR')}</span>
+                        <span className="text-zinc-500">
+                          Confirmados: <strong className="text-zinc-900 dark:text-zinc-100">R$ {item.itemCostConfirmed.toLocaleString('pt-BR')}</strong>
+                        </span>
+                        <span className="text-zinc-400">
+                          | Se todos: R$ {item.itemCostAll.toLocaleString('pt-BR')}
+                        </span>
+                        <div className="flex items-center gap-1 ml-2">
+                          <button
+                            onClick={() => handleOpenMenuModal(item)}
+                            className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                            title="Editar receita"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteMenuItem(item.id)}
+                            className="p-1 rounded text-zinc-400 hover:text-rose-500"
+                            title="Excluir prato"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
 
@@ -1418,13 +1690,13 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-200/40 dark:divide-zinc-800/40 text-zinc-600 dark:text-zinc-300">
-                          {item.ingredients.map((ing, idx) => (
+                          {(item.ingredients || []).map((ing, idx) => (
                             <tr key={idx}>
                               <td className="py-1.5 font-medium text-zinc-800 dark:text-zinc-200">{ing.name}</td>
                               <td className="py-1.5">{ing.amountPerPerson} {ing.unit}</td>
-                              <td className="py-1.5">R$ {ing.unitCost.toFixed(2)} / {ing.unit}</td>
+                              <td className="py-1.5">R$ {Number(ing.unitCost || 0).toFixed(2)} / {ing.unit}</td>
                               <td className="py-1.5 font-semibold text-zinc-900 dark:text-zinc-100">{ing.qtyConfirmed} {ing.unit}</td>
-                              <td className="py-1.5 text-right font-medium text-zinc-900 dark:text-zinc-100">R$ {ing.costConfirmed.toFixed(2)}</td>
+                              <td className="py-1.5 text-right font-medium text-zinc-900 dark:text-zinc-100">R$ {Number(ing.costConfirmed || 0).toFixed(2)}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -1437,18 +1709,31 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
           </div>
         )}
 
-        {/* TAB 4: BEBIDAS */}
+        {/* ============================================================ */}
+        {/* TAB 4: BEBIDAS DISCRIMINADAS (TOTALMENTE EDITÁVEL) */}
+        {/* ============================================================ */}
         {activeTab === 'beverages' && (
           <div className="space-y-6">
             <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-base font-semibold tracking-tight">Discriminação de Bebidas & Gelo</h2>
-                  <p className="text-xs text-zinc-500 mt-1">Cálculo individualizado com base nas horas de evento</p>
+                  <h2 className="text-base font-semibold tracking-tight">Discriminação de Bebidas, Sucos & Gelo</h2>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Cálculo individualizado considerando {config.durationHours}h de evento.
+                  </p>
                 </div>
-                <div className="text-xs text-right">
-                  <span className="text-zinc-400 block text-[10px]">Custo Total de Bebidas</span>
-                  <strong className="text-sm text-emerald-600 dark:text-emerald-400">R$ {budget.beveragesCostConfirmed.toLocaleString('pt-BR')}</strong>
+                <div className="flex items-center gap-3">
+                  <div className="text-xs text-right">
+                    <span className="text-zinc-400 block text-[10px]">Custo c/ Confirmados</span>
+                    <strong className="text-sm text-emerald-600 dark:text-emerald-400">R$ {budget.beveragesCostConfirmed.toLocaleString('pt-BR')}</strong>
+                  </div>
+                  <button
+                    onClick={() => handleOpenBeverageModal(null)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Adicionar Bebida</span>
+                  </button>
                 </div>
               </div>
 
@@ -1457,27 +1742,46 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
                   <thead className={`border-b ${darkMode ? 'border-zinc-800 text-zinc-400' : 'border-zinc-200 text-zinc-500'}`}>
                     <tr>
                       <th className="pb-2.5 font-medium">Bebida / Insumo</th>
-                      <th className="pb-2.5 font-medium">Consumo Sugerido</th>
+                      <th className="pb-2.5 font-medium">Consumo / Pessoa / Hora</th>
                       <th className="pb-2.5 font-medium">Preço / Litro</th>
                       <th className="pb-2.5 font-medium">Volume (Confirmados)</th>
-                      <th className="pb-2.5 font-medium">Embalagens a Comprar</th>
-                      <th className="pb-2.5 font-medium text-right">Custo Estimado</th>
+                      <th className="pb-2.5 font-medium">Embalagens Sugeridas</th>
+                      <th className="pb-2.5 font-medium">Custo (Confirmados)</th>
+                      <th className="pb-2.5 font-medium text-right">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
                     {calculatedBeverages.list.map(bev => (
                       <tr key={bev.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40">
                         <td className="py-3 font-medium text-zinc-900 dark:text-zinc-100">{bev.name}</td>
-                        <td className="py-3 text-zinc-500">{bev.mlPerPersonPerHour} ml / hora</td>
-                        <td className="py-3 text-zinc-500">R$ {bev.unitCostPerLiter.toFixed(2)}</td>
-                        <td className="py-3 font-semibold text-zinc-900 dark:text-zinc-100">{bev.totalLitersConfirmed} Litros</td>
+                        <td className="py-3 text-zinc-500">{bev.mlPerPersonPerHour} ml / h</td>
+                        <td className="py-3 text-zinc-500">R$ {Number(bev.unitCostPerLiter || 0).toFixed(2)}</td>
+                        <td className="py-3 font-semibold text-zinc-900 dark:text-zinc-100">{bev.totalLitersConfirmed} L</td>
                         <td className="py-3 text-zinc-700 dark:text-zinc-300">
                           <span className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 font-medium">
                             ~{bev.packagesConfirmed} {bev.unitPackage}
                           </span>
                         </td>
-                        <td className="py-3 text-right font-medium text-zinc-900 dark:text-zinc-100">
+                        <td className="py-3 font-medium text-zinc-900 dark:text-zinc-100">
                           R$ {bev.totalCostConfirmed.toLocaleString('pt-BR')}
+                        </td>
+                        <td className="py-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => handleOpenBeverageModal(bev)}
+                              className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                              title="Editar bebida"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteBeverage(bev.id)}
+                              className="p-1 rounded text-zinc-400 hover:text-rose-500"
+                              title="Excluir"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1488,25 +1792,30 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
           </div>
         )}
 
-        {/* TAB 5: LOCAÇÕES */}
+        {/* ============================================================ */}
+        {/* TAB 5: LOCAÇÕES, BRINQUEDOS E MOBILIÁRIO (EDITÁVEL) */}
+        {/* ============================================================ */}
         {activeTab === 'rentals' && (
           <div className="space-y-6">
             <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h2 className="text-base font-semibold tracking-tight">Locações, Brinquedos e Mobiliário</h2>
-                  <p className="text-xs text-zinc-500 mt-1">Gerencie os equipamentos infantis, espaço e móveis</p>
+                  <p className="text-xs text-zinc-500 mt-1">Gerencie os equipamentos infantis, espaço físico e móveis contratados.</p>
                 </div>
-                <button
-                  onClick={() => {
-                    setEditingRental(null);
-                    setRentalModalOpen(true);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Novo Item de Locação</span>
-                </button>
+                <div className="flex items-center gap-3">
+                  <div className="text-xs text-right">
+                    <span className="text-zinc-400 block text-[10px]">Total de Locações</span>
+                    <strong className="text-sm text-zinc-900 dark:text-zinc-100">R$ {budget.rentalsCost.toLocaleString('pt-BR')}</strong>
+                  </div>
+                  <button
+                    onClick={() => handleOpenRentalModal(null)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Novo Item de Locação</span>
+                  </button>
+                </div>
               </div>
 
               <div className="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1522,12 +1831,9 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
                         </div>
                         <div className="flex items-center gap-1">
                           <button
-                            onClick={() => {
-                              setEditingRental(rental);
-                              setRentalModalOpen(true);
-                            }}
+                            onClick={() => handleOpenRentalModal(rental)}
                             className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
-                            title="Editar"
+                            title="Editar locação"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
@@ -1556,14 +1862,18 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
           </div>
         )}
 
-        {/* TAB 6: LOUÇAS */}
+        {/* ============================================================ */}
+        {/* TAB 6: LOUÇAS, RECHAUDS, MOBILIÁRIO E DESCARTÁVEIS (EDITÁVEL) */}
+        {/* ============================================================ */}
         {activeTab === 'catering' && (
           <div className="space-y-6">
             <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-base font-semibold tracking-tight">Calculadora de Louças, Rechauds & Mesas</h2>
-                  <p className="text-xs text-zinc-500 mt-1">Margem de segurança configurada: {config.safetyMarginPct}%</p>
+                  <h2 className="text-base font-semibold tracking-tight">Calculadora de Louças, Rechauds, Mesas & Descartáveis</h2>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Altere parâmetros de custo unitário, margem de segurança e capacidade por mesa para recalcular tudo.
+                  </p>
                 </div>
                 <div className="flex bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-lg text-xs font-medium">
                   <button
@@ -1581,6 +1891,63 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
                 </div>
               </div>
 
+              {/* PAINEL DE PARÂMETROS EDITÁVEIS */}
+              <div className="mt-5 p-4 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-900/40">
+                <h3 className="text-xs font-semibold text-zinc-600 dark:text-zinc-300 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                  <SlidersHorizontal className="w-3.5 h-3.5" /> Parâmetros de Custos e Margem
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <label className="block text-zinc-500 text-[11px] mb-1">Margem de Quebra/Segurança (%)</label>
+                    <input
+                      type="number"
+                      value={config.safetyMarginPct}
+                      onChange={(e) => setConfig({ ...config, safetyMarginPct: Number(e.target.value) })}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-zinc-500 text-[11px] mb-1">Lugares por Mesa de Convidado</label>
+                    <input
+                      type="number"
+                      value={config.tableCapacity}
+                      onChange={(e) => setConfig({ ...config, tableCapacity: Number(e.target.value) })}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-zinc-500 text-[11px] mb-1">
+                      {config.materialMode === 'rental' ? 'Aluguel Louça/Pessoa (R$)' : 'Descartáveis/Pessoa (R$)'}
+                    </label>
+                    <input
+                      type="number"
+                      step="0.10"
+                      value={config.materialMode === 'rental' ? config.rentalUnitCost : config.disposableUnitCost}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 0;
+                        if (config.materialMode === 'rental') {
+                          setConfig({ ...config, rentalUnitCost: val });
+                        } else {
+                          setConfig({ ...config, disposableUnitCost: val });
+                        }
+                      }}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-zinc-500 text-[11px] mb-1">Aluguel Rechaud Inox (R$/un)</label>
+                    <input
+                      type="number"
+                      step="1.00"
+                      value={config.rechaudRentalCost}
+                      onChange={(e) => setConfig({ ...config, rechaudRentalCost: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* GRIDS DE RESULTADOS */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                 <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-zinc-50 border-zinc-200/70'}`}>
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-4 flex items-center gap-2">
@@ -1588,7 +1955,7 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
                   </h3>
                   <div className="space-y-3 text-xs">
                     <div className="flex justify-between py-2 border-b border-zinc-200/60 dark:border-zinc-800">
-                      <span className="text-zinc-600 dark:text-zinc-400">Pratos Refeição</span>
+                      <span className="text-zinc-600 dark:text-zinc-400">Pratos Refeição (+{config.safetyMarginPct}%)</span>
                       <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.mainPlates} un</strong>
                     </div>
                     <div className="flex justify-between py-2 border-b border-zinc-200/60 dark:border-zinc-800">
@@ -1628,16 +1995,16 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
                   </h3>
                   <div className="space-y-3 text-xs">
                     <div className="flex justify-between py-2 border-b border-zinc-200/60 dark:border-zinc-800">
-                      <span className="text-zinc-600 dark:text-zinc-400">Rechauds Inox (Banho-maria)</span>
+                      <span className="text-zinc-600 dark:text-zinc-400">Rechauds Inox (Sincronizado)</span>
                       <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.rechauds} cubas</strong>
                     </div>
                     <div className="flex justify-between py-2 border-b border-zinc-200/60 dark:border-zinc-800">
-                      <span className="text-zinc-600 dark:text-zinc-400">Pastilhas de Álcool Gel</span>
+                      <span className="text-zinc-600 dark:text-zinc-400">Pastilhas Álcool Gel ({config.durationHours}h)</span>
                       <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.fuelPastesNeeded} un</strong>
                     </div>
                     <div className="flex justify-between py-2">
                       <span className="text-zinc-600 dark:text-zinc-400">Jogos de Mesas ({config.tableCapacity} lug.)</span>
-                      <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.guestTablesNeeded} jogos</strong>
+                      <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.guestTablesNeeded} jogos ({calculatedMaterials.guestChairsNeeded} cad.)</strong>
                     </div>
                   </div>
                 </div>
@@ -1646,51 +2013,63 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
           </div>
         )}
 
-        {/* TAB 7: CENTRO DE CUSTOS */}
+        {/* ============================================================ */}
+        {/* TAB 7: CENTRO DE CUSTOS (100% SINCRONIZADO & AUTOMÁTICO) */}
+        {/* ============================================================ */}
         {activeTab === 'finance' && (
           <div className="space-y-6">
             <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-base font-semibold tracking-tight">Centro de Custos Integrado</h2>
+                  <h2 className="text-base font-semibold tracking-tight">Centro de Custos Integrado & Sincronizado</h2>
                   <p className="text-xs text-zinc-500 mt-1">
-                    Custo com Confirmados: <strong>R$ {budget.grandTotalConfirmed.toLocaleString('pt-BR')}</strong> | Se Todos Forem: <strong>R$ {budget.grandTotalAll.toLocaleString('pt-BR')}</strong>
+                    Custo Real com Confirmados: <strong>R$ {budget.grandTotalConfirmed.toLocaleString('pt-BR')}</strong> | Se Todos Forem: <strong>R$ {budget.grandTotalAll.toLocaleString('pt-BR')}</strong>
                   </p>
                 </div>
-                <button
-                  onClick={() => {
-                    setEditingExpense(null);
-                    setExpenseModalOpen(true);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Adicionar Despesa Extra</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50">
+                    Economia RSVP: <strong>R$ {budget.rsvpSavings.toLocaleString('pt-BR')}</strong>
+                  </span>
+                  <button
+                    onClick={() => handleOpenExpenseModal(null)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Adicionar Despesa Manual</span>
+                  </button>
+                </div>
               </div>
 
               <div className="mt-5 space-y-4">
-                <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Custos Sincronizados Automaticamente:</h4>
+                <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Custos Sincronizados em Tempo Real:</h4>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
-                  <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800">
-                    <span className="text-zinc-400 block text-[11px]">Locações e Espaço</span>
-                    <strong className="text-sm block mt-1">R$ {budget.rentalsCost.toLocaleString('pt-BR')}</strong>
+                  <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800">
+                    <span className="text-zinc-400 block text-[11px]">Locações, Espaço & Brinquedos</span>
+                    <strong className="text-base block mt-1">R$ {budget.rentalsCost.toLocaleString('pt-BR')}</strong>
+                    <span className="text-[10px] text-zinc-500">{rentals.length} itens cadastrados</span>
                   </div>
-                  <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800">
-                    <span className="text-zinc-400 block text-[11px]">Cardápio / Insumos</span>
-                    <strong className="text-sm block mt-1">R$ {budget.foodCostConfirmed.toLocaleString('pt-BR')}</strong>
+                  <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800">
+                    <span className="text-zinc-400 block text-[11px]">Cardápio (Receitas & Insumos)</span>
+                    <strong className="text-base block mt-1 text-emerald-600 dark:text-emerald-400">R$ {budget.foodCostConfirmed.toLocaleString('pt-BR')}</strong>
+                    <span className="text-[10px] text-zinc-500">Se todos forem: R$ {budget.foodCostAll.toLocaleString('pt-BR')}</span>
                   </div>
-                  <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800">
-                    <span className="text-zinc-400 block text-[11px]">Bebidas Detalhadas</span>
-                    <strong className="text-sm block mt-1">R$ {budget.beveragesCostConfirmed.toLocaleString('pt-BR')}</strong>
+                  <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800">
+                    <span className="text-zinc-400 block text-[11px]">Bebidas Detalhadas & Gelo</span>
+                    <strong className="text-base block mt-1 text-amber-600 dark:text-amber-400">R$ {budget.beveragesCostConfirmed.toLocaleString('pt-BR')}</strong>
+                    <span className="text-[10px] text-zinc-500">Se todos forem: R$ {budget.beveragesCostAll.toLocaleString('pt-BR')}</span>
                   </div>
-                  <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800">
-                    <span className="text-zinc-400 block text-[11px]">Louças & Rechauds</span>
-                    <strong className="text-sm block mt-1">R$ {budget.tablewareCostConfirmed.toLocaleString('pt-BR')}</strong>
+                  <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800">
+                    <span className="text-zinc-400 block text-[11px]">Louças, Rechauds & Mesas</span>
+                    <strong className="text-base block mt-1">R$ {budget.tablewareCostConfirmed.toLocaleString('pt-BR')}</strong>
+                    <span className="text-[10px] text-zinc-500">{config.materialMode === 'rental' ? 'Modo Aluguel' : 'Descartáveis'}</span>
                   </div>
                 </div>
 
-                <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider pt-4">Despesas Manuais:</h4>
+                <div className="flex items-center justify-between pt-4">
+                  <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Despesas Manuais & Contratações Adicionais:</h4>
+                  <span className="text-xs text-zinc-500 font-medium">Subtotal Manual: R$ {budget.manualTotalActual.toLocaleString('pt-BR')}</span>
+                </div>
+
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead className={`border-b ${darkMode ? 'border-zinc-800 text-zinc-400' : 'border-zinc-200 text-zinc-500'}`}>
@@ -1722,12 +2101,9 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
                           <td className="py-3 text-right">
                             <div className="flex items-center justify-end gap-1.5">
                               <button
-                                onClick={() => {
-                                  setEditingExpense(expense);
-                                  setExpenseModalOpen(true);
-                                }}
+                                onClick={() => handleOpenExpenseModal(expense)}
                                 className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
-                                title="Editar"
+                                title="Editar despesa"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
@@ -1750,7 +2126,9 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
           </div>
         )}
 
+        {/* ============================================================ */}
         {/* TAB 8: CHECKLIST */}
+        {/* ============================================================ */}
         {activeTab === 'checklist' && (
           <div className="space-y-6">
             <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
@@ -1790,12 +2168,14 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
           </div>
         )}
 
-        {/* TAB 9: CONFIGURAÇÕES */}
+        {/* ============================================================ */}
+        {/* TAB 9: CONFIGURAÇÕES GERAIS */}
+        {/* ============================================================ */}
         {activeTab === 'config' && (
           <div className="space-y-6">
             <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
-              <h2 className="text-base font-semibold tracking-tight">Parâmetros do Evento</h2>
-              <p className="text-xs text-zinc-500 mt-1 mb-5">Configure dados do aniversariante e do espaço</p>
+              <h2 className="text-base font-semibold tracking-tight">Parâmetros Gerais do Evento</h2>
+              <p className="text-xs text-zinc-500 mt-1 mb-5">Configure dados do aniversariante e regras do espaço</p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 <div>
@@ -1846,11 +2226,11 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
                   </select>
                 </div>
                 <div>
-                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Lugares por Mesa de Convidado</label>
+                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Nome do Salão / Local</label>
                   <input
-                    type="number"
-                    value={config.tableCapacity}
-                    onChange={(e) => setConfig({ ...config, tableCapacity: Number(e.target.value) })}
+                    type="text"
+                    value={config.venueName}
+                    onChange={(e) => setConfig({ ...config, venueName: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
                   />
                 </div>
@@ -1861,66 +2241,226 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
 
       </main>
 
-      {/* MODAL: BACKUP E DIAGNÓSTICO */}
-      {backupModalOpen && (
+      {/* ============================================================ */}
+      {/* MODAL 1: EDITAR / ADICIONAR PRATO E RECEITA NO CARDÁPIO */}
+      {/* ============================================================ */}
+      {menuModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className={`w-full max-w-2xl rounded-2xl border p-5 shadow-xl max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Database className="w-4 h-4 text-emerald-500" />
-                <h3 className="text-sm font-semibold">Backup, Diagnóstico & Recuperação</h3>
+              <h3 className="text-sm font-semibold">{editingMenuItem ? 'Editar Prato & Ficha Técnica' : 'Novo Prato no Cardápio'}</h3>
+              <button onClick={() => setMenuModalOpen(false)} className="text-zinc-400 hover:text-zinc-600 text-xs">✕</button>
+            </div>
+
+            <form onSubmit={handleSaveMenuItem} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-zinc-500 mb-1">Nome do Prato</label>
+                  <input
+                    type="text"
+                    name="name"
+                    required
+                    defaultValue={editingMenuItem?.name || ''}
+                    placeholder="Ex: Risoto de Alho Poró"
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-500 mb-1">Categoria do Prato</label>
+                  <select name="category" defaultValue={editingMenuItem?.category || 'side'} className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent">
+                    <option value="starter" className="dark:bg-zinc-900">Entrada / Salgado</option>
+                    <option value="protein" className="dark:bg-zinc-900">Proteína / Prato Principal</option>
+                    <option value="side" className="dark:bg-zinc-900">Guarnição / Acompanhamento</option>
+                    <option value="dessert" className="dark:bg-zinc-900">Sobremesa / Bolo</option>
+                  </select>
+                </div>
               </div>
-              <button onClick={() => setBackupModalOpen(false)} className="text-zinc-400 hover:text-zinc-600 text-xs">✕</button>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-              <button
-                onClick={handleExportBackup}
-                className="flex items-center justify-center gap-2 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 text-xs font-medium"
-              >
-                <Download className="w-4 h-4 text-emerald-500" />
-                <span>Exportar Backup (.json)</span>
-              </button>
+              <div className="flex items-center pt-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="isHot"
+                    defaultChecked={editingMenuItem ? editingMenuItem.isHot : false}
+                    className="rounded border-zinc-300"
+                  />
+                  <span><strong>Prato servido quente</strong> (necessita de rechaud inox em banho-maria)</span>
+                </label>
+              </div>
 
-              <label className="flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 text-xs font-medium cursor-pointer">
-                <Upload className="w-4 h-4 text-zinc-500" />
-                <span>Restaurar de Arquivo JSON</span>
-                <input type="file" accept=".json" onChange={handleImportBackup} className="hidden" />
-              </label>
-            </div>
-
-            <div className="space-y-2">
-              <h4 className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                Memória Local ({rawLocalStorageDump.length} registros):
-              </h4>
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                {rawLocalStorageDump.map((item, idx) => (
-                  <div key={idx} className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950/50 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="truncate">
-                      <strong className="text-zinc-900 dark:text-zinc-100 block font-mono text-[11px]">{item.key}</strong>
-                      <span className="text-[10px] text-zinc-400 truncate block max-w-md">{item.preview}...</span>
-                    </div>
-                    <button
-                      onClick={() => handleRestoreFromKey(item.full)}
-                      className="px-2.5 py-1 rounded bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 text-[10px] font-medium shrink-0"
-                    >
-                      Carregar Desta Chave
-                    </button>
+              {/* LISTA DINÂMICA DE INGREDIENTES */}
+              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h4 className="font-semibold text-xs">Ingredientes / Insumos da Receita</h4>
+                    <span className="text-[10px] text-zinc-400">Quantidade calculada por pessoa consumidora</span>
                   </div>
-                ))}
-              </div>
-            </div>
+                  <button
+                    type="button"
+                    onClick={handleAddIngredientRow}
+                    className="px-2.5 py-1 rounded bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-700 dark:text-zinc-300 font-medium text-[11px] flex items-center gap-1"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>Adicionar Insumo</span>
+                  </button>
+                </div>
 
-            <div className="flex justify-end pt-5 border-t border-zinc-100 dark:border-zinc-800 mt-6">
-              <button onClick={() => setBackupModalOpen(false)} className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium">
-                Fechar
-              </button>
-            </div>
+                <div className="space-y-2">
+                  {editingIngredients.map((ing, idx) => (
+                    <div key={idx} className="flex flex-col sm:flex-row items-center gap-2 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-800">
+                      <div className="flex-1 w-full">
+                        <input
+                          type="text"
+                          placeholder="Nome do Ingrediente (ex: Arroz Arbóreo)"
+                          value={ing.name}
+                          onChange={(e) => handleUpdateIngredient(idx, 'name', e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs"
+                        />
+                      </div>
+                      <div className="w-24">
+                        <input
+                          type="number"
+                          step="0.01"
+                          placeholder="Qtd/pessoa"
+                          value={ing.amountPerPerson}
+                          onChange={(e) => handleUpdateIngredient(idx, 'amountPerPerson', e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs"
+                        />
+                      </div>
+                      <div className="w-20">
+                        <select
+                          value={ing.unit}
+                          onChange={(e) => handleUpdateIngredient(idx, 'unit', e.target.value)}
+                          className="w-full px-2 py-1.5 rounded border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs"
+                        >
+                          <option value="kg" className="dark:bg-zinc-900">kg</option>
+                          <option value="L" className="dark:bg-zinc-900">L</option>
+                          <option value="un" className="dark:bg-zinc-900">un</option>
+                          <option value="pct" className="dark:bg-zinc-900">pct</option>
+                        </select>
+                      </div>
+                      <div className="w-28">
+                        <input
+                          type="number"
+                          step="0.10"
+                          placeholder="R$ Preço Unit."
+                          value={ing.unitCost}
+                          onChange={(e) => handleUpdateIngredient(idx, 'unitCost', e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveIngredientRow(idx)}
+                        className="p-1.5 text-zinc-400 hover:text-rose-500"
+                        title="Remover insumo"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  {editingIngredients.length === 0 && (
+                    <p className="text-[11px] text-zinc-400 italic py-2 text-center">Nenhum ingrediente adicionado. Clique no botão acima para incluir.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                <button type="button" onClick={() => setMenuModalOpen(false)} className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700">Cancelar</button>
+                <button type="submit" className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium">Salvar Prato</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
-      {/* MODAL: CONVIDADO */}
+      {/* ============================================================ */}
+      {/* MODAL 2: EDITAR / ADICIONAR BEBIDA */}
+      {/* ============================================================ */}
+      {beverageModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className={`w-full max-w-md rounded-2xl border p-5 shadow-xl ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
+            <h3 className="text-sm font-semibold mb-4">{editingBeverage ? 'Editar Bebida / Insumo' : 'Nova Bebida'}</h3>
+            <form onSubmit={handleSaveBeverage} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-zinc-500 mb-1">Nome da Bebida</label>
+                <input
+                  type="text"
+                  name="name"
+                  required
+                  defaultValue={editingBeverage?.name || ''}
+                  placeholder="Ex: Suco de Maracujá da Fruta"
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-zinc-500 mb-1">Categoria</label>
+                  <select name="category" defaultValue={editingBeverage?.category || 'juice'} className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent">
+                    <option value="soda" className="dark:bg-zinc-900">Refrigerante</option>
+                    <option value="juice" className="dark:bg-zinc-900">Suco / Água de Coco</option>
+                    <option value="water" className="dark:bg-zinc-900">Água Mineral</option>
+                    <option value="alcohol" className="dark:bg-zinc-900">Alcoólica (Chopp/Vinho)</option>
+                    <option value="ice" className="dark:bg-zinc-900">Gelo</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-zinc-500 mb-1">Consumo (ml/pessoa/hora)</label>
+                  <input
+                    type="number"
+                    name="mlPerPersonPerHour"
+                    required
+                    defaultValue={editingBeverage?.mlPerPersonPerHour || 60}
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-zinc-500 mb-1">Preço Médio por Litro (R$)</label>
+                  <input
+                    type="number"
+                    step="0.10"
+                    name="unitCostPerLiter"
+                    required
+                    defaultValue={editingBeverage?.unitCostPerLiter || 6.00}
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-500 mb-1">Tipo de Embalagem</label>
+                  <input
+                    type="text"
+                    name="unitPackage"
+                    defaultValue={editingBeverage?.unitPackage || 'Garrafa 2L'}
+                    placeholder="Ex: Fardo Lata, Garrafa 2L"
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-zinc-500 mb-1">Volume da Embalagem (Litros ou kg)</label>
+                <input
+                  type="number"
+                  step="0.05"
+                  name="packageVolume"
+                  defaultValue={editingBeverage?.packageVolume || 2.0}
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                <button type="button" onClick={() => setBeverageModalOpen(false)} className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700">Cancelar</button>
+                <button type="submit" className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium">Salvar Bebida</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* MODAL 3: CONVIDADO */}
+      {/* ============================================================ */}
       {guestModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className={`w-full max-w-lg rounded-2xl border p-5 shadow-xl max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
@@ -2014,19 +2554,17 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
-                <button type="button" onClick={() => setGuestModalOpen(false)} className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700">
-                  Cancelar
-                </button>
-                <button type="submit" className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium">
-                  Salvar
-                </button>
+                <button type="button" onClick={() => setGuestModalOpen(false)} className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700">Cancelar</button>
+                <button type="submit" className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium">Salvar</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL: LOCAÇÃO */}
+      {/* ============================================================ */}
+      {/* MODAL 4: LOCAÇÃO, BRINQUEDOS E MOBILIÁRIO */}
+      {/* ============================================================ */}
       {rentalModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className={`w-full max-w-md rounded-2xl border p-5 shadow-xl ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
@@ -2054,22 +2592,28 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
                 <label className="block text-zinc-500 mb-1">Fornecedor</label>
                 <input type="text" name="supplier" defaultValue={editingRental?.supplier || ''} className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent" />
               </div>
+              <div>
+                <label className="block text-zinc-500 mb-1">Observações de Montagem / Devolução</label>
+                <input type="text" name="notes" defaultValue={editingRental?.notes || ''} placeholder="Ex: Montagem 1h antes do início" className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent" />
+              </div>
               <div className="flex items-center pt-2">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" name="hasMonitor" defaultChecked={editingRental ? editingRental.hasMonitor : false} className="rounded border-zinc-300" />
                   <span>Inclui monitor / operador</span>
                 </label>
               </div>
-              <div className="flex justify-end gap-2 pt-3">
+              <div className="flex justify-end gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-800">
                 <button type="button" onClick={() => setRentalModalOpen(false)} className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700">Cancelar</button>
-                <button type="submit" className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium">Salvar</button>
+                <button type="submit" className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium">Salvar Locação</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL: DESPESA */}
+      {/* ============================================================ */}
+      {/* MODAL 5: DESPESA MANUAL */}
+      {/* ============================================================ */}
       {expenseModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className={`w-full max-w-md rounded-2xl border p-5 shadow-xl ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
@@ -2105,7 +2649,7 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
                   <span>Despesa quitada</span>
                 </label>
               </div>
-              <div className="flex justify-end gap-2 pt-3">
+              <div className="flex justify-end gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-800">
                 <button type="button" onClick={() => setExpenseModalOpen(false)} className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700">Cancelar</button>
                 <button type="submit" className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium">Salvar</button>
               </div>
@@ -2114,7 +2658,69 @@ ESTRUTURA DE LOUÇAS (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCART�
         </div>
       )}
 
-      {/* MODAL: RSVP LINK */}
+      {/* ============================================================ */}
+      {/* MODAL 6: BACKUP E DIAGNÓSTICO */}
+      {/* ============================================================ */}
+      {backupModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className={`w-full max-w-2xl rounded-2xl border p-5 shadow-xl max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Database className="w-4 h-4 text-emerald-500" />
+                <h3 className="text-sm font-semibold">Backup, Diagnóstico & Recuperação</h3>
+              </div>
+              <button onClick={() => setBackupModalOpen(false)} className="text-zinc-400 hover:text-zinc-600 text-xs">✕</button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+              <button
+                onClick={handleExportBackup}
+                className="flex items-center justify-center gap-2 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 text-xs font-medium"
+              >
+                <Download className="w-4 h-4 text-emerald-500" />
+                <span>Exportar Backup (.json)</span>
+              </button>
+
+              <label className="flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 text-xs font-medium cursor-pointer">
+                <Upload className="w-4 h-4 text-zinc-500" />
+                <span>Restaurar de Arquivo JSON</span>
+                <input type="file" accept=".json" onChange={handleImportBackup} className="hidden" />
+              </label>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                Memória Local ({rawLocalStorageDump.length} registros):
+              </h4>
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {rawLocalStorageDump.map((item, idx) => (
+                  <div key={idx} className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950/50 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="truncate">
+                      <strong className="text-zinc-900 dark:text-zinc-100 block font-mono text-[11px]">{item.key}</strong>
+                      <span className="text-[10px] text-zinc-400 truncate block max-w-md">{item.preview}...</span>
+                    </div>
+                    <button
+                      onClick={() => handleRestoreFromKey(item.full)}
+                      className="px-2.5 py-1 rounded bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 text-[10px] font-medium shrink-0"
+                    >
+                      Carregar Desta Chave
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-5 border-t border-zinc-100 dark:border-zinc-800 mt-6">
+              <button onClick={() => setBackupModalOpen(false)} className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium">
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* MODAL 7: LINK DE RSVP */}
       {rsvpSimModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className={`w-full max-w-sm rounded-2xl border p-5 shadow-xl ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
