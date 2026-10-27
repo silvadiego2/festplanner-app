@@ -29,8 +29,10 @@ import {
   Cake,
   ArrowUpDown,
   BookOpen,
-  CheckCircle2,
-  AlertCircle
+  GlassWater,
+  Coins,
+  ChevronDown,
+  Info
 } from 'lucide-react';
 
 // --- OPÇÕES PREDEFINIDAS DE GRUPOS E RESTRIÇÕES ---
@@ -55,7 +57,7 @@ const PRESET_RESTRICTIONS = [
   'Não consome carne de porco'
 ];
 
-// --- DADOS INICIAIS DE DEMONSTRAÇÃO ---
+// --- DADOS INICIAIS DO EVENTO ---
 const INITIAL_EVENT_CONFIG = {
   celebrantName: "Mariana Souza",
   age: 30,
@@ -75,25 +77,129 @@ const INITIAL_EVENT_CONFIG = {
   teardownEndTime: "02:00",
   venueMapUrl: "https://maps.google.com",
   venueContact: "(71) 98765-4321 - Paula",
-  serviceType: "buffet", // 'buffet' | 'alacarte' | 'churrasco' | 'fingerfood'
+  serviceType: "buffet",
   servesBeer: true,
   servesWine: true,
   safetyMarginPct: 15,
   materialMode: "rental", // 'rental' | 'disposable'
+  rentalPlateCost: 1.8,
+  rentalCutleryCost: 1.2,
+  rentalGlassCost: 1.5,
+  rentalRechaudCost: 45.0,
+  rentalTableSetCost: 22.0, // jogo mesa + cadeiras
   tableCapacity: 4
 };
 
+// --- CARDÁPIO COM INGREDIENTES / RECEITA E CUSTO ESTIMADO POR UNIDADE DE MEDIDA ---
 const INITIAL_MENU = [
-  { id: '1', name: 'Dadinhos de Tapioca com Geléia de Pimenta', category: 'starter', isHot: true },
-  { id: '2', name: 'Mini Coxinhas e Quibes Artesanais', category: 'starter', isHot: true },
-  { id: '3', name: 'Costela Suína com Barbecue de Goiabada', category: 'main', isHot: true },
-  { id: '4', name: 'Filé Mignon ao Molho Madeira e Champignon', category: 'main', isHot: true },
-  { id: '5', name: 'Arroz Biro-Biro Especial', category: 'side', isHot: true },
-  { id: '6', name: 'Farofa Crocante de Castanhas', category: 'side', isHot: false },
-  { id: '7', name: 'Mix de Folhas com Redução Balsâmica', category: 'side', isHot: false },
-  { id: '8', name: 'Bolo Trufado Red Velvet', category: 'dessert', isHot: false },
-  { id: '9', name: 'Brigadeiros Gourmet e Beijinhos de Coco', category: 'dessert', isHot: false },
-  { id: '10', name: 'Chopp Pilsen Artesanal e Caipirinhas', category: 'drink', isHot: false }
+  {
+    id: '1',
+    name: 'Dadinhos de Tapioca com Geléia de Pimenta',
+    category: 'starter',
+    isHot: true,
+    ingredients: [
+      { name: 'Tapioca Granulada', amountPerPerson: 0.05, unit: 'kg', unitPrice: 12.0 },
+      { name: 'Queijo Coalho', amountPerPerson: 0.06, unit: 'kg', unitPrice: 48.0 },
+      { name: 'Leite Integral', amountPerPerson: 0.08, unit: 'L', unitPrice: 5.5 },
+      { name: 'Geléia de Pimenta Artesanal', amountPerPerson: 0.02, unit: 'kg', unitPrice: 35.0 }
+    ]
+  },
+  {
+    id: '2',
+    name: 'Mini Coxinhas e Quibes Artesanais',
+    category: 'starter',
+    isHot: true,
+    ingredients: [
+      { name: 'Mini Salgados Finos Fritos/Assados', amountPerPerson: 5, unit: 'un', unitPrice: 0.85 }
+    ]
+  },
+  {
+    id: '3',
+    name: 'Filé Mignon ao Molho Madeira e Champignon',
+    category: 'main',
+    isHot: true,
+    ingredients: [
+      { name: 'Filé Mignon Limpo', amountPerPerson: 0.16, unit: 'kg', unitPrice: 78.0 },
+      { name: 'Vinho Tinto Seco & Molho Madeira', amountPerPerson: 0.03, unit: 'L', unitPrice: 28.0 },
+      { name: 'Champignon Fatiado', amountPerPerson: 0.03, unit: 'kg', unitPrice: 42.0 }
+    ]
+  },
+  {
+    id: '4',
+    name: 'Costela Suína com Barbecue de Goiabada',
+    category: 'main',
+    isHot: true,
+    ingredients: [
+      { name: 'Costelinha Suína Especial', amountPerPerson: 0.18, unit: 'kg', unitPrice: 32.0 },
+      { name: 'Molho Barbecue com Goiabada', amountPerPerson: 0.04, unit: 'kg', unitPrice: 22.0 }
+    ]
+  },
+  {
+    id: '5',
+    name: 'Arroz Biro-Biro Especial com Bacon e Palha',
+    category: 'side',
+    isHot: true,
+    ingredients: [
+      { name: 'Arroz Agulhinha Tipo 1', amountPerPerson: 0.07, unit: 'kg', unitPrice: 7.0 },
+      { name: 'Bacon em Cubos', amountPerPerson: 0.025, unit: 'kg', unitPrice: 38.0 },
+      { name: 'Batata Palha & Ovos', amountPerPerson: 0.02, unit: 'kg', unitPrice: 26.0 }
+    ]
+  },
+  {
+    id: '6',
+    name: 'Farofa Crocante de Castanhas de Caju',
+    category: 'side',
+    isHot: false,
+    ingredients: [
+      { name: 'Farinha de Mandioca Biju', amountPerPerson: 0.04, unit: 'kg', unitPrice: 8.5 },
+      { name: 'Castanha de Caju Triturada', amountPerPerson: 0.025, unit: 'kg', unitPrice: 75.0 },
+      { name: 'Manteiga de Garrafa', amountPerPerson: 0.015, unit: 'kg', unitPrice: 45.0 }
+    ]
+  },
+  {
+    id: '7',
+    name: 'Salada de Folhas Nobres, Figos e Parmesão',
+    category: 'side',
+    isHot: false,
+    ingredients: [
+      { name: 'Mix de Folhas (Rúcula, Alface Americana)', amountPerPerson: 0.05, unit: 'kg', unitPrice: 24.0 },
+      { name: 'Lâminas de Parmesão', amountPerPerson: 0.02, unit: 'kg', unitPrice: 85.0 },
+      { name: 'Figos Frescos & Molho Mostarda e Mel', amountPerPerson: 0.025, unit: 'kg', unitPrice: 32.0 }
+    ]
+  },
+  {
+    id: '8',
+    name: 'Bolo Trufado Red Velvet com Frutas Vermelhas',
+    category: 'dessert',
+    isHot: false,
+    ingredients: [
+      { name: 'Bolo Decorado Red Velvet', amountPerPerson: 0.1, unit: 'kg', unitPrice: 95.0 }
+    ]
+  },
+  {
+    id: '9',
+    name: 'Brigadeiros Gourmet (Pistache, Belga e Ninho)',
+    category: 'dessert',
+    isHot: false,
+    ingredients: [
+      { name: 'Docinhos Artesanais Finos', amountPerPerson: 5, unit: 'un', unitPrice: 2.2 }
+    ]
+  }
+];
+
+// --- BEBIDAS DISCRIMINADAS COM ESTIMATIVAS DE CONSUMO E PREÇO UNITÁRIO ---
+const INITIAL_BEVERAGE_TYPES = [
+  { id: 'coca', name: 'Refrigerante Cola (Coca-Cola / Zero)', category: 'soft', mlPerPerson: 350, unitCostPerLiter: 7.5, unitFormat: 'Garrafa 2L' },
+  { id: 'guarana', name: 'Refrigerante Guaraná (Antarctica)', category: 'soft', mlPerPerson: 250, unitCostPerLiter: 6.8, unitFormat: 'Garrafa 2L' },
+  { id: 'suco_uva', name: 'Suco de Uva Integral', category: 'juice', mlPerPerson: 180, unitCostPerLiter: 14.0, unitFormat: 'Garrafa 1.5L' },
+  { id: 'suco_laranja', name: 'Sucos Variados (Laranja / Maracujá)', category: 'juice', mlPerPerson: 220, unitCostPerLiter: 9.5, unitFormat: 'Caixa / Garrafa 1L' },
+  { id: 'agua_coco', name: 'Água de Coco Natural', category: 'juice', mlPerPerson: 150, unitCostPerLiter: 11.0, unitFormat: 'Caixa 1L' },
+  { id: 'agua_sem_gas', name: 'Água Mineral sem Gás', category: 'water', mlPerPerson: 350, unitCostPerLiter: 3.0, unitFormat: 'Garrafa 500ml / Galão' },
+  { id: 'agua_com_gas', name: 'Água Mineral com Gás', category: 'water', mlPerPerson: 200, unitCostPerLiter: 4.5, unitFormat: 'Garrafa 500ml' },
+  { id: 'cerveja', name: 'Chopp / Cerveja Puro Malte (Consumidores de álcool)', category: 'alcohol', mlPerPerson: 1800, unitCostPerLiter: 13.5, unitFormat: 'Lata 350ml / Barril' },
+  { id: 'vinho', name: 'Vinho / Espumante Brut', category: 'alcohol', mlPerPerson: 300, unitCostPerLiter: 48.0, unitFormat: 'Garrafa 750ml' },
+  { id: 'gelo_filtrado', name: 'Gelo Filtrado para Bebidas', category: 'ice', mlPerPerson: 700, unitCostPerLiter: 2.5, unitFormat: 'Saco 5kg' },
+  { id: 'gelo_tina', name: 'Gelo em Barra/Cubo para Tina e Coolers', category: 'ice', mlPerPerson: 600, unitCostPerLiter: 1.8, unitFormat: 'Saco 10kg' }
 ];
 
 const INITIAL_GUESTS = [
@@ -102,24 +208,26 @@ const INITIAL_GUESTS = [
   { id: '3', name: 'Lucas Lima (Filho)', group: 'Família', category: 'child_6_11', status: 'confirmed', drinksAlcohol: false, restrictions: ['Sem restrições'] },
   { id: '4', name: 'Beatriz Costa', group: 'Trabalho / Colegas', category: 'adult', status: 'confirmed', drinksAlcohol: true, restrictions: ['Sem glúten (Celíaco)'] },
   { id: '5', name: 'Rodrigo Alves', group: 'Amigos Próximos', category: 'adult', status: 'pending', drinksAlcohol: true, restrictions: ['Sem restrições'] },
-  { id: '6', name: 'Juliana Pires', group: 'Esposa / Marido / Cônjuge', category: 'adult', status: 'declined', drinksAlcohol: true, restrictions: ['Não consome frutos do mar'] },
-  { id: '7', name: 'Gabriel Pires (Bebê)', group: 'Crianças / Filhos de Amigos', category: 'child_0_5', status: 'confirmed', drinksAlcohol: false, restrictions: ['Sem restrições'] }
-];
-
-const INITIAL_EXPENSES = [
-  { id: '1', description: 'Locação Salão Villa Verde', category: 'Locação Espaço', estimated: 2800, actual: 2800, paid: true },
-  { id: '2', description: 'Carnes e Proteínas Nobres (Filé e Costela)', category: 'Buffet & Comidas', estimated: 1400, actual: 1250, paid: true },
-  { id: '3', description: 'Chopp Artesanal & Cervejas', category: 'Bebidas & Gelo', estimated: 950, actual: 920, paid: true },
-  { id: '4', description: 'Bolo Decorado & Docinhos Finos', category: 'Confeitaria', estimated: 650, actual: 650, paid: false },
-  { id: '5', description: 'Aluguel de Rechauds e Louças', category: 'Aluguel Materiais', estimated: 420, actual: 400, paid: true },
-  { id: '6', description: 'Cama Elástica com Monitor', category: 'Brinquedos', estimated: 350, actual: 350, paid: true }
+  { id: '6', name: 'Juliana Pires', group: 'Esposa / Marido / Cônjuge', category: 'adult', status: 'declined', drinksAlcohol: true, restrictions: ['Sem frutos do mar'] },
+  { id: '7', name: 'Gabriel Pires (Bebê)', group: 'Crianças / Filhos de Amigos', category: 'child_0_5', status: 'confirmed', drinksAlcohol: false, restrictions: ['Sem restrições'] },
+  { id: '8', name: 'Marcelo Santos', group: 'Trabalho / Colegas', category: 'adult', status: 'pending', drinksAlcohol: true, restrictions: ['Sem restrições'] },
+  { id: '9', name: 'Camila Rocha', group: 'Amigos Próximos', category: 'adult', status: 'pending', drinksAlcohol: true, restrictions: ['Sem restrições'] },
+  { id: '10', name: 'Patrícia Souza', group: 'Família', category: 'adult', status: 'confirmed', drinksAlcohol: false, restrictions: ['Não consome carne vermelha'] }
 ];
 
 const INITIAL_RENTALS = [
-  { id: '1', name: 'Salão Villa Verde', category: 'venue', cost: 2800, supplier: 'Espaço Villa Verde', notes: 'Incluso limpeza pós-evento' },
-  { id: '2', name: 'Cama Elástica 3,05m', category: 'toy', cost: 350, supplier: 'Tio Pipoca Festas', hasMonitor: true, notes: 'Montagem 1h antes com monitor' },
-  { id: '3', name: '10 Jogos de Mesas e Cadeiras', category: 'furniture', cost: 220, supplier: 'LocMóveis Eventos', notes: 'Entrega na sexta-feira à tarde' },
-  { id: '4', name: 'Kit Rechauds Inox com Cubas', category: 'furniture', cost: 180, supplier: 'LocMóveis Eventos', notes: 'Devolução limpo' }
+  { id: '1', name: 'Salão Villa Verde & Lounge', category: 'venue', cost: 2800, supplier: 'Espaço Villa Verde', notes: 'Incluso limpeza pós-evento' },
+  { id: '2', name: 'Cama Elástica 3,05m Premium', category: 'toy', cost: 380, supplier: 'Tio Pipoca Festas', hasMonitor: true, notes: 'Montagem às 14h, monitor incluso' },
+  { id: '3', name: 'Piscina de Bolinhas Inflável', category: 'toy', cost: 260, supplier: 'Tio Pipoca Festas', hasMonitor: true, notes: 'Monitor incluso' },
+  { id: '4', name: 'Jogos de Mesas e Cadeiras Revestidas', category: 'furniture', cost: 320, supplier: 'LocMóveis Eventos', notes: 'Entrega na sexta-feira à tarde' },
+  { id: '5', name: 'Kit Rechauds Inox com Banho-Maria', category: 'furniture', cost: 220, supplier: 'LocMóveis Eventos', notes: 'Devolução limpo' }
+];
+
+// Despesas avulsas complementares (decoração, dj, fotografia, etc.)
+const INITIAL_MANUAL_EXPENSES = [
+  { id: 'man_1', description: 'Decoração Floral & Painel de Fotos', category: 'Decoração & Cenografia', estimated: 1200, actual: 1200, paid: true },
+  { id: 'man_2', description: 'DJ e Iluminação Cênica', category: 'Música & Atrações', estimated: 900, actual: 900, paid: false },
+  { id: 'man_3', description: 'Fotógrafo Profissional (4h)', category: 'Fotografia & Vídeo', estimated: 800, actual: 800, paid: true }
 ];
 
 const INITIAL_CHECKLIST = [
@@ -135,46 +243,52 @@ const INITIAL_CHECKLIST = [
 ];
 
 export default function App() {
-  // --- ESTADOS COM PERSISTÊNCIA EM LOCALSTORAGE ---
   const [config, setConfig] = useState(() => {
     if (typeof window === 'undefined') return INITIAL_EVENT_CONFIG;
-    const saved = localStorage.getItem('festplanner_config');
+    const saved = localStorage.getItem('festplanner_config_v2');
     return saved ? JSON.parse(saved) : INITIAL_EVENT_CONFIG;
   });
 
   const [menu, setMenu] = useState(() => {
     if (typeof window === 'undefined') return INITIAL_MENU;
-    const saved = localStorage.getItem('festplanner_menu');
+    const saved = localStorage.getItem('festplanner_menu_v2');
     return saved ? JSON.parse(saved) : INITIAL_MENU;
+  });
+
+  const [beverages, setBeverages] = useState(() => {
+    if (typeof window === 'undefined') return INITIAL_BEVERAGE_TYPES;
+    const saved = localStorage.getItem('festplanner_beverages_v2');
+    return saved ? JSON.parse(saved) : INITIAL_BEVERAGE_TYPES;
   });
 
   const [guests, setGuests] = useState(() => {
     if (typeof window === 'undefined') return INITIAL_GUESTS;
-    const saved = localStorage.getItem('festplanner_guests');
+    const saved = localStorage.getItem('festplanner_guests_v2');
     return saved ? JSON.parse(saved) : INITIAL_GUESTS;
-  });
-
-  const [expenses, setExpenses] = useState(() => {
-    if (typeof window === 'undefined') return INITIAL_EXPENSES;
-    const saved = localStorage.getItem('festplanner_expenses');
-    return saved ? JSON.parse(saved) : INITIAL_EXPENSES;
   });
 
   const [rentals, setRentals] = useState(() => {
     if (typeof window === 'undefined') return INITIAL_RENTALS;
-    const saved = localStorage.getItem('festplanner_rentals');
+    const saved = localStorage.getItem('festplanner_rentals_v2');
     return saved ? JSON.parse(saved) : INITIAL_RENTALS;
+  });
+
+  const [manualExpenses, setManualExpenses] = useState(() => {
+    if (typeof window === 'undefined') return INITIAL_MANUAL_EXPENSES;
+    const saved = localStorage.getItem('festplanner_manual_expenses_v2');
+    return saved ? JSON.parse(saved) : INITIAL_MANUAL_EXPENSES;
   });
 
   const [checklist, setChecklist] = useState(() => {
     if (typeof window === 'undefined') return INITIAL_CHECKLIST;
-    const saved = localStorage.getItem('festplanner_checklist');
+    const saved = localStorage.getItem('festplanner_checklist_v2');
     return saved ? JSON.parse(saved) : INITIAL_CHECKLIST;
   });
 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [darkMode, setDarkMode] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+  const [budgetScenario, setBudgetScenario] = useState('both'); // 'confirmed' | 'all' | 'both'
 
   // Ordenação de convidados
   const [guestSortField, setGuestSortField] = useState('name');
@@ -196,29 +310,33 @@ export default function App() {
   const [menuModalOpen, setMenuModalOpen] = useState(false);
   const [editingMenuItem, setEditingMenuItem] = useState(null);
 
-  // Salvar no localStorage
+  // Persistência
   useEffect(() => {
-    localStorage.setItem('festplanner_config', JSON.stringify(config));
+    localStorage.setItem('festplanner_config_v2', JSON.stringify(config));
   }, [config]);
 
   useEffect(() => {
-    localStorage.setItem('festplanner_menu', JSON.stringify(menu));
+    localStorage.setItem('festplanner_menu_v2', JSON.stringify(menu));
   }, [menu]);
 
   useEffect(() => {
-    localStorage.setItem('festplanner_guests', JSON.stringify(guests));
+    localStorage.setItem('festplanner_beverages_v2', JSON.stringify(beverages));
+  }, [beverages]);
+
+  useEffect(() => {
+    localStorage.setItem('festplanner_guests_v2', JSON.stringify(guests));
   }, [guests]);
 
   useEffect(() => {
-    localStorage.setItem('festplanner_expenses', JSON.stringify(expenses));
-  }, [expenses]);
-
-  useEffect(() => {
-    localStorage.setItem('festplanner_rentals', JSON.stringify(rentals));
+    localStorage.setItem('festplanner_rentals_v2', JSON.stringify(rentals));
   }, [rentals]);
 
   useEffect(() => {
-    localStorage.setItem('festplanner_checklist', JSON.stringify(checklist));
+    localStorage.setItem('festplanner_manual_expenses_v2', JSON.stringify(manualExpenses));
+  }, [manualExpenses]);
+
+  useEffect(() => {
+    localStorage.setItem('festplanner_checklist_v2', JSON.stringify(checklist));
   }, [checklist]);
 
   const showToast = (msg) => {
@@ -226,145 +344,250 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // --- CÁLCULOS PRINCIPAIS BASEADOS EM CONFIRMADOS & CARDÁPIO ---
-  const stats = useMemo(() => {
-    const totalGuests = guests.length;
+  // --- ESTATÍSTICAS DOS CONVIDADOS (CONFIRMADOS VS. TODOS) ---
+  const guestStats = useMemo(() => {
+    const totalCount = guests.length;
     const confirmedList = guests.filter(g => g.status === 'confirmed');
     const pendingList = guests.filter(g => g.status === 'pending');
     const declinedList = guests.filter(g => g.status === 'declined');
 
-    const confirmedAdults = confirmedList.filter(g => g.category === 'adult').length;
-    const confirmedKids611 = confirmedList.filter(g => g.category === 'child_6_11').length;
-    const confirmedKids05 = confirmedList.filter(g => g.category === 'child_0_5').length;
+    // Confirmados
+    const confAdults = confirmedList.filter(g => g.category === 'adult').length;
+    const confKids611 = confirmedList.filter(g => g.category === 'child_6_11').length;
+    const confKids05 = confirmedList.filter(g => g.category === 'child_0_5').length;
+    const confWeightedEaters = confAdults + (confKids611 * 0.5);
+    const confDrinkers = confirmedList.filter(g => g.category === 'adult' && g.drinksAlcohol).length;
 
-    // Crianças de 6 a 11 anos contam como 0.5 cota alimentar; de 0 a 5 são isentas
-    const weightedEaters = confirmedAdults + (confirmedKids611 * 0.5);
-    const alcoholDrinkers = confirmedList.filter(g => g.category === 'adult' && g.drinksAlcohol).length;
-
-    // Custos
-    const totalEstimatedCost = expenses.reduce((acc, curr) => acc + (Number(curr.estimated) || 0), 0);
-    const totalActualCost = expenses.reduce((acc, curr) => acc + (Number(curr.actual) || 0), 0);
-    const costPerConfirmed = confirmedList.length > 0 ? (totalEstimatedCost / confirmedList.length) : 0;
-
-    // Gastos por categoria
-    const categoryTotals = expenses.reduce((acc, exp) => {
-      const cat = exp.category || 'Outros';
-      acc[cat] = (acc[cat] || 0) + (Number(exp.actual) || Number(exp.estimated) || 0);
-      return acc;
-    }, {});
-
-    // Checklist
-    const completedChecklist = checklist.filter(c => c.completed).length;
-    const checklistProgress = checklist.length > 0 ? Math.round((completedChecklist / checklist.length) * 100) : 0;
-    const pendingUrgentTasks = checklist.filter(c => !c.completed).slice(0, 3);
-
-    // Contagem de dias até o evento
-    const eventDate = new Date(config.date);
-    const today = new Date();
-    const diffTime = eventDate - today;
-    const daysUntilEvent = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    // Cardápio & Pratos Quentes
-    const hotDishesInMenu = menu.filter(item => item.isHot).length;
+    // Cenário se fossem TODOS os convidados (desconsiderando os expressamente recusados ou simulando 100%)
+    const allEligible = guests.filter(g => g.status !== 'declined');
+    const allAdults = allEligible.filter(g => g.category === 'adult').length;
+    const allKids611 = allEligible.filter(g => g.category === 'child_6_11').length;
+    const allKids05 = allEligible.filter(g => g.category === 'child_0_5').length;
+    const allWeightedEaters = allAdults + (allKids611 * 0.5);
+    const allDrinkers = allEligible.filter(g => g.category === 'adult' && g.drinksAlcohol).length;
 
     return {
-      totalGuests,
+      totalCount,
       confirmedCount: confirmedList.length,
       pendingCount: pendingList.length,
       declinedCount: declinedList.length,
-      confirmedAdults,
-      confirmedKids611,
-      confirmedKids05,
-      weightedEaters,
-      alcoholDrinkers,
-      totalEstimatedCost,
-      totalActualCost,
+      confAdults,
+      confKids611,
+      confKids05,
+      confWeightedEaters,
+      confDrinkers,
+      allEligibleCount: allEligible.length,
+      allWeightedEaters,
+      allDrinkers
+    };
+  }, [guests]);
+
+  // --- CÁLCULO DE COMIDAS & RECEITAS POR INGREDIENTE (CONFIRMADOS VS. TODOS) ---
+  const foodCalculations = useMemo(() => {
+    const calcForEaters = (eaters) => {
+      let totalCost = 0;
+      const ingredientDetails = [];
+
+      menu.forEach(item => {
+        let itemCost = 0;
+        const ingList = (item.ingredients || []).map(ing => {
+          const requiredAmount = Math.round(eaters * (Number(ing.amountPerPerson) || 0) * 100) / 100;
+          const subtotal = requiredAmount * (Number(ing.unitPrice) || 0);
+          itemCost += subtotal;
+          return {
+            name: ing.name,
+            amount: requiredAmount,
+            unit: ing.unit,
+            unitPrice: ing.unitPrice,
+            subtotal
+          };
+        });
+
+        totalCost += itemCost;
+        ingredientDetails.push({
+          menuItemId: item.id,
+          menuItemName: item.name,
+          category: item.category,
+          isHot: item.isHot,
+          itemCost,
+          ingredients: ingList
+        });
+      });
+
+      return { totalCost, ingredientDetails };
+    };
+
+    const confirmed = calcForEaters(guestStats.confWeightedEaters);
+    const all = calcForEaters(guestStats.allWeightedEaters);
+
+    return { confirmed, all };
+  }, [menu, guestStats.confWeightedEaters, guestStats.allWeightedEaters]);
+
+  // --- CÁLCULO DE BEBIDAS DISCRIMINADAS (CONFIRMADOS VS. TODOS) ---
+  const beverageCalculations = useMemo(() => {
+    const calcDrinks = (totalGuests, drinkers) => {
+      let totalCost = 0;
+      const list = beverages.map(bev => {
+        const isAlcohol = bev.category === 'alcohol';
+        const basePeople = isAlcohol ? drinkers : totalGuests;
+        const totalVolumeLiters = Math.round((basePeople * (Number(bev.mlPerPerson) || 0) / 1000) * 10) / 10;
+        const cost = Math.round(totalVolumeLiters * (Number(bev.unitCostPerLiter) || 0) * 100) / 100;
+        totalCost += cost;
+
+        return {
+          id: bev.id,
+          name: bev.name,
+          category: bev.category,
+          unitFormat: bev.unitFormat,
+          unitCostPerLiter: bev.unitCostPerLiter,
+          litersOrKg: totalVolumeLiters,
+          cost
+        };
+      });
+
+      return { totalCost, list };
+    };
+
+    const confirmed = calcDrinks(guestStats.confirmedCount, guestStats.confDrinkers);
+    const all = calcDrinks(guestStats.allEligibleCount, guestStats.allDrinkers);
+
+    return { confirmed, all };
+  }, [beverages, guestStats]);
+
+  // --- CÁLCULO DE LOUÇAS, RECHAUDS E MOBILIÁRIO (CONFIRMADOS VS. TODOS) ---
+  const materialCalculations = useMemo(() => {
+    const calcMaterials = (confirmedCount, drinkers) => {
+      const safety = 1 + ((Number(config.safetyMarginPct) || 15) / 100);
+      const isRental = config.materialMode === 'rental';
+
+      const mainPlates = Math.ceil(confirmedCount * 1.2 * safety);
+      const dessertPlates = Math.ceil(confirmedCount * 1.3 * safety);
+      const forksAndKnives = Math.ceil(confirmedCount * 1.25 * safety);
+      const waterGlasses = Math.ceil(confirmedCount * 1.5 * safety);
+      const beerTulips = Math.ceil(drinkers * 2 * safety);
+
+      // Rechauds determinados pelo número de pratos quentes cadastrados no menu
+      const hotDishesCount = menu.filter(m => m.isHot).length;
+      const rechauds = Math.max(1, hotDishesCount);
+      const durationHours = Number(config.durationHours) || 6;
+      const fuelPastesNeeded = Math.ceil(rechauds * (durationHours / 2.2));
+
+      const capacity = Number(config.tableCapacity) || 4;
+      const tablesNeeded = Math.ceil(confirmedCount / capacity);
+      const chairsNeeded = tablesNeeded * capacity;
+
+      // Custos estimados
+      let tablewareCost = 0;
+      if (isRental) {
+        tablewareCost =
+          (mainPlates + dessertPlates) * (Number(config.rentalPlateCost) || 1.8) +
+          forksAndKnives * (Number(config.rentalCutleryCost) || 1.2) +
+          (waterGlasses + beerTulips) * (Number(config.rentalGlassCost) || 1.5) +
+          rechauds * (Number(config.rentalRechaudCost) || 45.0) +
+          (fuelPastesNeeded * 8.5); // pastilhas de álcool gel
+      } else {
+        // Descartáveis ecológicos/biodegradáveis
+        tablewareCost =
+          (mainPlates + dessertPlates) * 0.65 +
+          forksAndKnives * 0.5 +
+          (waterGlasses + beerTulips) * 0.45 +
+          rechauds * (Number(config.rentalRechaudCost) || 45.0) +
+          (fuelPastesNeeded * 8.5);
+      }
+
+      const tablesCost = tablesNeeded * (Number(config.rentalTableSetCost) || 22.0);
+
+      return {
+        mainPlates,
+        dessertPlates,
+        forksAndKnives,
+        waterGlasses,
+        beerTulips,
+        rechauds,
+        fuelPastesNeeded,
+        tablesNeeded,
+        chairsNeeded,
+        tablewareCost,
+        tablesCost,
+        totalCost: tablewareCost + tablesCost
+      };
+    };
+
+    const confirmed = calcMaterials(guestStats.confirmedCount, guestStats.confDrinkers);
+    const all = calcMaterials(guestStats.allEligibleCount, guestStats.allDrinkers);
+
+    return { confirmed, all };
+  }, [config, menu, guestStats]);
+
+  // --- CUSTO TOTAL DE LOCAÇÕES CADASTRADAS (ESPAÇO, BRINQUEDOS, MOBÍLIA AVULSA) ---
+  const totalRentalsCost = useMemo(() => {
+    return rentals.reduce((acc, curr) => acc + (Number(curr.cost) || 0), 0);
+  }, [rentals]);
+
+  // --- CENTRO DE CUSTOS INTEGRADO E AUTOMATIZADO ---
+  const consolidatedBudget = useMemo(() => {
+    // 1. Locações Cadastradas
+    const venueRentals = rentals.filter(r => r.category === 'venue');
+    const toyRentals = rentals.filter(r => r.category === 'toy');
+    const furnitureRentals = rentals.filter(r => r.category === 'furniture');
+
+    const venueCost = venueRentals.reduce((a, b) => a + (Number(b.cost) || 0), 0) + (config.locationType === 'home' ? (Number(config.condoFee) || 0) : 0);
+    const toysCost = toyRentals.reduce((a, b) => a + (Number(b.cost) || 0), 0);
+    const furnitureCost = furnitureRentals.reduce((a, b) => a + (Number(b.cost) || 0), 0);
+
+    // 2. Insumos do Buffet (Comida)
+    const foodCostConfirmed = foodCalculations.confirmed.totalCost;
+    const foodCostAll = foodCalculations.all.totalCost;
+
+    // 3. Bebidas & Gelo
+    const drinksCostConfirmed = beverageCalculations.confirmed.totalCost;
+    const drinksCostAll = beverageCalculations.all.totalCost;
+
+    // 4. Louças, Rechauds & Mesas de Apoio
+    const materialsCostConfirmed = materialCalculations.confirmed.totalCost;
+    const materialsCostAll = materialCalculations.all.totalCost;
+
+    // 5. Despesas Manuais / Extras (Decoração, DJ, etc.)
+    const manualExpensesTotal = manualExpenses.reduce((a, b) => a + (Number(b.actual) || Number(b.estimated) || 0), 0);
+
+    // Totais Consolidados
+    const totalConfirmed = venueCost + toysCost + furnitureCost + foodCostConfirmed + drinksCostConfirmed + materialsCostConfirmed + manualExpensesTotal;
+    const totalAll = venueCost + toysCost + furnitureCost + foodCostAll + drinksCostAll + materialsCostAll + manualExpensesTotal;
+
+    const diff = totalAll - totalConfirmed;
+    const costPerConfirmed = guestStats.confirmedCount > 0 ? (totalConfirmed / guestStats.confirmedCount) : 0;
+    const costPerAll = guestStats.allEligibleCount > 0 ? (totalAll / guestStats.allEligibleCount) : 0;
+
+    // Linhas estruturadas para exibição no Centro de Custos
+    const lineItems = [
+      { id: 'cat_venue', name: 'Locação do Espaço / Salão', category: 'Espaço & Infra', confirmedCost: venueCost, allCost: venueCost, source: 'Locações' },
+      { id: 'cat_toys', name: 'Brinquedos & Recreação Infantil', category: 'Entretenimento', confirmedCost: toysCost, allCost: toysCost, source: 'Locações' },
+      { id: 'cat_furniture', name: 'Mobiliário Extra Locado', category: 'Locações', confirmedCost: furnitureCost, allCost: furnitureCost, source: 'Locações' },
+      { id: 'cat_food', name: 'Insumos do Cardápio (Carnes, Pratos & Doces)', category: 'Buffet & Cozinha', confirmedCost: foodCostConfirmed, allCost: foodCostAll, source: 'Cardápio / Receitas' },
+      { id: 'cat_drinks', name: 'Bebidas Detalhadas & Gelo', category: 'Bebidas', confirmedCost: drinksCostConfirmed, allCost: drinksCostAll, source: 'Bebidas' },
+      { id: 'cat_materials', name: `Louças, Rechauds e Jogos de Mesas (${config.materialMode === 'rental' ? 'Aluguel' : 'Descartáveis'})`, category: 'Utensílios & Mesas', confirmedCost: materialsCostConfirmed, allCost: materialsCostAll, source: 'Calculadora' },
+      ...manualExpenses.map(m => ({
+        id: m.id,
+        name: m.description,
+        category: m.category,
+        confirmedCost: Number(m.actual) || Number(m.estimated) || 0,
+        allCost: Number(m.actual) || Number(m.estimated) || 0,
+        source: 'Despesa Avulsa',
+        paid: m.paid
+      }))
+    ];
+
+    return {
+      totalConfirmed,
+      totalAll,
+      diff,
       costPerConfirmed,
-      completedChecklist,
-      checklistProgress,
-      pendingUrgentTasks,
-      daysUntilEvent,
-      categoryTotals,
-      hotDishesInMenu
+      costPerAll,
+      lineItems
     };
-  }, [guests, expenses, checklist, config.date, menu]);
+  }, [rentals, config, foodCalculations, beverageCalculations, materialCalculations, manualExpenses, guestStats]);
 
-  // Cálculos de Comidas e Bebidas integrados ao cardápio
-  const calculatedFoodAndBeverages = useMemo(() => {
-    const eaters = stats.weightedEaters;
-    const drinkers = stats.alcoholDrinkers;
-    const hours = Number(config.durationHours) || 5;
-
-    // Se o serviço for churrasco ou fingerfood ajustamos a cota
-    const meatPerPersonKg = config.serviceType === 'churrasco' ? 0.38 : 0.25;
-    const totalMeatKg = Math.round(eaters * meatPerPersonKg * 10) / 10;
-    const sidesKg = Math.round(eaters * 0.22 * 10) / 10;
-    const totalSalgados = Math.round(eaters * (config.serviceType === 'fingerfood' ? 20 : 12));
-    const cakeKg = Math.round(stats.confirmedCount * 0.1 * 10) / 10;
-    const docinhos = Math.round(stats.confirmedCount * 5);
-
-    const waterLiters = Math.round(stats.confirmedCount * 0.5 * 10) / 10;
-    const sodaJuiceLiters = Math.round(stats.confirmedCount * 0.6 * 10) / 10;
-    const beerPerDrinkerLiters = hours <= 4 ? 1.5 : hours <= 6 ? 2.0 : 2.5;
-    const totalBeerLiters = Math.round(drinkers * beerPerDrinkerLiters * 10) / 10;
-    const totalBeerCans = Math.round((totalBeerLiters * 1000) / 350);
-    const wineBottles = Math.ceil(drinkers / 2.5);
-    const filteredIceKg = Math.round(stats.confirmedCount * 0.8);
-    const coolerIceBags = Math.ceil(stats.confirmedCount / 8);
-
-    return {
-      totalMeatKg,
-      sidesKg,
-      totalSalgados,
-      cakeKg,
-      docinhos,
-      waterLiters,
-      sodaJuiceLiters,
-      totalBeerLiters,
-      totalBeerCans,
-      wineBottles,
-      filteredIceKg,
-      coolerIceBags
-    };
-  }, [stats, config.durationHours, config.serviceType]);
-
-  // Cálculos de Louças, Rechauds (baseados nos pratos quentes do menu) e Mobiliário
-  const calculatedMaterials = useMemo(() => {
-    const confirmed = stats.confirmedCount;
-    const safety = 1 + ((Number(config.safetyMarginPct) || 15) / 100);
-
-    const mainPlates = Math.ceil(confirmed * 1.2 * safety);
-    const dessertPlates = Math.ceil(confirmed * 1.3 * safety);
-    const forksAndKnives = Math.ceil(confirmed * 1.25 * safety);
-    const dessertCutlery = Math.ceil(confirmed * 1.3 * safety);
-    const waterGlasses = Math.ceil(confirmed * 1.5 * safety);
-    const beerTulips = Math.ceil(stats.alcoholDrinkers * 2 * safety);
-
-    // Rechauds determinados dinamicamente pelo número de pratos quentes no cardápio
-    const rechauds = Math.max(1, stats.hotDishesInMenu || 4);
-    const durationHours = Number(config.durationHours) || 5;
-    // Cada pastilha de álcool gel dura cerca de 2h a 2.5h
-    const fuelPastesNeeded = Math.ceil(rechauds * (durationHours / 2));
-
-    const capacity = Number(config.tableCapacity) || 4;
-    const guestTablesNeeded = Math.ceil(confirmed / capacity);
-    const guestChairsNeeded = guestTablesNeeded * capacity;
-
-    return {
-      mainPlates,
-      dessertPlates,
-      forksAndKnives,
-      dessertCutlery,
-      waterGlasses,
-      beerTulips,
-      rechauds,
-      fuelPastesNeeded,
-      guestTablesNeeded,
-      guestChairsNeeded
-    };
-  }, [stats.confirmedCount, stats.alcoholDrinkers, stats.hotDishesInMenu, config.safetyMarginPct, config.durationHours, config.tableCapacity]);
-
-  // Lista ordenada de convidados
+  // Lista de convidados ordenada
   const sortedGuests = useMemo(() => {
     return [...guests].sort((a, b) => {
       let valA = a[guestSortField];
@@ -391,10 +614,10 @@ export default function App() {
   const openGuestModal = (guest = null) => {
     setEditingGuest(guest);
     if (guest) {
-      const rest = Array.isArray(guest.restrictions) 
-        ? guest.restrictions 
-        : typeof guest.restrictions === 'string' 
-        ? [guest.restrictions] 
+      const rest = Array.isArray(guest.restrictions)
+        ? guest.restrictions
+        : typeof guest.restrictions === 'string'
+        ? [guest.restrictions]
         : ['Sem restrições'];
       setSelectedRestrictions(rest);
     } else {
@@ -447,7 +670,7 @@ export default function App() {
         drinksAlcohol,
         restrictions: finalRestrictions
       } : g));
-      showToast('Convidado atualizado com sucesso!');
+      showToast('Convidado atualizado!');
     } else {
       const newGuest = {
         id: Date.now().toString(),
@@ -471,7 +694,7 @@ export default function App() {
     showToast('Convidado removido.');
   };
 
-  // --- HANDLERS DO CARDÁPIO ---
+  // --- HANDLERS DO CARDÁPIO & INGREDIENTES ---
   const openMenuModal = (item = null) => {
     setEditingMenuItem(item);
     setMenuModalOpen(true);
@@ -484,17 +707,36 @@ export default function App() {
     const category = form.category.value;
     const isHot = form.isHot.checked;
 
+    // Ingrediente principal simplificado
+    const ingName = form.ingName.value.trim() || name;
+    const ingAmount = parseFloat(form.ingAmount.value) || 0.1;
+    const ingUnit = form.ingUnit.value;
+    const ingPrice = parseFloat(form.ingPrice.value) || 0;
+
     if (!name) return;
 
+    const updatedIngredients = [
+      { name: ingName, amountPerPerson: ingAmount, unit: ingUnit, unitPrice: ingPrice }
+    ];
+
     if (editingMenuItem) {
-      setMenu(menu.map(m => m.id === editingMenuItem.id ? { ...m, name, category, isHot } : m));
-      showToast('Item do cardápio atualizado!');
+      setMenu(menu.map(m => m.id === editingMenuItem.id ? {
+        ...m,
+        name,
+        category,
+        isHot,
+        ingredients: (m.ingredients && m.ingredients.length > 1)
+          ? [{ ...m.ingredients[0], name: ingName, amountPerPerson: ingAmount, unit: ingUnit, unitPrice: ingPrice }, ...m.ingredients.slice(1)]
+          : updatedIngredients
+      } : m));
+      showToast('Prato atualizado e custos recalculados!');
     } else {
       const newItem = {
         id: Date.now().toString(),
         name,
         category,
-        isHot
+        isHot,
+        ingredients: updatedIngredients
       };
       setMenu([...menu, newItem]);
       showToast('Prato adicionado ao cardápio!');
@@ -509,56 +751,7 @@ export default function App() {
     showToast('Item removido do cardápio.');
   };
 
-  // --- HANDLERS DO CENTRO DE CUSTOS (CRIAR E EDITAR) ---
-  const openExpenseModal = (expense = null) => {
-    setEditingExpense(expense);
-    setExpenseModalOpen(true);
-  };
-
-  const handleSaveExpense = (e) => {
-    e.preventDefault();
-    const form = e.target;
-    const description = form.description.value.trim();
-    const category = form.category.value;
-    const estimated = parseFloat(form.estimated.value) || 0;
-    const actual = parseFloat(form.actual.value) || 0;
-    const paid = form.paid.checked;
-
-    if (!description) return;
-
-    if (editingExpense) {
-      setExpenses(expenses.map(exp => exp.id === editingExpense.id ? {
-        ...exp,
-        description,
-        category,
-        estimated,
-        actual,
-        paid
-      } : exp));
-      showToast('Despesa atualizada com sucesso!');
-    } else {
-      const newExpense = {
-        id: Date.now().toString(),
-        description,
-        category,
-        estimated,
-        actual,
-        paid
-      };
-      setExpenses([...expenses, newExpense]);
-      showToast('Despesa cadastrada!');
-    }
-
-    setExpenseModalOpen(false);
-    setEditingExpense(null);
-  };
-
-  const handleDeleteExpense = (id) => {
-    setExpenses(expenses.filter(e => e.id !== id));
-    showToast('Despesa removida.');
-  };
-
-  // --- HANDLERS DE LOCAÇÕES & MOBILIÁRIO (CRIAR E EDITAR) ---
+  // --- HANDLERS DE LOCAÇÃO ---
   const openRentalModal = (rental = null) => {
     setEditingRental(rental);
     setRentalModalOpen(true);
@@ -586,7 +779,7 @@ export default function App() {
         notes,
         hasMonitor
       } : r));
-      showToast('Item de locação atualizado!');
+      showToast('Locação atualizada! Centro de Custos sincronizado.');
     } else {
       const newRental = {
         id: Date.now().toString(),
@@ -598,7 +791,7 @@ export default function App() {
         hasMonitor
       };
       setRentals([...rentals, newRental]);
-      showToast('Item de locação cadastrado!');
+      showToast('Locação adicionada ao orçamento!');
     }
 
     setRentalModalOpen(false);
@@ -607,7 +800,56 @@ export default function App() {
 
   const handleDeleteRental = (id) => {
     setRentals(rentals.filter(r => r.id !== id));
-    showToast('Item de locação excluído.');
+    showToast('Locação removida.');
+  };
+
+  // --- HANDLERS DE DESPESAS AVULSAS ---
+  const openExpenseModal = (expense = null) => {
+    setEditingExpense(expense);
+    setExpenseModalOpen(true);
+  };
+
+  const handleSaveExpense = (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const description = form.description.value.trim();
+    const category = form.category.value;
+    const estimated = parseFloat(form.estimated.value) || 0;
+    const actual = parseFloat(form.actual.value) || 0;
+    const paid = form.paid.checked;
+
+    if (!description) return;
+
+    if (editingExpense) {
+      setManualExpenses(manualExpenses.map(exp => exp.id === editingExpense.id ? {
+        ...exp,
+        description,
+        category,
+        estimated,
+        actual,
+        paid
+      } : exp));
+      showToast('Despesa atualizada!');
+    } else {
+      const newExpense = {
+        id: Date.now().toString(),
+        description,
+        category,
+        estimated,
+        actual,
+        paid
+      };
+      setManualExpenses([...manualExpenses, newExpense]);
+      showToast('Despesa avulsa registrada!');
+    }
+
+    setExpenseModalOpen(false);
+    setEditingExpense(null);
+  };
+
+  const handleDeleteExpense = (id) => {
+    setManualExpenses(manualExpenses.filter(e => e.id !== id));
+    showToast('Despesa excluída.');
   };
 
   const toggleChecklist = (id) => {
@@ -617,69 +859,89 @@ export default function App() {
   const handleResetDemoData = () => {
     setConfig(INITIAL_EVENT_CONFIG);
     setMenu(INITIAL_MENU);
+    setBeverages(INITIAL_BEVERAGE_TYPES);
     setGuests(INITIAL_GUESTS);
-    setExpenses(INITIAL_EXPENSES);
     setRentals(INITIAL_RENTALS);
+    setManualExpenses(INITIAL_MANUAL_EXPENSES);
     setChecklist(INITIAL_CHECKLIST);
     showToast('Dados padrão restaurados!');
   };
 
+  // Exportar lista completa de compras e suprimentos
   const handleExportShoppingList = () => {
     const textContent = `
-LISTA DE COMPRAS & SUPRIMENTOS - FESTPLANNER PRO
+======================================================================
+FESTPLANNER PRO - LISTA CONSOLIDADA DE COMPRAS E ORÇAMENTO
 Evento: Aniversário de ${config.celebrantName} (${config.age} anos)
-Data: ${config.date} | Duração: ${config.durationHours}h
-Confirmados: ${stats.confirmedCount} pessoas (${stats.weightedEaters.toFixed(1)} cotas alimentares)
+Data: ${config.date} | Horário: ${config.startTime} às ${config.endTime} (${config.durationHours}h)
+Local: ${config.locationType === 'home' ? 'Espaço Próprio / Condomínio' : config.venueName}
+----------------------------------------------------------------------
+CONVIDADOS & QUÓRUM:
+- Confirmados no RSVP: ${guestStats.confirmedCount} pessoas (${guestStats.confWeightedEaters.toFixed(1)} cotas alimentares)
+- Lista Completa (Elegíveis): ${guestStats.allEligibleCount} pessoas (${guestStats.allWeightedEaters.toFixed(1)} cotas)
+- Consumidores de Álcool Confirmados: ${guestStats.confDrinkers} adultos
+----------------------------------------------------------------------
+CENÁRIO FINANCEIRO TOTAL:
+- CUSTO TOTAL COM CONFIRMADOS: R$ ${consolidatedBudget.totalConfirmed.toFixed(2)} (R$ ${consolidatedBudget.costPerConfirmed.toFixed(2)} / pessoa)
+- CUSTO SE TODOS COMPARECEREM: R$ ${consolidatedBudget.totalAll.toFixed(2)} (R$ ${consolidatedBudget.costPerAll.toFixed(2)} / pessoa)
+- DIFERENÇA ESTIMADA (ECONOMIA ATUAL): R$ ${consolidatedBudget.diff.toFixed(2)}
+======================================================================
 
-========================================
-1. CARDÁPIO SUGERIDO E PRATOS
-========================================
-${menu.map(m => `- [${m.category.toUpperCase()}] ${m.name} ${m.isHot ? '(Requer Rechaud/Aquecimento)' : ''}`).join('\n')}
+1. INSUMOS E INGREDIENTES DO CARDÁPIO (BASEADO NOS CONFIRMADOS):
+${foodCalculations.confirmed.ingredientDetails.map(item => {
+  return `\n* [${item.category.toUpperCase()}] ${item.menuItemName} ${item.isHot ? '(Rechaud Quente)' : ''}\n` +
+    item.ingredients.map(ing => `   - ${ing.name}: ${ing.amount} ${ing.unit} (R$ ${ing.subtotal.toFixed(2)})`).join('\n');
+}).join('\n')}
 
-========================================
-2. ALIMENTOS & BUFFET (CÁLCULO TOTAL)
-========================================
-- Carnes/Proteínas: ${calculatedFoodAndBeverages.totalMeatKg} kg
-- Guarnições (arroz/massas/farofas): ${calculatedFoodAndBeverages.sidesKg} kg
-- Salgadinhos/Canapés: ${calculatedFoodAndBeverages.totalSalgados} un
-- Bolo de Aniversário: ${calculatedFoodAndBeverages.cakeKg} kg
-- Docinhos Gourmet: ${calculatedFoodAndBeverages.docinhos} un
+Subtotal Comidas (Confirmados): R$ ${foodCalculations.confirmed.totalCost.toFixed(2)}
+Subtotal Comidas (Se todos fossem): R$ ${foodCalculations.all.totalCost.toFixed(2)}
 
-========================================
-3. BEBIDAS & GELO
-========================================
-- Água Mineral: ${calculatedFoodAndBeverages.waterLiters} Litros
-- Refrigerantes e Sucos: ${calculatedFoodAndBeverages.sodaJuiceLiters} Litros
-${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters} L (~${calculatedFoodAndBeverages.totalBeerCans} latas de 350ml)\n` : ''}${config.servesWine ? `- Vinhos/Espumantes: ${calculatedFoodAndBeverages.wineBottles} garrafas\n` : ''}- Gelo filtrado para consumo: ${calculatedFoodAndBeverages.filteredIceKg} kg
-- Gelo para tina/coolers: ${calculatedFoodAndBeverages.coolerIceBags} sacos de 5kg
+----------------------------------------------------------------------
+2. BEBIDAS DETALHADAS & GELO:
+${beverageCalculations.confirmed.list.map(bev => `
+- ${bev.name}:
+  * Volume para confirmados: ${bev.litersOrKg} L/kg (~ R$ ${bev.cost.toFixed(2)})
+  * Formato sugerido: ${bev.unitFormat}`).join('')}
 
-========================================
-4. LOUÇAS & ESTRUTURA (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁVEIS'})
-========================================
-- Pratos Principais: ${calculatedMaterials.mainPlates} un
-- Pratos de Sobremesa: ${calculatedMaterials.dessertPlates} un
-- Garfos e Facas de Mesa: ${calculatedMaterials.forksAndKnives} pares
-- Copos/Taças de Água: ${calculatedMaterials.waterGlasses} un
-- Tulipas/Copos de Chopp: ${calculatedMaterials.beerTulips} un
-- Rechauds Inox com Banho-Maria: ${calculatedMaterials.rechauds} cubas (Para ${stats.hotDishesInMenu} pratos quentes)
-- Pastilhas de Álcool Gel: ${calculatedMaterials.fuelPastesNeeded} un (Para ${config.durationHours}h de evento)
-- Mesas de Convidados: ${calculatedMaterials.guestTablesNeeded} jogos (${calculatedMaterials.guestChairsNeeded} cadeiras)
+Subtotal Bebidas (Confirmados): R$ ${beverageCalculations.confirmed.totalCost.toFixed(2)}
+Subtotal Bebidas (Se todos fossem): R$ ${beverageCalculations.all.totalCost.toFixed(2)}
+
+----------------------------------------------------------------------
+3. LOUÇAS, RECHAUDS E MOBILIÁRIO (${config.materialMode === 'rental' ? 'ALUGUEL' : 'DESCARTÁVEIS'}):
+- Pratos de Refeição: ${materialCalculations.confirmed.mainPlates} un
+- Pratos de Sobremesa: ${materialCalculations.confirmed.dessertPlates} un
+- Talheres (Garfos e Facas): ${materialCalculations.confirmed.forksAndKnives} pares
+- Copos / Taças de Água: ${materialCalculations.confirmed.waterGlasses} un
+- Copos / Tulipas de Cerveja: ${materialCalculations.confirmed.beerTulips} un
+- Rechauds Banho-Maria: ${materialCalculations.confirmed.rechauds} cubas (${materialCalculations.confirmed.fuelPastesNeeded} pastilhas de combustível)
+- Mesas de Convidados: ${materialCalculations.confirmed.tablesNeeded} jogos (${materialCalculations.confirmed.chairsNeeded} cadeiras)
+Subtotal Materiais & Louças: R$ ${materialCalculations.confirmed.totalCost.toFixed(2)}
+
+----------------------------------------------------------------------
+4. LOCAÇÕES CONTRATADAS (ESPAÇO, BRINQUEDOS E MÓVEIS):
+${rentals.map(r => `- ${r.name} (${r.supplier}): R$ ${Number(r.cost).toFixed(2)} ${r.hasMonitor ? '[Monitor incluso]' : ''}`).join('\n')}
+Subtotal Locações: R$ ${totalRentalsCost.toFixed(2)}
+
+----------------------------------------------------------------------
+5. DESPESAS EXTRAS & AVULSAS:
+${manualExpenses.map(m => `- ${m.description} (${m.category}): R$ ${(Number(m.actual) || Number(m.estimated)).toFixed(2)} [${m.paid ? 'Pago' : 'Pendente'}]`).join('\n')}
+======================================================================
 `.trim();
 
     const element = document.createElement("a");
     const file = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
     element.href = URL.createObjectURL(file);
-    element.download = `Lista_Compras_${config.celebrantName.replace(/\s+/g, '_')}.txt`;
+    element.download = `FestPlanner_Orcamento_Completo_${config.celebrantName.replace(/\s+/g, '_')}.txt`;
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
-    showToast('Arquivo baixado com sucesso!');
+    showToast('Relatório completo baixado!');
   };
 
   return (
     <div className={`min-h-screen font-sans antialiased transition-colors duration-200 ${darkMode ? 'bg-zinc-950 text-zinc-100 selection:bg-zinc-800' : 'bg-zinc-50/70 text-zinc-900 selection:bg-zinc-200'}`}>
       
-      {/* FEEDBACK TOAST */}
+      {/* TOAST DE FEEDBACK */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-zinc-900 text-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 px-4 py-2.5 rounded-xl shadow-lg border border-zinc-800 dark:border-zinc-200 text-xs font-medium animate-in slide-in-from-bottom-2 duration-200">
           <Sparkles className="w-4 h-4 text-amber-400" />
@@ -697,8 +959,8 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-sm tracking-tight">FestPlanner</span>
-                <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-                  Pro
+                <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200/50">
+                  Auto Cost Sync
                 </span>
               </div>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate max-w-[180px] sm:max-w-none">
@@ -744,12 +1006,13 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
           <nav className="flex space-x-1 py-1.5">
             {[
               { id: 'dashboard', label: 'Visão Geral', icon: Sparkles },
-              { id: 'guests', label: 'Convidados & RSVP', icon: Users, count: stats.confirmedCount },
-              { id: 'menu', label: 'Cardápio Sugerido', icon: BookOpen, count: menu.length },
+              { id: 'guests', label: 'Convidados & RSVP', icon: Users, count: guestStats.confirmedCount },
+              { id: 'menu', label: 'Cardápio & Receitas', icon: BookOpen, count: menu.length },
+              { id: 'beverages', label: 'Bebidas Detalhadas', icon: GlassWater, count: beverages.length },
               { id: 'catering', label: 'Buffet & Louças', icon: Utensils },
               { id: 'rentals', label: 'Locações & Espaço', icon: Gamepad2, count: rentals.length },
-              { id: 'finance', label: 'Centro de Custos', icon: DollarSign, count: expenses.length },
-              { id: 'checklist', label: 'Cronograma', icon: CheckSquare, badge: `${stats.checklistProgress}%` },
+              { id: 'finance', label: 'Centro de Custos Auto', icon: DollarSign, badge: 'Sincronizado' },
+              { id: 'checklist', label: 'Cronograma', icon: CheckSquare },
               { id: 'config', label: 'Configurações', icon: Building },
             ].map(tab => {
               const Icon = tab.icon;
@@ -774,9 +1037,7 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                     </span>
                   )}
                   {tab.badge && (
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
-                      isActive ? 'bg-zinc-800 text-zinc-200 dark:bg-zinc-200 dark:text-zinc-800' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
-                    }`}>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full font-semibold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
                       {tab.badge}
                     </span>
                   )}
@@ -791,7 +1052,7 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24">
         
         {/* ============================================================ */}
-        {/* ABA 1: DASHBOARD */}
+        {/* ABA 1: DASHBOARD COM COMPARATIVO DUAL (CONFIRMADOS VS TODOS) */}
         {/* ============================================================ */}
         {activeTab === 'dashboard' && (
           <div className="space-y-6">
@@ -806,11 +1067,11 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] font-semibold tracking-wider uppercase text-zinc-500 dark:text-zinc-400">
-                      Painel do Evento
+                      Painel Executivo do Evento
                     </span>
                     <span className="inline-block w-1 h-1 rounded-full bg-zinc-400" />
                     <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200/50 dark:border-emerald-800/50">
-                      {stats.daysUntilEvent > 0 ? `Faltam ${stats.daysUntilEvent} dias` : stats.daysUntilEvent === 0 ? 'É hoje!' : 'Concluído'}
+                      Orçamento Dinâmico Ativo
                     </span>
                   </div>
 
@@ -833,241 +1094,258 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                     </span>
                     <span className="flex items-center gap-1.5">
                       <BookOpen className="w-3.5 h-3.5 text-zinc-400" />
-                      {menu.length} pratos no cardápio ({stats.hotDishesInMenu} rechauds necessários)
+                      {menu.length} pratos com ingredientes calculados
                     </span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2.5 shrink-0">
                   <button
-                    onClick={() => setActiveTab('menu')}
+                    onClick={() => setActiveTab('finance')}
                     className="px-3.5 py-2 rounded-xl text-xs font-medium border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
                   >
-                    Ver Cardápio
+                    Ver Centro de Custos
                   </button>
                   <button
                     onClick={handleExportShoppingList}
                     className="px-3.5 py-2 rounded-xl text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 shadow-sm transition flex items-center gap-1.5"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    <span>Lista de Compras</span>
+                    <span>Baixar Relatório & Compras</span>
                   </button>
                 </div>
+              </div>
+            </div>
+
+            {/* SELETOR DE CENÁRIO DUAL (TODOS OS CONVIDADOS VS. APENAS CONFIRMADOS) */}
+            <div className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+              darkMode ? 'bg-zinc-900/60 border-zinc-800' : 'bg-amber-50/60 border-amber-200/60'
+            }`}>
+              <div className="flex items-center gap-3">
+                <Coins className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                <div>
+                  <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                    Cenários de Projeção Financeira
+                  </h4>
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    Compare o desembolso caso 100% dos convidados compareçam versus o valor real contratado para os confirmados no RSVP.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center bg-white dark:bg-zinc-900 p-1 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium self-start sm:self-auto">
+                <button
+                  onClick={() => setBudgetScenario('confirmed')}
+                  className={`px-3 py-1 rounded-md transition ${budgetScenario === 'confirmed' ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'text-zinc-500'}`}
+                >
+                  Só Confirmados
+                </button>
+                <button
+                  onClick={() => setBudgetScenario('all')}
+                  className={`px-3 py-1 rounded-md transition ${budgetScenario === 'all' ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'text-zinc-500'}`}
+                >
+                  Se Todos Fossem
+                </button>
+                <button
+                  onClick={() => setBudgetScenario('both')}
+                  className={`px-3 py-1 rounded-md transition ${budgetScenario === 'both' ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'text-zinc-500'}`}
+                >
+                  Lado a Lado
+                </button>
               </div>
             </div>
 
             {/* 4 CARDS DE KPIS */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               
+              {/* CARD 1: PRESENÇA CONFIRMADA */}
               <div className={`p-4 rounded-xl border transition-all ${
                 darkMode ? 'bg-zinc-900/40 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'
               }`}>
                 <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
-                  <span>Presença Confirmada</span>
+                  <span>Presença no RSVP</span>
                   <Users className="w-4 h-4 text-zinc-400" />
                 </div>
                 <div className="mt-2 flex items-baseline gap-2">
                   <span className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-                    {stats.confirmedCount}
+                    {guestStats.confirmedCount}
                   </span>
                   <span className="text-xs text-zinc-500 font-normal">
-                    de {stats.totalGuests} convidados
+                    de {guestStats.totalCount} convidados
                   </span>
                 </div>
                 <div className="mt-3 flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-2 border-t border-zinc-100 dark:border-zinc-800/60">
-                  <span>{stats.confirmedAdults} adultos</span>
-                  <span className="text-zinc-300 dark:text-zinc-700">•</span>
-                  <span>{stats.confirmedKids611 + stats.confirmedKids05} crianças</span>
-                  <span className="text-zinc-300 dark:text-zinc-700">•</span>
+                  <span>{guestStats.confAdults} adultos ({guestStats.confDrinkers} bebem)</span>
                   <span className="font-medium text-emerald-600 dark:text-emerald-400">
-                    {stats.totalGuests > 0 ? Math.round((stats.confirmedCount / stats.totalGuests) * 100) : 0}%
+                    {guestStats.totalCount > 0 ? Math.round((guestStats.confirmedCount / guestStats.totalCount) * 100) : 0}%
                   </span>
                 </div>
               </div>
 
+              {/* CARD 2: CUSTO TOTAL COM CONFIRMADOS */}
               <div className={`p-4 rounded-xl border transition-all ${
                 darkMode ? 'bg-zinc-900/40 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'
               }`}>
                 <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
-                  <span>Orçamento Executado</span>
-                  <DollarSign className="w-4 h-4 text-zinc-400" />
+                  <span>Custo Real (Confirmados)</span>
+                  <DollarSign className="w-4 h-4 text-emerald-500" />
                 </div>
                 <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-                    R$ {stats.totalActualCost.toLocaleString('pt-BR')}
+                  <span className="text-2xl font-semibold tracking-tight text-emerald-600 dark:text-emerald-400">
+                    R$ {Math.round(consolidatedBudget.totalConfirmed).toLocaleString('pt-BR')}
                   </span>
                   <span className="text-xs text-zinc-500 font-normal">
-                    de R$ {stats.totalEstimatedCost.toLocaleString('pt-BR')}
+                    p/ {guestStats.confirmedCount} pess.
                   </span>
                 </div>
-                <div className="mt-3 pt-2 border-t border-zinc-100 dark:border-zinc-800/60">
-                  <div className="flex justify-between text-[11px] text-zinc-500 mb-1">
-                    <span>Comprometido</span>
-                    <span className="font-medium">
-                      {Math.round((stats.totalActualCost / (stats.totalEstimatedCost || 1)) * 100)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-1 overflow-hidden">
-                    <div 
-                      className="bg-zinc-900 dark:bg-zinc-100 h-1 rounded-full transition-all"
-                      style={{ width: `${Math.min(100, Math.round((stats.totalActualCost / (stats.totalEstimatedCost || 1)) * 100))}%` }}
-                    />
-                  </div>
+                <div className="mt-3 flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-2 border-t border-zinc-100 dark:border-zinc-800/60">
+                  <span>Custo médio unitário:</span>
+                  <strong className="text-zinc-800 dark:text-zinc-200">
+                    R$ {Math.round(consolidatedBudget.costPerConfirmed)} / pessoa
+                  </strong>
                 </div>
               </div>
 
+              {/* CARD 3: CUSTO SE TODOS FOSSEM (100%) */}
               <div className={`p-4 rounded-xl border transition-all ${
                 darkMode ? 'bg-zinc-900/40 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'
               }`}>
                 <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
-                  <span>Custo por Confirmado</span>
-                  <TrendingUp className="w-4 h-4 text-zinc-400" />
+                  <span>Custo se Todos Fossem</span>
+                  <TrendingUp className="w-4 h-4 text-amber-500" />
                 </div>
                 <div className="mt-2 flex items-baseline gap-2">
                   <span className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-                    R$ {Math.round(stats.costPerConfirmed)}
+                    R$ {Math.round(consolidatedBudget.totalAll).toLocaleString('pt-BR')}
                   </span>
-                  <span className="text-xs text-zinc-500 font-normal">/ pessoa</span>
+                  <span className="text-xs text-zinc-500 font-normal">
+                    p/ {guestStats.allEligibleCount} pess.
+                  </span>
                 </div>
                 <div className="mt-3 flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-2 border-t border-zinc-100 dark:border-zinc-800/60">
-                  <span>Cota alimentar:</span>
+                  <span>Economia no RSVP:</span>
+                  <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                    - R$ {Math.round(consolidatedBudget.diff).toLocaleString('pt-BR')}
+                  </span>
+                </div>
+              </div>
+
+              {/* CARD 4: RECHAUDS & CARDÁPIO */}
+              <div className={`p-4 rounded-xl border transition-all ${
+                darkMode ? 'bg-zinc-900/40 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'
+              }`}>
+                <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
+                  <span>Rechauds & Pratos Quentes</span>
+                  <Flame className="w-4 h-4 text-orange-500" />
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+                    {materialCalculations.confirmed.rechauds}
+                  </span>
+                  <span className="text-xs text-zinc-500 font-normal">
+                    cubas necessárias
+                  </span>
+                </div>
+                <div className="mt-3 flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-2 border-t border-zinc-100 dark:border-zinc-800/60">
+                  <span>Álcool gel ({config.durationHours}h):</span>
                   <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                    {stats.weightedEaters.toFixed(1)} cotas
-                  </span>
-                </div>
-              </div>
-
-              <div className={`p-4 rounded-xl border transition-all ${
-                darkMode ? 'bg-zinc-900/40 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'
-              }`}>
-                <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
-                  <span>Cardápio & Rechauds</span>
-                  <Flame className="w-4 h-4 text-zinc-400" />
-                </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-                    {stats.hotDishesInMenu}
-                  </span>
-                  <span className="text-xs text-zinc-500 font-normal">
-                    pratos quentes
-                  </span>
-                </div>
-                <div className="mt-3 flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-2 border-t border-zinc-100 dark:border-zinc-800/60">
-                  <span>Rechauds necessários:</span>
-                  <span className="font-medium text-emerald-600 dark:text-emerald-400">
-                    {calculatedMaterials.rechauds} cubas ({calculatedMaterials.fuelPastesNeeded} pastilhas)
+                    {materialCalculations.confirmed.fuelPastesNeeded} pastilhas
                   </span>
                 </div>
               </div>
 
             </div>
 
-            {/* SEÇÃO PRINCIPAL */}
+            {/* SEÇÃO PRINCIPAL DE COMPARAÇÃO DINÂMICA */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
               <div className="lg:col-span-2 space-y-6">
                 
-                {/* RSVP TRACKER */}
+                {/* TABELA DE DEMONSTRAÇÃO SINTÉTICA DE CUSTOS POR GRUPO */}
                 <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="text-sm font-semibold tracking-tight">Status de Convites & Restrições</h3>
-                      <p className="text-xs text-zinc-500 mt-0.5">Visão consolidada do retorno dos convidados</p>
+                      <h3 className="text-sm font-semibold tracking-tight">Sincronização Automática de Despesas</h3>
+                      <p className="text-xs text-zinc-500 mt-0.5">Valores atualizados automaticamente conforme edições em cardápio, bebidas e locações</p>
                     </div>
                     <button
-                      onClick={() => setActiveTab('guests')}
+                      onClick={() => setActiveTab('finance')}
                       className="text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center gap-1 transition"
                     >
-                      <span>Gerenciar convidados</span>
+                      <span>Abrir Centro de Custos</span>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
-                  <div className="w-full h-2.5 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden flex gap-0.5 mb-3">
-                    <div
-                      style={{ width: `${stats.totalGuests > 0 ? (stats.confirmedCount / stats.totalGuests) * 100 : 0}%` }}
-                      className="bg-emerald-500 h-full transition-all"
-                      title="Confirmados"
-                    />
-                    <div
-                      style={{ width: `${stats.totalGuests > 0 ? (stats.pendingCount / stats.totalGuests) * 100 : 0}%` }}
-                      className="bg-amber-400 h-full transition-all"
-                      title="Pendentes"
-                    />
-                    <div
-                      style={{ width: `${stats.totalGuests > 0 ? (stats.declinedCount / stats.totalGuests) * 100 : 0}%` }}
-                      className="bg-zinc-300 dark:bg-zinc-700 h-full transition-all"
-                      title="Recusados"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 text-xs">
-                    <div className="p-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
-                      <div className="flex items-center gap-1.5 text-zinc-500 text-[11px]">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                        <span>Confirmados</span>
-                      </div>
-                      <div className="text-base font-semibold mt-1">{stats.confirmedCount}</div>
-                    </div>
-                    <div className="p-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
-                      <div className="flex items-center gap-1.5 text-zinc-500 text-[11px]">
-                        <span className="w-2 h-2 rounded-full bg-amber-400" />
-                        <span>Pendentes</span>
-                      </div>
-                      <div className="text-base font-semibold mt-1">{stats.pendingCount}</div>
-                    </div>
-                    <div className="p-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
-                      <div className="flex items-center gap-1.5 text-zinc-500 text-[11px]">
-                        <span className="w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-700" />
-                        <span>Recusados</span>
-                      </div>
-                      <div className="text-base font-semibold mt-1">{stats.declinedCount}</div>
-                    </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className={`border-b ${darkMode ? 'border-zinc-800 text-zinc-400' : 'border-zinc-200 text-zinc-500'}`}>
+                        <tr>
+                          <th className="pb-2.5 font-medium">Categoria / Origem</th>
+                          <th className="pb-2.5 font-medium">Origem do Dado</th>
+                          <th className="pb-2.5 font-medium text-right">Confirmados ({guestStats.confirmedCount})</th>
+                          <th className="pb-2.5 font-medium text-right">Se Todos Fossem ({guestStats.allEligibleCount})</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                        {consolidatedBudget.lineItems.map(item => (
+                          <tr key={item.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40">
+                            <td className="py-2.5 font-medium text-zinc-900 dark:text-zinc-100">{item.name}</td>
+                            <td className="py-2.5">
+                              <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-mono">
+                                {item.source}
+                              </span>
+                            </td>
+                            <td className="py-2.5 text-right font-medium text-emerald-600 dark:text-emerald-400">
+                              R$ {item.confirmedCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-2.5 text-right font-medium text-zinc-500">
+                              R$ {item.allCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot className="border-t-2 border-zinc-200 dark:border-zinc-700">
+                        <tr>
+                          <td colSpan={2} className="pt-3 font-semibold text-xs text-zinc-900 dark:text-zinc-100">
+                            TOTAL GERAL CONSOLIDADO
+                          </td>
+                          <td className="pt-3 text-right font-bold text-sm text-emerald-600 dark:text-emerald-400">
+                            R$ {consolidatedBudget.totalConfirmed.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                          <td className="pt-3 text-right font-bold text-sm text-zinc-700 dark:text-zinc-300">
+                            R$ {consolidatedBudget.totalAll.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
                   </div>
                 </div>
 
-                {/* RESUMO DO BUFFET & CARDÁPIO */}
+                {/* PRÉVIA DAS BEBIDAS DISCRIMINADAS */}
                 <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="text-sm font-semibold tracking-tight">Cálculo Essencial de Buffet & Estrutura</h3>
-                      <p className="text-xs text-zinc-500 mt-0.5">Calculado para {stats.confirmedCount} confirmados em {config.durationHours}h</p>
+                      <h3 className="text-sm font-semibold tracking-tight">Bebidas & Volumes Calculados</h3>
+                      <p className="text-xs text-zinc-500 mt-0.5">Coca-Cola, Guaraná, Sucos integrais, Águas com e sem gás, Chopp e Gelo</p>
                     </div>
                     <button
-                      onClick={() => setActiveTab('catering')}
+                      onClick={() => setActiveTab('beverages')}
                       className="text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center gap-1 transition"
                     >
-                      <span>Calculadora detalhada</span>
+                      <span>Ver todas bebidas</span>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                    <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
-                      <span className="text-[11px] text-zinc-400 block">Carnes / Proteínas</span>
-                      <strong className="text-sm font-semibold mt-1 block">{calculatedFoodAndBeverages.totalMeatKg} kg</strong>
-                      <span className="text-[10px] text-zinc-500">~250g / cota</span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
-                      <span className="text-[11px] text-zinc-400 block">Bolo & Doces</span>
-                      <strong className="text-sm font-semibold mt-1 block">{calculatedFoodAndBeverages.cakeKg} kg</strong>
-                      <span className="text-[10px] text-zinc-500">+{calculatedFoodAndBeverages.docinhos} doces</span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
-                      <span className="text-[11px] text-zinc-400 block">Cervejas</span>
-                      <strong className="text-sm font-semibold mt-1 block">
-                        {config.servesBeer ? `${calculatedFoodAndBeverages.totalBeerLiters} L` : 'Não'}
-                      </strong>
-                      <span className="text-[10px] text-zinc-500">~{calculatedFoodAndBeverages.totalBeerCans} latas</span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
-                      <span className="text-[11px] text-zinc-400 block">Rechauds & Pastilhas</span>
-                      <strong className="text-sm font-semibold mt-1 block">{calculatedMaterials.rechauds} cubas</strong>
-                      <span className="text-[10px] text-zinc-500">{calculatedMaterials.fuelPastesNeeded} pastilhas</span>
-                    </div>
+                    {beverageCalculations.confirmed.list.slice(0, 4).map(b => (
+                      <div key={b.id} className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60">
+                        <span className="text-[11px] text-zinc-400 block truncate">{b.name}</span>
+                        <strong className="text-sm font-semibold mt-1 block">{b.litersOrKg} L/kg</strong>
+                        <span className="text-[10px] text-zinc-500">R$ {b.cost.toFixed(2)}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -1075,67 +1353,63 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
 
               <div className="space-y-6">
                 
-                {/* GASTOS */}
+                {/* CARD DE ECONOMIA DO RSVP */}
                 <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold tracking-tight">Distribuição de Gastos</h3>
-                    <button
-                      onClick={() => setActiveTab('finance')}
-                      className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition"
-                    >
-                      Editar
-                    </button>
-                  </div>
+                  <h3 className="text-sm font-semibold tracking-tight mb-2">Impacto Real das Confirmações</h3>
+                  <p className="text-xs text-zinc-500 mb-4">
+                    Com base nos {guestStats.confirmedCount} convidados que confirmaram até o momento contra {guestStats.allEligibleCount} convidados potenciais:
+                  </p>
 
                   <div className="space-y-3">
-                    {Object.entries(stats.categoryTotals).slice(0, 5).map(([category, amount]) => {
-                      const percentage = Math.round((amount / (stats.totalActualCost || stats.totalEstimatedCost || 1)) * 100);
-                      return (
-                        <div key={category} className="space-y-1">
-                          <div className="flex justify-between text-xs">
-                            <span className="text-zinc-600 dark:text-zinc-400">{category}</span>
-                            <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                              R$ {amount.toLocaleString('pt-BR')} ({percentage}%)
-                            </span>
-                          </div>
-                          <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
-                            <div
-                              className="bg-zinc-800 dark:bg-zinc-200 h-1.5 rounded-full"
-                              style={{ width: `${Math.min(100, percentage)}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
+                    <div className="p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/50 dark:border-emerald-800/40">
+                      <span className="text-[11px] text-emerald-800 dark:text-emerald-300 font-medium block">
+                        Economia Direta em Alimentos e Bebidas
+                      </span>
+                      <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400">
+                        R$ {Math.round(consolidatedBudget.diff).toLocaleString('pt-BR')}
+                      </span>
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block mt-0.5">
+                        Insumos que não precisarão ser comprados
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/60 text-xs space-y-1.5">
+                      <div className="flex justify-between">
+                        <span className="text-zinc-500">Custo Buffet (Confirmados):</span>
+                        <span className="font-semibold">R$ {foodCalculations.confirmed.totalCost.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-zinc-500">Custo Bebidas (Confirmados):</span>
+                        <span className="font-semibold">R$ {beverageCalculations.confirmed.totalCost.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-zinc-500">Locações Fixas:</span>
+                        <span className="font-semibold">R$ {totalRentalsCost.toFixed(2)}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 {/* TAREFAS */}
                 <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-semibold tracking-tight">Próximos Passos</h3>
                     <button
                       onClick={() => setActiveTab('checklist')}
-                      className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition"
+                      className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
                     >
                       Ver todas
                     </button>
                   </div>
-
                   <div className="space-y-2">
-                    {stats.pendingUrgentTasks.map(task => (
+                    {checklist.filter(c => !c.completed).slice(0, 3).map(task => (
                       <div
                         key={task.id}
                         onClick={() => toggleChecklist(task.id)}
-                        className={`p-2.5 rounded-lg border text-xs flex items-center justify-between cursor-pointer transition ${
-                          darkMode ? 'bg-zinc-900/50 border-zinc-800 hover:border-zinc-700' : 'bg-zinc-50 border-zinc-200/70 hover:border-zinc-300'
-                        }`}
+                        className="p-2.5 rounded-lg border text-xs flex items-center justify-between cursor-pointer bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200/70 dark:border-zinc-800"
                       >
-                        <div className="flex items-center gap-2.5 truncate">
-                          <div className="w-4 h-4 rounded border border-zinc-300 dark:border-zinc-600 flex items-center justify-center shrink-0" />
-                          <span className="truncate text-zinc-800 dark:text-zinc-200">{task.title}</span>
-                        </div>
-                        <span className="text-[10px] text-zinc-400 shrink-0 ml-2">{task.period.split(' ')[0]}</span>
+                        <span className="truncate">{task.title}</span>
+                        <span className="text-[10px] text-zinc-400 ml-2 shrink-0">{task.period.split(' ')[0]}</span>
                       </div>
                     ))}
                   </div>
@@ -1158,7 +1432,7 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                 <div>
                   <h2 className="text-base font-semibold tracking-tight">Lista de Convidados & Confirmações (RSVP)</h2>
                   <p className="text-xs text-zinc-500 mt-1">
-                    {stats.confirmedCount} confirmados ({stats.confirmedAdults} adultos, {stats.confirmedKids611 + stats.confirmedKids05} crianças), {stats.pendingCount} pendentes e {stats.declinedCount} recusados
+                    {guestStats.confirmedCount} confirmados ({guestStats.confAdults} adultos, {guestStats.confKids611 + guestStats.confKids05} crianças), {guestStats.pendingCount} pendentes e {guestStats.declinedCount} recusados
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1273,16 +1547,16 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
         )}
 
         {/* ============================================================ */}
-        {/* ABA NOVA: CARDÁPIO SUGERIDO & PRATOS QUENTES (COM RECHAUDS) */}
+        {/* ABA 3: CARDÁPIO SUGERIDO COM CÁLCULO BASEADO EM RECEITAS */}
         {/* ============================================================ */}
         {activeTab === 'menu' && (
           <div className="space-y-6">
             <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-base font-semibold tracking-tight">Cardápio Sugerido do Evento</h2>
+                  <h2 className="text-base font-semibold tracking-tight">Cardápio & Cálculo de Receitas / Insumos</h2>
                   <p className="text-xs text-zinc-500 mt-1">
-                    Cadastre os pratos do menu. Itens marcados como <strong>quentes</strong> alimentam automaticamente o cálculo de rechauds e pastilhas de aquecimento.
+                    Cada prato possui ingredientes com gramatura por pessoa e preço unitário. O valor total do buffet no Centro de Custos é alimentado automaticamente por aqui.
                   </p>
                 </div>
                 <button
@@ -1290,73 +1564,160 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Novo Prato / Item</span>
+                  <span>Novo Prato / Receita</span>
                 </button>
               </div>
 
-              {/* Categorias do Menu */}
-              <div className="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {['starter', 'main', 'side', 'dessert', 'drink'].map(cat => {
-                  const catLabel = cat === 'starter' ? 'Entradas & Canapés' : cat === 'main' ? 'Pratos Principais' : cat === 'side' ? 'Guarnições & Saladas' : cat === 'dessert' ? 'Sobremesas & Doces' : 'Bebidas Oficiais';
-                  const items = menu.filter(m => m.category === cat);
+              {/* Comparativo de Custo Total do Buffet */}
+              <div className="mt-4 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200/60 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div>
+                  <span className="text-zinc-500">Subtotal Insumos (Confirmados - {guestStats.confWeightedEaters.toFixed(1)} cotas):</span>
+                  <strong className="text-emerald-600 dark:text-emerald-400 ml-1 font-semibold text-sm">
+                    R$ {foodCalculations.confirmed.totalCost.toFixed(2)}
+                  </strong>
+                </div>
+                <div>
+                  <span className="text-zinc-500">Subtotal Insumos (Se todos fossem - {guestStats.allWeightedEaters.toFixed(1)} cotas):</span>
+                  <strong className="text-zinc-700 dark:text-zinc-300 ml-1 font-semibold text-sm">
+                    R$ {foodCalculations.all.totalCost.toFixed(2)}
+                  </strong>
+                </div>
+                <div className="text-zinc-400 text-[11px]">
+                  {menu.filter(m => m.isHot).length} pratos quentes vinculados aos Rechauds
+                </div>
+              </div>
 
-                  return (
-                    <div key={cat} className={`p-4 rounded-xl border flex flex-col justify-between ${darkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-zinc-50 border-zinc-200/70'}`}>
-                      <div>
-                        <div className="flex items-center justify-between pb-2 border-b border-zinc-200 dark:border-zinc-800 mb-3">
-                          <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-300">
-                            {catLabel}
-                          </h4>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-medium">
-                            {items.length}
-                          </span>
+              {/* Lista dos Pratos e Ingredientes */}
+              <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {foodCalculations.confirmed.ingredientDetails.map(item => (
+                  <div key={item.menuItemId} className={`p-4 rounded-xl border flex flex-col justify-between ${
+                    darkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-white border-zinc-200/80 shadow-2xs'
+                  }`}>
+                    <div>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                              {item.category === 'starter' ? 'Entrada' : item.category === 'main' ? 'Prato Principal' : item.category === 'side' ? 'Guarnição' : 'Sobremesa'}
+                            </span>
+                            {item.isHot && (
+                              <span className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                                <Flame className="w-3 h-3" /> Rechaud
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 mt-1">{item.menuItemName}</h4>
                         </div>
-
-                        <div className="space-y-2">
-                          {items.map(item => (
-                            <div key={item.id} className="p-2 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs">
-                              <div>
-                                <span className="font-medium text-zinc-800 dark:text-zinc-200">{item.name}</span>
-                                {item.isHot && (
-                                  <div className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
-                                    <Flame className="w-3 h-3" />
-                                    <span>Servido quente (Rechaud)</span>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1 shrink-0 ml-2">
-                                <button
-                                  onClick={() => openMenuModal(item)}
-                                  className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
-                                >
-                                  <Edit2 className="w-3 h-3" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteMenuItem(item.id)}
-                                  className="p-1 rounded text-zinc-400 hover:text-rose-500"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                          {items.length === 0 && (
-                            <div className="py-4 text-center text-xs text-zinc-400 italic">
-                              Nenhum item adicionado nesta categoria.
-                            </div>
-                          )}
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => openMenuModal(menu.find(m => m.id === item.menuItemId))}
+                            className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                            title="Editar Receita"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteMenuItem(item.menuItemId)}
+                            className="p-1 rounded text-zinc-400 hover:text-rose-500"
+                            title="Excluir"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </div>
+
+                      {/* Tabela de Ingredientes da Receita */}
+                      <div className="mt-3 space-y-1.5 text-xs">
+                        <span className="text-[11px] text-zinc-400 font-medium">Ingredientes calculados p/ {guestStats.confWeightedEaters.toFixed(1)} cotas:</span>
+                        {item.ingredients.map((ing, idx) => (
+                          <div key={idx} className="flex justify-between items-center py-1 border-b border-zinc-100 dark:border-zinc-800/60 text-[11px]">
+                            <span className="text-zinc-600 dark:text-zinc-400">{ing.name} ({ing.amount} {ing.unit})</span>
+                            <span className="font-medium text-zinc-900 dark:text-zinc-100">R$ {ing.subtotal.toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  );
-                })}
+
+                    <div className="mt-4 pt-2.5 border-t border-zinc-100 dark:border-zinc-800 flex justify-between items-center text-xs">
+                      <span className="text-zinc-500">Custo Total deste Prato:</span>
+                      <strong className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                        R$ {item.itemCost.toFixed(2)}
+                      </strong>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         )}
 
         {/* ============================================================ */}
-        {/* ABA 3: CALCULADORA DE BUFFET & LOUÇAS */}
+        {/* ABA 4: BEBIDAS DETALHADAS & DISCRIMINADAS */}
+        {/* ============================================================ */}
+        {activeTab === 'beverages' && (
+          <div className="space-y-6">
+            <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-base font-semibold tracking-tight">Detalhamento de Bebidas & Gelo</h2>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Cálculo individualizado por tipo de bebida (Coca-Cola, Guaraná, Sucos Naturais, Águas com e sem gás, Chopp e Gelo).
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 text-xs">
+                  <div className="p-2 px-3 rounded-lg bg-zinc-100 dark:bg-zinc-800">
+                    <span className="text-zinc-500">Subtotal Bebidas (Confirmados):</span>
+                    <strong className="text-emerald-600 dark:text-emerald-400 ml-1 font-semibold">
+                      R$ {beverageCalculations.confirmed.totalCost.toFixed(2)}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className={`border-b ${darkMode ? 'border-zinc-800 text-zinc-400' : 'border-zinc-200 text-zinc-500'}`}>
+                    <tr>
+                      <th className="pb-2.5 font-medium">Bebida / Insumo</th>
+                      <th className="pb-2.5 font-medium">Categoria</th>
+                      <th className="pb-2.5 font-medium">Embalagem Sugerida</th>
+                      <th className="pb-2.5 font-medium">Preço Base</th>
+                      <th className="pb-2.5 font-medium text-right">Volume (Confirmados)</th>
+                      <th className="pb-2.5 font-medium text-right">Custo Estimado</th>
+                      <th className="pb-2.5 font-medium text-right">Se Todos Fossem</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                    {beverageCalculations.confirmed.list.map(bev => {
+                      const allEquiv = beverageCalculations.all.list.find(a => a.id === bev.id);
+                      return (
+                        <tr key={bev.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40">
+                          <td className="py-3 font-medium text-zinc-900 dark:text-zinc-100">{bev.name}</td>
+                          <td className="py-3 text-zinc-500 capitalize">{bev.category}</td>
+                          <td className="py-3 text-zinc-500">{bev.unitFormat}</td>
+                          <td className="py-3 text-zinc-500">R$ {bev.unitCostPerLiter.toFixed(2)} / L-kg</td>
+                          <td className="py-3 text-right font-medium text-zinc-900 dark:text-zinc-100">
+                            {bev.litersOrKg} {bev.category === 'ice' ? 'kg' : 'L'}
+                          </td>
+                          <td className="py-3 text-right font-semibold text-emerald-600 dark:text-emerald-400">
+                            R$ {bev.cost.toFixed(2)}
+                          </td>
+                          <td className="py-3 text-right text-zinc-400">
+                            R$ {allEquiv ? allEquiv.cost.toFixed(2) : '-'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* ABA 5: CALCULADORA DE BUFFET & LOUÇAS */}
         {/* ============================================================ */}
         {activeTab === 'catering' && (
           <div className="space-y-6">
@@ -1366,7 +1727,7 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                 <div>
                   <h2 className="text-base font-semibold tracking-tight">Calculadora de Suprimentos & Materiais</h2>
                   <p className="text-xs text-zinc-500 mt-1">
-                    Cálculos baseados em <strong>{stats.confirmedCount} confirmados</strong> ({stats.weightedEaters.toFixed(1)} cotas alimentares), <strong>{stats.hotDishesInMenu} pratos quentes do cardápio</strong> e <strong>{config.durationHours}h de duração</strong>.
+                    Cálculos baseados em <strong>{guestStats.confirmedCount} confirmados</strong> ({guestStats.confWeightedEaters.toFixed(1)} cotas), <strong>{materialCalculations.confirmed.rechauds} pratos quentes do cardápio</strong> e <strong>{config.durationHours}h de duração</strong>.
                   </p>
                 </div>
 
@@ -1398,31 +1759,27 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               
-              {/* COMIDAS */}
+              {/* ALIMENTOS */}
               <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-4 flex items-center gap-2">
-                  <Flame className="w-4 h-4 text-zinc-400" /> Alimentos & Doces
+                  <Flame className="w-4 h-4 text-zinc-400" /> Resumo do Cardápio
                 </h3>
                 <div className="space-y-3 text-xs">
                   <div className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800">
-                    <span className="text-zinc-600 dark:text-zinc-400">Carnes e Proteínas Limpas</span>
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{calculatedFoodAndBeverages.totalMeatKg} kg</span>
+                    <span className="text-zinc-600 dark:text-zinc-400">Total de Pratos Cadastrados</span>
+                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{menu.length} pratos</span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800">
-                    <span className="text-zinc-600 dark:text-zinc-400">Guarnições (Arroz/Massas/Farofa)</span>
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{calculatedFoodAndBeverages.sidesKg} kg</span>
+                    <span className="text-zinc-600 dark:text-zinc-400">Pratos Quentes (Rechauds)</span>
+                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{materialCalculations.confirmed.rechauds} pratos</span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800">
-                    <span className="text-zinc-600 dark:text-zinc-400">Salgadinhos / Finger Foods</span>
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{calculatedFoodAndBeverages.totalSalgados} un</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800">
-                    <span className="text-zinc-600 dark:text-zinc-400">Bolo de Aniversário (100g/pess.)</span>
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{calculatedFoodAndBeverages.cakeKg} kg</span>
+                    <span className="text-zinc-600 dark:text-zinc-400">Custo Total Insumos (Confirmados)</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">R$ {foodCalculations.confirmed.totalCost.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center py-2">
-                    <span className="text-zinc-600 dark:text-zinc-400">Docinhos Gourmet</span>
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{calculatedFoodAndBeverages.docinhos} un</span>
+                    <span className="text-zinc-600 dark:text-zinc-400">Custo Total Insumos (Se Todos Fossem)</span>
+                    <span className="font-semibold text-zinc-500">R$ {foodCalculations.all.totalCost.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -1430,37 +1787,29 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
               {/* BEBIDAS */}
               <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-4 flex items-center gap-2">
-                  <Wine className="w-4 h-4 text-zinc-400" /> Bebidas & Gelo
+                  <Wine className="w-4 h-4 text-zinc-400" /> Resumo de Bebidas
                 </h3>
                 <div className="space-y-3 text-xs">
                   <div className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800">
-                    <span className="text-zinc-600 dark:text-zinc-400">Água Mineral (com e sem gás)</span>
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{calculatedFoodAndBeverages.waterLiters} L</span>
+                    <span className="text-zinc-600 dark:text-zinc-400">Tipos de Bebidas Detalhadas</span>
+                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{beverages.length} itens</span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800">
-                    <span className="text-zinc-600 dark:text-zinc-400">Refrigerantes e Sucos</span>
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{calculatedFoodAndBeverages.sodaJuiceLiters} L</span>
+                    <span className="text-zinc-600 dark:text-zinc-400">Consumidores de Álcool</span>
+                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{guestStats.confDrinkers} pessoas</span>
                   </div>
-                  {config.servesBeer && (
-                    <div className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800">
-                      <span className="text-zinc-600 dark:text-zinc-400">Cervejas (~{calculatedFoodAndBeverages.totalBeerCans} latas)</span>
-                      <span className="font-semibold text-zinc-900 dark:text-zinc-100">{calculatedFoodAndBeverages.totalBeerLiters} L</span>
-                    </div>
-                  )}
-                  {config.servesWine && (
-                    <div className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800">
-                      <span className="text-zinc-600 dark:text-zinc-400">Vinho / Espumante</span>
-                      <span className="font-semibold text-zinc-900 dark:text-zinc-100">{calculatedFoodAndBeverages.wineBottles} garrafas</span>
-                    </div>
-                  )}
+                  <div className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800">
+                    <span className="text-zinc-600 dark:text-zinc-400">Custo Total Bebidas (Confirmados)</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">R$ {beverageCalculations.confirmed.totalCost.toFixed(2)}</span>
+                  </div>
                   <div className="flex justify-between items-center py-2">
-                    <span className="text-zinc-600 dark:text-zinc-400">Gelo (Filtrado + Tina)</span>
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{calculatedFoodAndBeverages.filteredIceKg}kg + {calculatedFoodAndBeverages.coolerIceBags}scs</span>
+                    <span className="text-zinc-600 dark:text-zinc-400">Custo Total Bebidas (Se Todos Fossem)</span>
+                    <span className="font-semibold text-zinc-500">R$ {beverageCalculations.all.totalCost.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
 
-              {/* LOUÇAS E RECHAUDS VINCULADOS AO MENU */}
+              {/* LOUÇAS E RECHAUDS */}
               <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-4 flex items-center gap-2">
                   <Layers className="w-4 h-4 text-zinc-400" /> Louças & Equipamentos
@@ -1468,27 +1817,19 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                 <div className="space-y-3 text-xs">
                   <div className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800">
                     <span className="text-zinc-600 dark:text-zinc-400">Pratos (Refeição + Sobremesa)</span>
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{calculatedMaterials.mainPlates + calculatedMaterials.dessertPlates} un</span>
+                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{materialCalculations.confirmed.mainPlates + materialCalculations.confirmed.dessertPlates} un</span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800">
                     <span className="text-zinc-600 dark:text-zinc-400">Talheres (Garfos e Facas)</span>
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{calculatedMaterials.forksAndKnives} pares</span>
+                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{materialCalculations.confirmed.forksAndKnives} pares</span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800">
-                    <span className="text-zinc-600 dark:text-zinc-400">Taças & Copos</span>
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{calculatedMaterials.waterGlasses + calculatedMaterials.beerTulips} un</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800">
-                    <span className="text-zinc-600 dark:text-zinc-400">Rechauds Inox ({stats.hotDishesInMenu} pratos quentes)</span>
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{calculatedMaterials.rechauds} cubas</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800">
-                    <span className="text-zinc-600 dark:text-zinc-400">Pastilhas de Álcool Gel ({config.durationHours}h)</span>
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{calculatedMaterials.fuelPastesNeeded} un</span>
+                    <span className="text-zinc-600 dark:text-zinc-400">Rechauds ({materialCalculations.confirmed.rechauds} pratos quentes)</span>
+                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{materialCalculations.confirmed.rechauds} cubas ({materialCalculations.confirmed.fuelPastesNeeded} pastilhas)</span>
                   </div>
                   <div className="flex justify-between items-center py-2">
                     <span className="text-zinc-600 dark:text-zinc-400">Mesas & Cadeiras</span>
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{calculatedMaterials.guestTablesNeeded} mesas ({calculatedMaterials.guestChairsNeeded} cad.)</span>
+                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{materialCalculations.confirmed.tablesNeeded} mesas ({materialCalculations.confirmed.chairsNeeded} cad.)</span>
                   </div>
                 </div>
               </div>
@@ -1499,7 +1840,7 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
         )}
 
         {/* ============================================================ */}
-        {/* ABA 4: LOCAÇÕES COM EDIÇÃO COMPLETA */}
+        {/* ABA 6: LOCAÇÕES COM EDIÇÃO COMPLETA & SINCRONIZAÇÃO */}
         {/* ============================================================ */}
         {activeTab === 'rentals' && (
           <div className="space-y-6">
@@ -1507,7 +1848,9 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h2 className="text-base font-semibold tracking-tight">Locações, Brinquedos e Mobiliário</h2>
-                  <p className="text-xs text-zinc-500 mt-1">Gerencie e edite os equipamentos infantis, espaço físico e móveis contratados</p>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Qualquer alteração feita aqui atualiza instantaneamente o <strong>Centro de Custos</strong> da festa.
+                  </p>
                 </div>
                 <button
                   onClick={() => openRentalModal()}
@@ -1563,78 +1906,148 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
         )}
 
         {/* ============================================================ */}
-        {/* ABA 5: CENTRO DE CUSTOS COM EDIÇÃO COMPLETA */}
+        {/* ABA 7: CENTRO DE CUSTOS TOTALMENTE AUTOMATIZADO E DINÂMICO */}
         {/* ============================================================ */}
         {activeTab === 'finance' && (
           <div className="space-y-6">
             <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-base font-semibold tracking-tight">Centro de Custos & Compras</h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-semibold tracking-tight">Centro de Custos Integrado & Automatizado</h2>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400 font-medium">
+                      Auto-Sync Ativo
+                    </span>
+                  </div>
                   <p className="text-xs text-zinc-500 mt-1">
-                    Previsto: <strong>R$ {stats.totalEstimatedCost.toLocaleString('pt-BR')}</strong> | Realizado: <strong>R$ {stats.totalActualCost.toLocaleString('pt-BR')}</strong>
+                    Este centro de custos reflete automaticamente os valores de <strong>Locações</strong>, <strong>Receitas do Cardápio</strong>, <strong>Bebidas</strong> e <strong>Louças</strong>, comparando os confirmados com a lista completa.
                   </p>
                 </div>
-                <button
-                  onClick={() => openExpenseModal()}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Nova Despesa</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => openExpenseModal()}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:opacity-90 transition shadow-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Despesa Avulsa</span>
+                  </button>
+                  <button
+                    onClick={handleExportShoppingList}
+                    className="px-3.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-medium flex items-center gap-1.5"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Baixar TXT</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="mt-5 overflow-x-auto">
+              {/* BARRA COMPARATIVA DE TOTAIS */}
+              <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="p-4 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/50">
+                  <span className="text-[11px] text-emerald-800 dark:text-emerald-300 font-medium block">
+                    Total Real (Apenas Confirmados - {guestStats.confirmedCount} pessoas)
+                  </span>
+                  <span className="text-xl font-bold text-emerald-700 dark:text-emerald-400 mt-1 block">
+                    R$ {consolidatedBudget.totalConfirmed.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400">
+                    R$ {consolidatedBudget.costPerConfirmed.toFixed(2)} / convidado confirmado
+                  </span>
+                </div>
+
+                <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200/70 dark:border-zinc-800">
+                  <span className="text-[11px] text-zinc-500 font-medium block">
+                    Total Previsto (Se Todos Fossem - {guestStats.allEligibleCount} pessoas)
+                  </span>
+                  <span className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mt-1 block">
+                    R$ {consolidatedBudget.totalAll.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                  <span className="text-[11px] text-zinc-500">
+                    R$ {consolidatedBudget.costPerAll.toFixed(2)} / pessoa elegível
+                  </span>
+                </div>
+
+                <div className="p-4 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/50">
+                  <span className="text-[11px] text-amber-800 dark:text-amber-300 font-medium block">
+                    Economia Atual por Ausências/Pendências
+                  </span>
+                  <span className="text-xl font-bold text-amber-700 dark:text-amber-400 mt-1 block">
+                    R$ {consolidatedBudget.diff.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                  <span className="text-[11px] text-amber-600 dark:text-amber-400">
+                    Economia gerada por convites não confirmados
+                  </span>
+                </div>
+              </div>
+
+              {/* TABELA CONSOLIDADA DE DESPESAS */}
+              <div className="mt-6 overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className={`border-b ${darkMode ? 'border-zinc-800 text-zinc-400' : 'border-zinc-200 text-zinc-500'}`}>
                     <tr>
-                      <th className="pb-2.5 font-medium">Item / Descrição</th>
+                      <th className="pb-2.5 font-medium">Item / Origem</th>
                       <th className="pb-2.5 font-medium">Categoria</th>
-                      <th className="pb-2.5 font-medium">Previsto</th>
-                      <th className="pb-2.5 font-medium">Realizado</th>
-                      <th className="pb-2.5 font-medium">Status</th>
+                      <th className="pb-2.5 font-medium">Origem do Cálculo</th>
+                      <th className="pb-2.5 font-medium text-right">Confirmados</th>
+                      <th className="pb-2.5 font-medium text-right">Se Todos Fossem</th>
                       <th className="pb-2.5 font-medium text-right">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
-                    {expenses.map(expense => (
-                      <tr key={expense.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40 transition-colors">
-                        <td className="py-3 font-medium text-zinc-900 dark:text-zinc-100">{expense.description}</td>
-                        <td className="py-3 text-zinc-500">{expense.category}</td>
-                        <td className="py-3 text-zinc-600 dark:text-zinc-300">R$ {Number(expense.estimated || 0).toLocaleString('pt-BR')}</td>
-                        <td className="py-3 font-medium text-zinc-900 dark:text-zinc-100">
-                          {expense.actual ? `R$ ${Number(expense.actual).toLocaleString('pt-BR')}` : '-'}
-                        </td>
+                    {consolidatedBudget.lineItems.map(item => (
+                      <tr key={item.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40 transition-colors">
+                        <td className="py-3 font-medium text-zinc-900 dark:text-zinc-100">{item.name}</td>
+                        <td className="py-3 text-zinc-500">{item.category}</td>
                         <td className="py-3">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                            expense.paid
-                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
-                              : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400'
-                          }`}>
-                            {expense.paid ? 'Pago' : 'Pendente'}
+                          <span className="inline-block px-2 py-0.5 rounded text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-mono">
+                            {item.source}
                           </span>
                         </td>
+                        <td className="py-3 text-right font-medium text-emerald-600 dark:text-emerald-400">
+                          R$ {item.confirmedCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td className="py-3 text-right font-medium text-zinc-600 dark:text-zinc-300">
+                          R$ {item.allCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
                         <td className="py-3 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => openExpenseModal(expense)}
-                              className="p-1 rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                              title="Editar Despesa"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteExpense(expense.id)}
-                              className="p-1 rounded-md text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
-                              title="Excluir"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                          {item.source === 'Despesa Avulsa' ? (
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => openExpenseModal(manualExpenses.find(m => m.id === item.id))}
+                                className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                                title="Editar Despesa"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteExpense(item.id)}
+                                className="p-1 rounded text-zinc-400 hover:text-rose-600"
+                                title="Excluir"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-zinc-400 italic">Automático</span>
+                          )}
                         </td>
                       </tr>
                     ))}
                   </tbody>
+                  <tfoot className="border-t-2 border-zinc-200 dark:border-zinc-700">
+                    <tr>
+                      <td colSpan={3} className="pt-3 font-semibold text-xs text-zinc-900 dark:text-zinc-100">
+                        VALOR TOTAL DA FESTA
+                      </td>
+                      <td className="pt-3 text-right font-bold text-sm text-emerald-600 dark:text-emerald-400">
+                        R$ {consolidatedBudget.totalConfirmed.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="pt-3 text-right font-bold text-sm text-zinc-800 dark:text-zinc-200">
+                        R$ {consolidatedBudget.totalAll.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
             </div>
@@ -1642,7 +2055,7 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
         )}
 
         {/* ============================================================ */}
-        {/* ABA 6: CRONOGRAMA */}
+        {/* ABA 8: CRONOGRAMA */}
         {/* ============================================================ */}
         {activeTab === 'checklist' && (
           <div className="space-y-6">
@@ -1651,7 +2064,7 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                 <div>
                   <h2 className="text-base font-semibold tracking-tight">Linha do Tempo & Tarefas</h2>
                   <p className="text-xs text-zinc-500 mt-1">
-                    {stats.completedChecklist} de {checklist.length} concluídas ({stats.checklistProgress}%)
+                    Controle de prazos e providências para antes e no dia do evento
                   </p>
                 </div>
               </div>
@@ -1688,13 +2101,13 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
         )}
 
         {/* ============================================================ */}
-        {/* ABA 7: CONFIGURAÇÕES */}
+        {/* ABA 9: CONFIGURAÇÕES */}
         {/* ============================================================ */}
         {activeTab === 'config' && (
           <div className="space-y-6">
             <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800/80' : 'bg-white border-zinc-200/70 shadow-2xs'}`}>
               <h2 className="text-base font-semibold tracking-tight">Parâmetros do Evento</h2>
-              <p className="text-xs text-zinc-500 mt-1 mb-5">Configure dados de local, horário e parâmetros de cálculo</p>
+              <p className="text-xs text-zinc-500 mt-1 mb-5">Configure dados de local, horário e parâmetros de cálculo de louças</p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 <div>
@@ -1745,19 +2158,6 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Serviço de Alimentação</label>
-                  <select
-                    value={config.serviceType}
-                    onChange={(e) => setConfig({ ...config, serviceType: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
-                  >
-                    <option value="buffet">Buffet Livre & Rechauds</option>
-                    <option value="alacarte">À La Carte</option>
-                    <option value="churrasco">Churrasco</option>
-                    <option value="fingerfood">Finger Foods & Salgados</option>
-                  </select>
-                </div>
-                <div>
                   <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Capacidade por Mesa (Lugares)</label>
                   <input
                     type="number"
@@ -1775,6 +2175,16 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                     className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Custo Aluguel Jogo Mesa + Cadeiras (R$)</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    value={config.rentalTableSetCost}
+                    onChange={(e) => setConfig({ ...config, rentalTableSetCost: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -1783,7 +2193,7 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
       </main>
 
       {/* ============================================================ */}
-      {/* MODAL: CONVIDADO COM GRUPOS PREDEFINIDOS E RESTRIÇÕES EM CHIPS */}
+      {/* MODAL: CONVIDADO COM GRUPOS E RESTRIÇÕES */}
       {/* ============================================================ */}
       {guestModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
@@ -1804,7 +2214,6 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                 />
               </div>
 
-              {/* SELEÇÃO DE GRUPO COM PRESETS */}
               <div>
                 <label className="block text-zinc-500 mb-1 font-medium">Grupo / Vínculo</label>
                 <select
@@ -1857,7 +2266,6 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                 </label>
               </div>
 
-              {/* SELEÇÃO DE RESTRIÇÕES ALIMENTARES COM CHIPS */}
               <div>
                 <label className="block text-zinc-500 mb-1.5 font-medium">Restrições Alimentares (clique para selecionar):</label>
                 <div className="flex flex-wrap gap-1.5 mb-2">
@@ -1908,54 +2316,102 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
       )}
 
       {/* ============================================================ */}
-      {/* MODAL: ITEM DO CARDÁPIO (CRIAR / EDITAR) */}
+      {/* MODAL: PRATO DO CARDÁPIO & INGREDIENTE/RECEITA */}
       {/* ============================================================ */}
       {menuModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className={`w-full max-w-md rounded-2xl border p-5 shadow-xl ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
             <h3 className="text-sm font-semibold mb-4">
-              {editingMenuItem ? 'Editar Prato / Item' : 'Novo Prato no Cardápio'}
+              {editingMenuItem ? 'Editar Prato & Receita' : 'Novo Prato no Cardápio'}
             </h3>
             <form onSubmit={handleSaveMenuItem} className="space-y-3 text-xs">
               <div>
-                <label className="block text-zinc-500 mb-1">Nome do Prato / Bebida</label>
+                <label className="block text-zinc-500 mb-1">Nome do Prato</label>
                 <input
                   type="text"
                   required
                   defaultValue={editingMenuItem?.name || ''}
                   name="name"
-                  placeholder="Ex: Risoto de Alho Poró com Parmesão"
+                  placeholder="Ex: Filé ao Molho Madeira"
                   className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
                 />
               </div>
-              <div>
-                <label className="block text-zinc-500 mb-1">Categoria do Menu</label>
-                <select
-                  name="category"
-                  defaultValue={editingMenuItem?.category || 'main'}
-                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent dark:bg-zinc-900"
-                >
-                  <option value="starter" className="dark:bg-zinc-900">Entradas & Canapés</option>
-                  <option value="main" className="dark:bg-zinc-900">Prato Principal</option>
-                  <option value="side" className="dark:bg-zinc-900">Guarnição / Salada</option>
-                  <option value="dessert" className="dark:bg-zinc-900">Sobremesa & Doces</option>
-                  <option value="drink" className="dark:bg-zinc-900">Bebida</option>
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-zinc-500 mb-1">Categoria</label>
+                  <select
+                    name="category"
+                    defaultValue={editingMenuItem?.category || 'main'}
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent dark:bg-zinc-900"
+                  >
+                    <option value="starter" className="dark:bg-zinc-900">Entradas & Canapés</option>
+                    <option value="main" className="dark:bg-zinc-900">Prato Principal</option>
+                    <option value="side" className="dark:bg-zinc-900">Guarnição / Salada</option>
+                    <option value="dessert" className="dark:bg-zinc-900">Sobremesa & Doces</option>
+                  </select>
+                </div>
+                <div className="pt-5">
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="isHot"
+                      defaultChecked={editingMenuItem ? editingMenuItem.isHot : true}
+                      className="rounded border-zinc-300"
+                    />
+                    <span className="font-medium">Servido Quente (Rechaud)</span>
+                  </label>
+                </div>
               </div>
-              <div className="pt-2">
-                <label className="flex items-center gap-2 cursor-pointer">
+
+              {/* DADOS DA RECEITA / INSUMO */}
+              <div className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700 space-y-2">
+                <span className="font-semibold text-zinc-700 dark:text-zinc-300 block">Ingrediente Principal / Insumo:</span>
+                <div>
+                  <label className="block text-zinc-500 text-[11px] mb-0.5">Nome do Insumo</label>
                   <input
-                    type="checkbox"
-                    name="isHot"
-                    defaultChecked={editingMenuItem ? editingMenuItem.isHot : true}
-                    className="rounded border-zinc-300"
+                    type="text"
+                    name="ingName"
+                    defaultValue={editingMenuItem?.ingredients?.[0]?.name || ''}
+                    placeholder="Ex: Filé Mignon Limpo"
+                    className="w-full px-2.5 py-1.5 rounded border border-zinc-300 dark:border-zinc-700 bg-transparent"
                   />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <span className="font-medium text-zinc-800 dark:text-zinc-200">Prato quente (Requer Rechaud com Banho-Maria)</span>
-                    <p className="text-[10px] text-zinc-400">Gera automaticamente cálculo de cuba e pastilha de combustível.</p>
+                    <label className="block text-zinc-500 text-[11px] mb-0.5">Qtd / Pessoa</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      name="ingAmount"
+                      defaultValue={editingMenuItem?.ingredients?.[0]?.amountPerPerson || 0.15}
+                      className="w-full px-2.5 py-1.5 rounded border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                    />
                   </div>
-                </label>
+                  <div>
+                    <label className="block text-zinc-500 text-[11px] mb-0.5">Unidade</label>
+                    <select
+                      name="ingUnit"
+                      defaultValue={editingMenuItem?.ingredients?.[0]?.unit || 'kg'}
+                      className="w-full px-2.5 py-1.5 rounded border border-zinc-300 dark:border-zinc-700 bg-transparent dark:bg-zinc-900"
+                    >
+                      <option value="kg">kg</option>
+                      <option value="L">L</option>
+                      <option value="un">un</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-zinc-500 text-[11px] mb-0.5">Preço Unit. (R$)</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      name="ingPrice"
+                      defaultValue={editingMenuItem?.ingredients?.[0]?.unitPrice || 60}
+                      className="w-full px-2.5 py-1.5 rounded border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                    />
+                  </div>
+                </div>
               </div>
+
               <div className="flex justify-end gap-2 pt-3">
                 <button
                   type="button"
@@ -1977,100 +2433,7 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
       )}
 
       {/* ============================================================ */}
-      {/* MODAL: DESPESA (CRIAR / EDITAR) */}
-      {/* ============================================================ */}
-      {expenseModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className={`w-full max-w-md rounded-2xl border p-5 shadow-xl ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
-            <h3 className="text-sm font-semibold mb-4">
-              {editingExpense ? 'Editar Lançamento' : 'Novo Lançamento Financeiro'}
-            </h3>
-            <form onSubmit={handleSaveExpense} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-zinc-500 mb-1">Descrição</label>
-                <input
-                  type="text"
-                  name="description"
-                  required
-                  defaultValue={editingExpense?.description || ''}
-                  placeholder="Ex: Barril de Chopp 50L"
-                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-zinc-500 mb-1">Categoria</label>
-                <select
-                  name="category"
-                  defaultValue={editingExpense?.category || 'Bebidas & Gelo'}
-                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent dark:bg-zinc-900"
-                >
-                  <option value="Locação Espaço" className="dark:bg-zinc-900">Locação Espaço</option>
-                  <option value="Buffet & Comidas" className="dark:bg-zinc-900">Buffet & Comidas</option>
-                  <option value="Bebidas & Gelo" className="dark:bg-zinc-900">Bebidas & Gelo</option>
-                  <option value="Aluguel Materiais" className="dark:bg-zinc-900">Aluguel Materiais</option>
-                  <option value="Brinquedos" className="dark:bg-zinc-900">Brinquedos</option>
-                  <option value="Confeitaria" className="dark:bg-zinc-900">Confeitaria</option>
-                  <option value="Outros" className="dark:bg-zinc-900">Outros</option>
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-zinc-500 mb-1">Valor Previsto (R$)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    name="estimated"
-                    required
-                    defaultValue={editingExpense?.estimated || ''}
-                    placeholder="0.00"
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-zinc-500 mb-1">Valor Realizado (R$)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    name="actual"
-                    defaultValue={editingExpense?.actual || ''}
-                    placeholder="0.00"
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
-                  />
-                </div>
-              </div>
-              <div className="pt-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="paid"
-                    defaultChecked={editingExpense ? editingExpense.paid : false}
-                    className="rounded border-zinc-300"
-                  />
-                  <span>Despesa já foi paga</span>
-                </label>
-              </div>
-              <div className="flex justify-end gap-2 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setExpenseModalOpen(false)}
-                  className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium"
-                >
-                  {editingExpense ? 'Salvar Alterações' : 'Adicionar Despesa'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================ */}
-      {/* MODAL: LOCAÇÕES E BRINQUEDOS (CRIAR / EDITAR) */}
+      {/* MODAL: LOCAÇÕES (CRIAR / EDITAR) */}
       {/* ============================================================ */}
       {rentalModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
@@ -2160,6 +2523,97 @@ ${config.servesBeer ? `- Cervejas: ${calculatedFoodAndBeverages.totalBeerLiters}
                   className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium"
                 >
                   {editingRental ? 'Salvar Alterações' : 'Adicionar Locação'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* MODAL: DESPESA AVULSA */}
+      {/* ============================================================ */}
+      {expenseModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className={`w-full max-w-md rounded-2xl border p-5 shadow-xl ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
+            <h3 className="text-sm font-semibold mb-4">
+              {editingExpense ? 'Editar Despesa Avulsa' : 'Nova Despesa Avulsa'}
+            </h3>
+            <form onSubmit={handleSaveExpense} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-zinc-500 mb-1">Descrição</label>
+                <input
+                  type="text"
+                  name="description"
+                  required
+                  defaultValue={editingExpense?.description || ''}
+                  placeholder="Ex: Decoração de Balões ou Fotógrafo"
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-zinc-500 mb-1">Categoria</label>
+                <select
+                  name="category"
+                  defaultValue={editingExpense?.category || 'Decoração & Cenografia'}
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent dark:bg-zinc-900"
+                >
+                  <option value="Decoração & Cenografia" className="dark:bg-zinc-900">Decoração & Cenografia</option>
+                  <option value="Música & Atrações" className="dark:bg-zinc-900">Música & Atrações</option>
+                  <option value="Fotografia & Vídeo" className="dark:bg-zinc-900">Fotografia & Vídeo</option>
+                  <option value="Lembrancinhas" className="dark:bg-zinc-900">Lembrancinhas</option>
+                  <option value="Outros" className="dark:bg-zinc-900">Outros</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-zinc-500 mb-1">Valor Previsto (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="estimated"
+                    required
+                    defaultValue={editingExpense?.estimated || ''}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-500 mb-1">Valor Realizado (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="actual"
+                    defaultValue={editingExpense?.actual || ''}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent"
+                  />
+                </div>
+              </div>
+              <div className="pt-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="paid"
+                    defaultChecked={editingExpense ? editingExpense.paid : false}
+                    className="rounded border-zinc-300"
+                  />
+                  <span>Despesa já foi paga</span>
+                </label>
+              </div>
+              <div className="flex justify-end gap-2 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setExpenseModalOpen(false)}
+                  className="px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium"
+                >
+                  Salvar Despesa
                 </button>
               </div>
             </form>
