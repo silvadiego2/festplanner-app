@@ -204,7 +204,8 @@ const INITIAL_EVENT_CONFIG = {
   rentalUnitCost: 4.50,
   disposableUnitCost: 1.80,
   rechaudRentalCost: 45.00,
-  fuelPasteCost: 8.00
+  fuelPasteCost: 8.00,
+  hostPin: "1234"
 };
 
 const INITIAL_GUESTS = [
@@ -330,12 +331,7 @@ export default function App() {
   const [rawLocalStorageDump, setRawLocalStorageDump] = useState([]);
 
   // PROTEÇÃO DE ACESSO AO PAINEL DO ANFITRIÃO (PIN DE SEGURANÇA)
-  const [hostPin, setHostPin] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('festplanner_host_pin') || '1234';
-    }
-    return '1234';
-  });
+  const [hostPin, setHostPin] = useState('1234');
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     if (typeof window !== 'undefined') {
       return sessionStorage.getItem('festplanner_auth') === 'true';
@@ -356,7 +352,8 @@ export default function App() {
 
   const handleVerifyPin = (e) => {
     e.preventDefault();
-    if (pinInput.trim() === hostPin) {
+    const effectivePin = config.hostPin || hostPin || '1234';
+    if (pinInput.trim() === effectivePin.trim()) {
       setIsAuthenticated(true);
       sessionStorage.setItem('festplanner_auth', 'true');
       setPinError(false);
@@ -375,7 +372,8 @@ export default function App() {
 
   const handleChangePinSubmit = (e) => {
     e.preventDefault();
-    if (currentPinAttempt.trim() !== hostPin) {
+    const effectivePin = config.hostPin || hostPin || '1234';
+    if (currentPinAttempt.trim() !== effectivePin.trim()) {
       showToast('PIN atual incorreto.');
       return;
     }
@@ -390,6 +388,7 @@ export default function App() {
 
     const updatedPin = newPinValue.trim();
     setHostPin(updatedPin);
+    setConfig(prev => ({ ...prev, hostPin: updatedPin }));
     if (typeof window !== 'undefined') {
       localStorage.setItem('festplanner_host_pin', updatedPin);
     }
@@ -410,7 +409,10 @@ export default function App() {
 
         if (json.success && json.data) {
           const d = json.data;
-          if (d.config) setConfig(d.config);
+          if (d.config) {
+            setConfig(d.config);
+            if (d.config.hostPin) setHostPin(d.config.hostPin);
+          }
           if (d.guests && d.guests.length > 0) setGuests(d.guests);
           if (d.menu && d.menu.length > 0) setMenu(d.menu);
           if (d.beverages && d.beverages.length > 0) setBeverages(d.beverages);
@@ -427,10 +429,16 @@ export default function App() {
       }
 
       try {
+        const savedPin = localStorage.getItem('festplanner_host_pin');
+        if (savedPin) setHostPin(savedPin);
         const savedGuests = localStorage.getItem('festplanner_guests_v3') || localStorage.getItem('festplanner_guests');
         if (savedGuests) setGuests(JSON.parse(savedGuests));
         const savedConfig = localStorage.getItem('festplanner_config_v3') || localStorage.getItem('festplanner_config');
-        if (savedConfig) setConfig(JSON.parse(savedConfig));
+        if (savedConfig) {
+          const parsedCfg = JSON.parse(savedConfig);
+          setConfig(parsedCfg);
+          if (parsedCfg.hostPin) setHostPin(parsedCfg.hostPin);
+        }
         const savedMenu = localStorage.getItem('festplanner_menu_v3') || localStorage.getItem('festplanner_menu');
         if (savedMenu) setMenu(JSON.parse(savedMenu));
         const savedBeverages = localStorage.getItem('festplanner_beverages_v3') || localStorage.getItem('festplanner_beverages');
@@ -1312,12 +1320,14 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
         }`}>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-600"
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden p-2 rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+              aria-label="Abrir Menu de Navegação"
             >
-              <SlidersHorizontal className="w-4 h-4" />
+              <SlidersHorizontal className="w-5 h-5 text-emerald-600" />
             </button>
-            <span className="font-bold text-sm">{config.celebrantName || 'Meu Evento'}</span>
+            <span className="font-bold text-sm truncate max-w-[140px] sm:max-w-none">{config.celebrantName || 'Meu Evento'}</span>
             <span className="text-xs text-zinc-400 hidden sm:inline">•</span>
             <button
               onClick={() => setEventEditModalOpen(true)}
@@ -1332,7 +1342,7 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
           <div className="flex items-center gap-2">
             <button
               onClick={handleExportShoppingList}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
               <Download className="w-3.5 h-3.5 text-zinc-500" />
               <span>Relatório Operacional</span>
@@ -1355,6 +1365,109 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
             </button>
           </div>
         </header>
+
+        {/* DRAWER LATERAL MOBILE COMPLETO */}
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <div 
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity" 
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            <div className={`fixed inset-y-0 left-0 w-72 max-w-[85vw] p-5 shadow-2xl flex flex-col justify-between overflow-y-auto transition-transform ${
+              darkMode ? 'bg-zinc-950 border-r border-zinc-800 text-zinc-100' : 'bg-white border-r border-zinc-200 text-zinc-900'
+            }`}>
+              <div className="space-y-5">
+                <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center font-bold">
+                      <Cake className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-sm block">FestPlanner</span>
+                      <span className="text-[10px] text-zinc-400">Navegação Geral</span>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="p-1 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-sm font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Resumo da festa mobile */}
+                <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs">
+                  <p className="font-semibold text-zinc-900 dark:text-zinc-100 truncate">{config.celebrantName}</p>
+                  <p className="text-[11px] text-zinc-500 mt-0.5">Início: {config.startTime} • {config.durationHours}h de festa</p>
+                </div>
+
+                {/* Abas */}
+                <nav className="space-y-1">
+                  {navItems.map(item => {
+                    const Icon = item.icon;
+                    const isActive = activeTab === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setActiveTab(item.id);
+                          setMobileMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition ${
+                          isActive
+                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-bold shadow-sm'
+                            : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-400 dark:text-emerald-600' : 'text-zinc-400'}`} />
+                          <span>{item.label}</span>
+                        </div>
+                        {item.badge !== undefined && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-zinc-200 dark:bg-zinc-800">
+                            {item.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </nav>
+              </div>
+
+              {/* Ações inferiores do drawer mobile */}
+              <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
+                <button
+                  onClick={() => {
+                    setRsvpSimModalOpen(true);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full py-2 px-3 rounded-xl bg-emerald-600 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>Enviar Convite Digital</span>
+                </button>
+                <div className="flex items-center justify-between pt-1">
+                  <button
+                    onClick={() => {
+                      setEventEditModalOpen(true);
+                      setMobileMenuOpen(false);
+                    }}
+                    className="text-xs text-zinc-500 hover:text-emerald-500 flex items-center gap-1"
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Ajustar Horário</span>
+                  </button>
+                  <button
+                    onClick={() => setDarkMode(!darkMode)}
+                    className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-500"
+                  >
+                    {darkMode ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Conteúdo das Abas */}
         <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24">
