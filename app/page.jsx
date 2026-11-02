@@ -626,7 +626,7 @@ export default function App() {
     return () => clearTimeout(timeout);
   }, [config, guests, menu, beverages, rentals, manualExpenses, checklist, mounted]);
 
-  // Cálculos Estatísticos de Presença
+  // Estatísticas e Métricas de Convidados e Consumo
   const stats = useMemo(() => {
     const totalGuests = guests.length;
     const confirmedList = guests.filter(g => g.status === 'confirmed');
@@ -641,7 +641,6 @@ export default function App() {
 
     const allAdults = guests.filter(g => g.category === 'adult').length;
     const allKids611 = guests.filter(g => g.category === 'child_6_11').length;
-    const allKids05 = guests.filter(g => g.category === 'child_0_5').length;
     const allPotentialEaters = allAdults + (allKids611 * 0.5);
     const allPotentialDrinkers = guests.filter(g => g.category === 'adult' && g.drinksAlcohol).length;
 
@@ -678,20 +677,12 @@ export default function App() {
     };
   }, [guests, menu, checklist, config.date]);
 
-  // Cálculos do Cardápio & Insumos das Receitas (Confirmados vs. Todos)
+  // Cálculos do Cardápio & Insumos de Salvador
   const calculatedMenu = useMemo(() => {
     let totalCostConfirmed = 0;
     let totalCostAll = 0;
 
-    // Organização Cronológica: Entradas -> Principal/Carnes -> Acompanhamentos -> Sobremesas
-    const sortedMenu = [...menu].sort((a, b) => {
-      const orderA = MENU_CATEGORY_ORDER[a.category]?.order || 99;
-      const orderB = MENU_CATEGORY_ORDER[b.category]?.order || 99;
-      if (orderA !== orderB) return orderA - orderB;
-      return a.name.localeCompare(b.name, 'pt-BR');
-    });
-
-    const itemsDetailed = sortedMenu.map(item => {
+    const itemsDetailed = menu.map(item => {
       let itemCostConfirmed = 0;
       let itemCostAll = 0;
 
@@ -714,10 +705,14 @@ export default function App() {
       return { ...item, ingredients: detailedIngredients, itemCostConfirmed, itemCostAll };
     });
 
-    return { itemsDetailed, totalCostConfirmed: Math.round(totalCostConfirmed), totalCostAll: Math.round(totalCostAll) };
+    return {
+      itemsDetailed,
+      totalCostConfirmed: Math.round(totalCostConfirmed), 
+      totalCostAll: Math.round(totalCostAll) 
+    };
   }, [menu, stats.confirmedEaters, stats.allPotentialEaters]);
 
-  // Cálculos de Bebidas Detalhadas (Confirmados vs. Todos) - ORDENADAS EM ORDEM ALFABÉTICA (A-Z)
+  // Cálculos de Bebidas Detalhadas com MOTOR DE COMPENSAÇÃO DE SOBRAS (Pools de Intercâmbio)
   const calculatedBeverages = useMemo(() => {
     const hours = Number(config.durationHours) || 5;
     const servesAlcohol = config.servesAlcohol !== false;
@@ -727,10 +722,10 @@ export default function App() {
     // Ordenação Alfabética A-Z das Bebidas
     const sortedBeverages = [...beverages].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
 
-    const list = sortedBeverages.map(bev => {
+    // PASSO 1: Cálculo base de volume necessário e comprado em Litros
+    const rawList = sortedBeverages.map(bev => {
       const isAlcohol = bev.category === 'alcohol';
 
-      // Se o evento não serve álcool, zera o consumo de bebidas alcoólicas
       if (isAlcohol && !servesAlcohol) {
         return {
           ...bev,
@@ -740,11 +735,14 @@ export default function App() {
           totalLitersAll: 0,
           totalCostAll: 0,
           packagesAll: 0,
+          purchasedPackages: 0,
+          purchasedLiters: 0,
+          purchasedCost: 0,
+          balanceLiters: 0,
           disabled: true
         };
       }
 
-      // Se não houver álcool, adiciona uma ligeira compensação (+25%) em sucos e refrigerantes
       const compensationFactor = (!servesAlcohol && (bev.category === 'soda' || bev.category === 'juice')) ? 1.25 : 1.0;
       const effectiveRate = bev.mlPerPersonPerHour * compensationFactor;
 
@@ -760,15 +758,9 @@ export default function App() {
       const packagesConfirmed = Math.ceil(totalLitersConfirmed / (bev.packageVolume || 1));
       const packagesAll = Math.ceil(totalLitersAll / (bev.packageVolume || 1));
 
-      // Saldo de Estoque: Já Comprado vs. Necessário
       const purchased = Number(bev.purchasedPackages) || 0;
-      const balancePackages = purchased - packagesConfirmed;
       const purchasedLiters = Number((purchased * (bev.packageVolume || 1)).toFixed(1));
       const purchasedCost = Number((purchasedLiters * bev.unitCostPerLiter).toFixed(2));
-      const missingPackages = Math.max(0, packagesConfirmed - purchased);
-      const missingCost = Number((missingPackages * (bev.packageVolume || 1) * bev.unitCostPerLiter).toFixed(2));
-      const surplusPackages = Math.max(0, purchased - packagesConfirmed);
-      const surplusLiters = Number((surplusPackages * (bev.packageVolume || 1)).toFixed(1));
 
       totalBeveragesCostConfirmed += totalCostConfirmed;
       totalBeveragesCostAll += totalCostAll;
@@ -778,30 +770,143 @@ export default function App() {
         purchasedPackages: purchased,
         purchasedLiters,
         purchasedCost,
-        balancePackages,
-        missingPackages,
-        missingCost,
-        surplusPackages,
-        surplusLiters,
         totalLitersConfirmed,
         totalCostConfirmed,
         packagesConfirmed,
         totalLitersAll,
         totalCostAll,
         packagesAll,
+        balanceLiters: Number((purchasedLiters - totalLitersConfirmed).toFixed(1)),
         disabled: false
       };
     });
 
+    // PASSO 2: Balanço de Sobras por Pool (Refrigerantes, Sucos, Cervejas, Gelo, Água)
+    const poolSurplus = {
+      soda: 0,
+      juice: 0,
+      water: 0,
+      alcohol: 0,
+      ice: 0
+    };
+
+    // Identifica quanto sobrou em Litros em cada categoria
+    rawList.forEach(b => {
+      if (!b.disabled && b.balanceLiters > 0) {
+        poolSurplus[b.category] = (poolSurplus[b.category] || 0) + b.balanceLiters;
+      }
+    });
+
+    // Cria cópia manipulável das sobras para abater déficits
+    const availablePoolSurplus = { ...poolSurplus };
+
+    // PASSO 3: Aplicação da compensação inteligente (Sobra de uma supre a outra)
+    const list = rawList.map(bev => {
+      if (bev.disabled) {
+        return {
+          ...bev,
+          balancePackages: 0,
+          missingPackages: 0,
+          missingCost: 0,
+          surplusPackages: 0,
+          surplusLiters: 0,
+          isCompensated: false,
+          compensatedLiters: 0
+        };
+      }
+
+      const rawDiffLiters = bev.balanceLiters;
+      const packageVol = bev.packageVolume || 1;
+
+      if (rawDiffLiters >= 0) {
+        // Sobra própria
+        const surplusPkgs = Math.floor(rawDiffLiters / packageVol);
+        return {
+          ...bev,
+          balancePackages: surplusPkgs,
+          missingPackages: 0,
+          missingCost: 0,
+          surplusPackages: surplusPkgs,
+          surplusLiters: rawDiffLiters,
+          isCompensated: false,
+          compensatedLiters: 0
+        };
+      }
+
+      // Déficit nesta bebida específica
+      const neededLiters = Math.abs(rawDiffLiters);
+      let coveredFromSameCategory = 0;
+      let coveredFromCrossCategory = 0;
+
+      // 1. Tenta cobrir com a sobra da mesma categoria (ex: Coca cobre Guaraná)
+      if (availablePoolSurplus[bev.category] > 0) {
+        const canTake = Math.min(availablePoolSurplus[bev.category], neededLiters);
+        coveredFromSameCategory = canTake;
+        availablePoolSurplus[bev.category] -= canTake;
+      }
+
+      // 2. Se for suco ou água e ainda faltar, verifica se sobrou refrigerante ou vice-versa (Intercâmbio de Hidratação)
+      const remainingDeficit = neededLiters - coveredFromSameCategory;
+      if (remainingDeficit > 0) {
+        if (bev.category === 'juice' && availablePoolSurplus.soda > 0) {
+          const crossTake = Math.min(availablePoolSurplus.soda, remainingDeficit);
+          coveredFromCrossCategory = crossTake;
+          availablePoolSurplus.soda -= crossTake;
+        } else if (bev.category === 'soda' && availablePoolSurplus.juice > 0) {
+          const crossTake = Math.min(availablePoolSurplus.juice, remainingDeficit);
+          coveredFromCrossCategory = crossTake;
+          availablePoolSurplus.juice -= crossTake;
+        } else if (bev.category === 'water' && (availablePoolSurplus.soda > 0 || availablePoolSurplus.juice > 0)) {
+          const poolKey = availablePoolSurplus.juice > 0 ? 'juice' : 'soda';
+          const crossTake = Math.min(availablePoolSurplus[poolKey], remainingDeficit);
+          coveredFromCrossCategory = crossTake;
+          availablePoolSurplus[poolKey] -= crossTake;
+        }
+      }
+
+      const totalCoveredLiters = Number((coveredFromSameCategory + coveredFromCrossCategory).toFixed(1));
+      const effectiveDeficitLiters = Math.max(0, Number((neededLiters - totalCoveredLiters).toFixed(1)));
+      const effectiveMissingPackages = Math.ceil(effectiveDeficitLiters / packageVol);
+      const effectiveMissingCost = Number((effectiveMissingPackages * packageVol * bev.unitCostPerLiter).toFixed(2));
+
+      return {
+        ...bev,
+        balancePackages: -effectiveMissingPackages,
+        missingPackages: effectiveMissingPackages,
+        missingCost: effectiveMissingCost,
+        surplusPackages: 0,
+        surplusLiters: 0,
+        isCompensated: totalCoveredLiters > 0,
+        compensatedLiters: totalCoveredLiters,
+        compensatedSource: coveredFromCrossCategory > 0 ? 'Intercâmbio (Refri/Suco)' : 'Sobra do Grupo'
+      };
+    });
+
     const totalPurchasedCost = list.reduce((acc, b) => acc + (b.disabled ? 0 : b.purchasedCost), 0);
+    // Custo pendente real considera as compensações
     const totalPendingCost = list.reduce((acc, b) => acc + (b.disabled ? 0 : b.missingCost), 0);
+
+    // Resumo dos Grupos de Hidratação
+    const nonAlcoholicLitersNeeded = list
+      .filter(b => !b.disabled && (b.category === 'soda' || b.category === 'juice' || b.category === 'water'))
+      .reduce((acc, b) => acc + b.totalLitersConfirmed, 0);
+
+    const nonAlcoholicLitersPurchased = list
+      .filter(b => !b.disabled && (b.category === 'soda' || b.category === 'juice' || b.category === 'water'))
+      .reduce((acc, b) => acc + b.purchasedLiters, 0);
+
+    const nonAlcoholicBalance = Number((nonAlcoholicLitersPurchased - nonAlcoholicLitersNeeded).toFixed(1));
 
     return { 
       list, 
       totalCostConfirmed: Math.round(totalBeveragesCostConfirmed), 
       totalCostAll: Math.round(totalBeveragesCostAll),
       totalPurchasedCost: Math.round(totalPurchasedCost),
-      totalPendingCost: Math.round(totalPendingCost)
+      totalPendingCost: Math.round(totalPendingCost),
+      poolSurplus,
+      nonAlcoholicLitersNeeded: Number(nonAlcoholicLitersNeeded.toFixed(1)),
+      nonAlcoholicLitersPurchased: Number(nonAlcoholicLitersPurchased.toFixed(1)),
+      nonAlcoholicBalance
     };
   }, [beverages, config.durationHours, config.servesAlcohol, stats.confirmedCount, stats.confirmedDrinkers, stats.totalGuests, stats.allPotentialDrinkers]);
 
@@ -2245,13 +2350,40 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
                     </div>
 
                     <div className="p-3.5 rounded-2xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/60">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400 block">Pendente a Comprar</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400 block">Pendente Real (Com Compensação)</span>
                       <strong className="text-base font-bold text-amber-700 dark:text-amber-300 mt-0.5 block">
                         R$ {calculatedBeverages.totalPendingCost.toLocaleString('pt-BR')}
                       </strong>
                       <span className="text-[11px] text-amber-700/80 dark:text-amber-400/80">
-                        {calculatedBeverages.totalPendingCost === 0 ? 'Tudo comprado! Estoque completo.' : 'Falta adquirir para atingir a meta.'}
+                        {calculatedBeverages.totalPendingCost === 0 ? 'Tudo suprido! As sobras cobriram os itens pendentes.' : 'Falta adquirir para atingir o volume total.'}
                       </span>
+                    </div>
+                  </div>
+
+                  {/* PAINEL DE INTELIGÊNCIA: BALANÇO DE HIDRATAÇÃO TOTAL & COMPENSAÇÃO DE SOBRAS */}
+                  <div className="mb-5 p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-transparent border border-emerald-500/30">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5" /> Motor de Intercâmbio & Compensação de Sobras Ativo
+                        </span>
+                        <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-1">
+                          Balanço Geral Não Alcoólico (Refri + Sucos + Águas): <strong>{calculatedBeverages.nonAlcoholicLitersPurchased} L</strong> comprados de <strong>{calculatedBeverages.nonAlcoholicLitersNeeded} L</strong> necessários.
+                        </p>
+                      </div>
+
+                      <div className="shrink-0">
+                        {calculatedBeverages.nonAlcoholicBalance >= 0 ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-bold border border-emerald-500/30">
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            <span>Meta de Líquidos Atingida (+{calculatedBeverages.nonAlcoholicBalance}L de folga)</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-bold border border-amber-500/30">
+                            <span>Déficit global: {Math.abs(calculatedBeverages.nonAlcoholicBalance)} L restantes</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -2272,7 +2404,7 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
                           <th className="pb-2.5">Consumo / Hora</th>
                           <th className="pb-2.5">Necessário (Meta)</th>
                           <th className="pb-2.5 text-center">Já Comprado (Estoque)</th>
-                          <th className="pb-2.5">Balanço (Falta / Sobra)</th>
+                          <th className="pb-2.5">Balanço & Compensação</th>
                           <th className="pb-2.5 text-right">Custo Total</th>
                           <th className="pb-2.5 text-right">Ação</th>
                         </tr>
@@ -2316,31 +2448,48 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
                               )}
                             </td>
 
-                            {/* BALANÇO: FALTA / SOBRA / CONCLUÍDO */}
+                            {/* BALANÇO INTELIGENTE: FALTA / SOBRA / COMPENSADO POR OUTRA BEBIDA */}
                             <td className="py-3">
                               {bev.disabled ? (
                                 <span className="text-zinc-400 text-[11px]">-</span>
-                              ) : bev.balancePackages === 0 ? (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50 text-[11px] font-semibold">
-                                  <Check className="w-3 h-3 stroke-[3]" />
-                                  <span>Tudo comprado</span>
-                                </span>
-                              ) : bev.balancePackages < 0 ? (
+                              ) : bev.surplusPackages > 0 || (bev.purchasedPackages >= bev.packagesConfirmed && bev.missingPackages === 0) ? (
+                                bev.surplusPackages > 0 ? (
+                                  <div>
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-400 border border-cyan-200/50 dark:border-cyan-800/50 text-[11px] font-bold">
+                                      Sobra de +{bev.surplusPackages} un (+{bev.surplusLiters}L)
+                                    </span>
+                                    <span className="block text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-medium">
+                                      ↳ Suprindo déficits do grupo
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50 text-[11px] font-semibold">
+                                    <Check className="w-3 h-3 stroke-[3]" />
+                                    <span>Tudo comprado</span>
+                                  </span>
+                                )
+                              ) : bev.missingPackages === 0 && bev.isCompensated ? (
                                 <div>
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/50 text-[11px] font-bold">
-                                    Faltam {bev.missingPackages} un
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200/50 dark:border-teal-800/50 text-[11px] font-semibold">
+                                    <Check className="w-3 h-3 stroke-[3]" />
+                                    <span>100% Suprido por sobra</span>
                                   </span>
                                   <span className="block text-[10px] text-zinc-400 mt-0.5">
-                                    A comprar: R$ {bev.missingCost.toFixed(2)}
+                                    {bev.compensatedLiters}L cobertos ({bev.compensatedSource})
                                   </span>
                                 </div>
                               ) : (
                                 <div>
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-400 border border-cyan-200/50 dark:border-cyan-800/50 text-[11px] font-bold">
-                                    Sobra de +{bev.surplusPackages} un
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/50 text-[11px] font-bold">
+                                    Faltam {bev.missingPackages} un
                                   </span>
-                                  <span className="block text-[10px] text-cyan-600 dark:text-cyan-400/80 mt-0.5 font-medium">
-                                    Excedente: ~{bev.surplusLiters}L
+                                  {bev.isCompensated && (
+                                    <span className="block text-[10px] text-teal-600 dark:text-teal-400 mt-0.5 font-medium">
+                                      {bev.compensatedLiters}L já abatidos por sobras
+                                    </span>
+                                  )}
+                                  <span className="block text-[10px] text-zinc-400 mt-0.5">
+                                    A comprar: R$ {bev.missingCost.toFixed(2)}
                                   </span>
                                 </div>
                               )}
