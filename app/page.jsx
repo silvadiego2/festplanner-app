@@ -283,17 +283,17 @@ const INITIAL_GUESTS = [
 ];
 
 const INITIAL_BEVERAGE_TYPES = [
-  { id: 'b1', name: 'Refrigerante Cola (Coca-Cola / Zero)', category: 'soda', mlPerPersonPerHour: 90, unitCostPerLiter: 5.50, unitPackage: 'Garrafa 2L', packageVolume: 2.0 },
-  { id: 'b2', name: 'Refrigerante Guaraná (Antarctica)', category: 'soda', mlPerPersonPerHour: 60, unitCostPerLiter: 5.00, unitPackage: 'Garrafa 2L', packageVolume: 2.0 },
-  { id: 'b3', name: 'Suco de Uva Integral', category: 'juice', mlPerPersonPerHour: 40, unitCostPerLiter: 11.00, unitPackage: 'Garrafa 1.5L', packageVolume: 1.5 },
-  { id: 'b4', name: 'Sucos Variados (Laranja / Maracujá)', category: 'juice', mlPerPersonPerHour: 50, unitCostPerLiter: 8.50, unitPackage: 'Garrafa 1L', packageVolume: 1.0 },
-  { id: 'b5', name: 'Água de Coco Natural', category: 'juice', mlPerPersonPerHour: 40, unitCostPerLiter: 7.80, unitPackage: 'Garrafa 1L', packageVolume: 1.0 },
-  { id: 'b6', name: 'Água Mineral sem Gás', category: 'water', mlPerPersonPerHour: 80, unitCostPerLiter: 2.20, unitPackage: 'Garrafão 5L', packageVolume: 5.0 },
-  { id: 'b7', name: 'Água Mineral com Gás', category: 'water', mlPerPersonPerHour: 40, unitCostPerLiter: 3.50, unitPackage: 'Garrafa 500ml', packageVolume: 0.5 },
-  { id: 'b8', name: 'Chopp Artesanal / Cerveja Puro Malte', category: 'alcohol', mlPerPersonPerHour: 320, unitCostPerLiter: 14.00, unitPackage: 'Barril 50L ou Lata', packageVolume: 0.35 },
-  { id: 'b9', name: 'Vinho / Espumante Brut', category: 'alcohol', mlPerPersonPerHour: 60, unitCostPerLiter: 48.00, unitPackage: 'Garrafa 750ml', packageVolume: 0.75 },
-  { id: 'b10', name: 'Gelo Filtrado (Consumo)', category: 'ice', mlPerPersonPerHour: 80, unitCostPerLiter: 3.00, unitPackage: 'Saco 5kg', packageVolume: 5.0 },
-  { id: 'b11', name: 'Gelo em Cubos/Barra (Tina & Coolers)', category: 'ice', mlPerPersonPerHour: 100, unitCostPerLiter: 2.20, unitPackage: 'Saco 10kg', packageVolume: 10.0 }
+  { id: 'b1', name: 'Refrigerante Cola (Coca-Cola / Zero)', category: 'soda', mlPerPersonPerHour: 90, unitCostPerLiter: 5.50, unitPackage: 'Garrafa 2L', packageVolume: 2.0, purchasedPackages: 0 },
+  { id: 'b2', name: 'Refrigerante Guaraná (Antarctica)', category: 'soda', mlPerPersonPerHour: 60, unitCostPerLiter: 5.00, unitPackage: 'Garrafa 2L', packageVolume: 2.0, purchasedPackages: 0 },
+  { id: 'b3', name: 'Suco de Uva Integral', category: 'juice', mlPerPersonPerHour: 40, unitCostPerLiter: 11.00, unitPackage: 'Garrafa 1.5L', packageVolume: 1.5, purchasedPackages: 0 },
+  { id: 'b4', name: 'Sucos Variados (Laranja / Maracujá)', category: 'juice', mlPerPersonPerHour: 50, unitCostPerLiter: 8.50, unitPackage: 'Garrafa 1L', packageVolume: 1.0, purchasedPackages: 0 },
+  { id: 'b5', name: 'Água de Coco Natural', category: 'juice', mlPerPersonPerHour: 40, unitCostPerLiter: 7.80, unitPackage: 'Garrafa 1L', packageVolume: 1.0, purchasedPackages: 0 },
+  { id: 'b6', name: 'Água Mineral sem Gás', category: 'water', mlPerPersonPerHour: 80, unitCostPerLiter: 2.20, unitPackage: 'Garrafão 5L', packageVolume: 5.0, purchasedPackages: 0 },
+  { id: 'b7', name: 'Água Mineral com Gás', category: 'water', mlPerPersonPerHour: 40, unitCostPerLiter: 3.50, unitPackage: 'Garrafa 500ml', packageVolume: 0.5, purchasedPackages: 0 },
+  { id: 'b8', name: 'Chopp Artesanal / Cerveja Puro Malte', category: 'alcohol', mlPerPersonPerHour: 320, unitCostPerLiter: 14.00, unitPackage: 'Barril 50L ou Lata', packageVolume: 0.35, purchasedPackages: 0 },
+  { id: 'b9', name: 'Vinho / Espumante Brut', category: 'alcohol', mlPerPersonPerHour: 60, unitCostPerLiter: 48.00, unitPackage: 'Garrafa 750ml', packageVolume: 0.75, purchasedPackages: 0 },
+  { id: 'b10', name: 'Gelo Filtrado (Consumo)', category: 'ice', mlPerPersonPerHour: 80, unitCostPerLiter: 3.00, unitPackage: 'Saco 5kg', packageVolume: 5.0, purchasedPackages: 0 },
+  { id: 'b11', name: 'Gelo em Cubos/Barra (Tina & Coolers)', category: 'ice', mlPerPersonPerHour: 100, unitCostPerLiter: 2.20, unitPackage: 'Saco 10kg', packageVolume: 10.0, purchasedPackages: 0 }
 ];
 
 // MODELOS TÉCNICOS FIXOS DE CALCULADORA DE BEBIDAS (ESTILO DESCORCHA / EVENT MASTER)
@@ -760,11 +760,29 @@ export default function App() {
       const packagesConfirmed = Math.ceil(totalLitersConfirmed / (bev.packageVolume || 1));
       const packagesAll = Math.ceil(totalLitersAll / (bev.packageVolume || 1));
 
+      // Saldo de Estoque: Já Comprado vs. Necessário
+      const purchased = Number(bev.purchasedPackages) || 0;
+      const balancePackages = purchased - packagesConfirmed;
+      const purchasedLiters = Number((purchased * (bev.packageVolume || 1)).toFixed(1));
+      const purchasedCost = Number((purchasedLiters * bev.unitCostPerLiter).toFixed(2));
+      const missingPackages = Math.max(0, packagesConfirmed - purchased);
+      const missingCost = Number((missingPackages * (bev.packageVolume || 1) * bev.unitCostPerLiter).toFixed(2));
+      const surplusPackages = Math.max(0, purchased - packagesConfirmed);
+      const surplusLiters = Number((surplusPackages * (bev.packageVolume || 1)).toFixed(1));
+
       totalBeveragesCostConfirmed += totalCostConfirmed;
       totalBeveragesCostAll += totalCostAll;
 
       return {
         ...bev,
+        purchasedPackages: purchased,
+        purchasedLiters,
+        purchasedCost,
+        balancePackages,
+        missingPackages,
+        missingCost,
+        surplusPackages,
+        surplusLiters,
         totalLitersConfirmed,
         totalCostConfirmed,
         packagesConfirmed,
@@ -775,7 +793,16 @@ export default function App() {
       };
     });
 
-    return { list, totalCostConfirmed: Math.round(totalBeveragesCostConfirmed), totalCostAll: Math.round(totalBeveragesCostAll) };
+    const totalPurchasedCost = list.reduce((acc, b) => acc + (b.disabled ? 0 : b.purchasedCost), 0);
+    const totalPendingCost = list.reduce((acc, b) => acc + (b.disabled ? 0 : b.missingCost), 0);
+
+    return { 
+      list, 
+      totalCostConfirmed: Math.round(totalBeveragesCostConfirmed), 
+      totalCostAll: Math.round(totalBeveragesCostAll),
+      totalPurchasedCost: Math.round(totalPurchasedCost),
+      totalPendingCost: Math.round(totalPendingCost)
+    };
   }, [beverages, config.durationHours, config.servesAlcohol, stats.confirmedCount, stats.confirmedDrinkers, stats.totalGuests, stats.allPotentialDrinkers]);
 
   // Cálculos de Louças, Rechauds, Mesas e Descartáveis
@@ -1070,6 +1097,11 @@ export default function App() {
     setBeverageModalOpen(true);
   };
 
+  const handleUpdatePurchasedQty = (id, newPurchased) => {
+    const qty = Math.max(0, parseInt(newPurchased, 10) || 0);
+    setBeverages(beverages.map(b => b.id === id ? { ...b, purchasedPackages: qty } : b));
+  };
+
   const handleSaveBeverage = (e) => {
     e.preventDefault();
     const form = e.target;
@@ -1083,14 +1115,15 @@ export default function App() {
     
     const unitPackage = form.unitPackage.value.trim() || 'Garrafa 2L';
     const packageVolume = Number(form.packageVolume.value.toString().replace(',', '.')) || 1.0;
+    const purchasedPackages = Math.max(0, parseInt(form.purchasedPackages?.value || 0, 10));
 
     if (!name) return;
 
     if (editingBeverage) {
-      setBeverages(beverages.map(b => b.id === editingBeverage.id ? { ...b, name, category, mlPerPersonPerHour, unitCostPerLiter, unitPackage, packageVolume } : b));
+      setBeverages(beverages.map(b => b.id === editingBeverage.id ? { ...b, name, category, mlPerPersonPerHour, unitCostPerLiter, unitPackage, packageVolume, purchasedPackages } : b));
       showToast('Bebida atualizada!');
     } else {
-      const newBev = { id: 'bev-' + Date.now(), name, category, mlPerPersonPerHour, unitCostPerLiter, unitPackage, packageVolume };
+      const newBev = { id: 'bev-' + Date.now(), name, category, mlPerPersonPerHour, unitCostPerLiter, unitPackage, packageVolume, purchasedPackages };
       setBeverages([...beverages, newBev]);
       showToast('Nova bebida adicionada!');
     }
@@ -1273,19 +1306,25 @@ INDICADORES DE PRESENÇA (RSVP)
 - Ausentes que informaram não comparecer: ${stats.declinedCount}
 
 ============================================================
-1. INSUMOS DO BUFFET & RECEITAS (Apenas Confirmados)
+2. BEBIDAS & GELO (BALANÇO DE ESTOQUE)
 ============================================================
-${calculatedMenu.itemsDetailed.map(dish => `
-[${dish.name.toUpperCase()}]
-${dish.ingredients.map(ing => `  - ${ing.name}: ${ing.qtyConfirmed} ${ing.unit} (~R$ ${ing.costConfirmed.toFixed(2)})`).join('\n')}
-`).join('')}
-Subtotal Estimado do Buffet: R$ ${calculatedMenu.totalCostConfirmed.toLocaleString('pt-BR')}
+${calculatedBeverages.list.map(bev => {
+  const statusStr = bev.disabled 
+    ? '[Não Servido]' 
+    : bev.balancePackages === 0 
+    ? '[OK - Quantidade Exata]' 
+    : bev.balancePackages < 0 
+    ? `[FALTAM: ${bev.missingPackages} un (~R$ ${bev.missingCost.toFixed(2)})]` 
+    : `[SOBRA: +${bev.surplusPackages} un (~${bev.surplusLiters}L)]`;
 
-============================================================
-2. BEBIDAS & GELO
-============================================================
-${calculatedBeverages.list.map(bev => `  - ${bev.name}: ${bev.totalLitersConfirmed} L (~${bev.packagesConfirmed} un de ${bev.unitPackage}) - R$ ${bev.totalCostConfirmed.toFixed(2)}`).join('\n')}
-Subtotal Estimado de Bebidas: R$ ${calculatedBeverages.totalCostConfirmed.toLocaleString('pt-BR')}
+  return `  - ${bev.name}:
+      Necessário: ${bev.packagesConfirmed} un (${bev.totalLitersConfirmed} L) | Já Comprado: ${bev.purchasedPackages} un
+      Status: ${statusStr}`;
+}).join('\n')}
+
+Subtotal Total Estimado de Bebidas: R$ ${calculatedBeverages.totalCostConfirmed.toLocaleString('pt-BR')}
+Já Investido / Comprado: R$ ${calculatedBeverages.totalPurchasedCost.toLocaleString('pt-BR')}
+Pendente a Comprar: R$ ${calculatedBeverages.totalPendingCost.toLocaleString('pt-BR')}
 
 ============================================================
 3. LOUÇAS, RECHAUDS & MOBILIÁRIO
@@ -2187,6 +2226,35 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
                     </div>
                   </div>
 
+                  {/* CARDS DE SALDO DE COMPRAS DE BEBIDAS */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+                    <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200/80 dark:border-zinc-800">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 block">Orçamento Total de Bebidas</span>
+                      <strong className="text-base font-bold text-zinc-900 dark:text-zinc-100 mt-0.5 block">
+                        R$ {calculatedBeverages.totalCostConfirmed.toLocaleString('pt-BR')}
+                      </strong>
+                      <span className="text-[11px] text-zinc-500">Custo planejado para {stats.confirmedCount} confirmados</span>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/60">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block">Já Comprado / Em Estoque</span>
+                      <strong className="text-base font-bold text-emerald-700 dark:text-emerald-300 mt-0.5 block">
+                        R$ {calculatedBeverages.totalPurchasedCost.toLocaleString('pt-BR')}
+                      </strong>
+                      <span className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80">Valor correspondente aos itens já adquiridos</span>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/60">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400 block">Pendente a Comprar</span>
+                      <strong className="text-base font-bold text-amber-700 dark:text-amber-300 mt-0.5 block">
+                        R$ {calculatedBeverages.totalPendingCost.toLocaleString('pt-BR')}
+                      </strong>
+                      <span className="text-[11px] text-amber-700/80 dark:text-amber-400/80">
+                        {calculatedBeverages.totalPendingCost === 0 ? 'Tudo comprado! Estoque completo.' : 'Falta adquirir para atingir a meta.'}
+                      </span>
+                    </div>
+                  </div>
+
                   {config.servesAlcohol === false && (
                     <div className="mb-4 p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/60 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
                       <Wine className="w-4 h-4 shrink-0 text-amber-500" />
@@ -2200,32 +2268,86 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
                     <table className="w-full text-left text-xs">
                       <thead>
                         <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400">
-                          <th className="pb-2">Bebida / Insumo</th>
-                          <th className="pb-2">Consumo por Hora</th>
-                          <th className="pb-2">Volume Total</th>
-                          <th className="pb-2">Embalagens Sugeridas</th>
-                          <th className="pb-2">Custo Unitário</th>
-                          <th className="pb-2 text-right">Custo Total</th>
-                          <th className="pb-2 text-right">Ação</th>
+                          <th className="pb-2.5">Bebida / Insumo</th>
+                          <th className="pb-2.5">Consumo / Hora</th>
+                          <th className="pb-2.5">Necessário (Meta)</th>
+                          <th className="pb-2.5 text-center">Já Comprado (Estoque)</th>
+                          <th className="pb-2.5">Balanço (Falta / Sobra)</th>
+                          <th className="pb-2.5 text-right">Custo Total</th>
+                          <th className="pb-2.5 text-right">Ação</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
                         {calculatedBeverages.list.map(bev => (
                           <tr key={bev.id} className={`hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 ${bev.disabled ? 'opacity-40 line-through' : ''}`}>
-                            <td className="py-2.5 font-medium">
+                            <td className="py-3 font-medium">
                               {bev.name}
                               {bev.disabled && (
                                 <span className="ml-2 text-[10px] no-underline px-1.5 py-0.2 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-500 font-normal">
                                   Não servido
                                 </span>
                               )}
+                              <span className="block text-[10px] text-zinc-400 font-normal mt-0.5">
+                                Embalagem: {bev.unitPackage} ({bev.packageVolume}L) • R$ {Number(bev.unitCostPerLiter).toFixed(2)}/L
+                              </span>
                             </td>
-                            <td className="py-2.5 text-zinc-500">{bev.disabled ? '0 ml/h' : `${bev.mlPerPersonPerHour} ml/h`}</td>
-                            <td className="py-2.5 font-bold">{bev.totalLitersConfirmed} L</td>
-                            <td className="py-2.5 text-zinc-500">{bev.disabled ? '-' : `~${bev.packagesConfirmed} un (${bev.unitPackage})`}</td>
-                            <td className="py-2.5 text-zinc-500">R$ {Number(bev.unitCostPerLiter).toFixed(2)}/L</td>
-                            <td className="py-2.5 text-right font-bold text-emerald-600">R$ {bev.totalCostConfirmed.toLocaleString('pt-BR')}</td>
-                            <td className="py-2.5 text-right">
+                            <td className="py-3 text-zinc-500">{bev.disabled ? '0 ml/h' : `${bev.mlPerPersonPerHour} ml/h`}</td>
+                            <td className="py-3">
+                              <span className="font-bold text-zinc-900 dark:text-zinc-100 block">{bev.packagesConfirmed} un</span>
+                              <span className="text-[10px] text-zinc-400 block">{bev.totalLitersConfirmed} Litros</span>
+                            </td>
+
+                            {/* CONTROLE INLINE DE QUANTIDADE JÁ COMPRADA */}
+                            <td className="py-3 text-center">
+                              {bev.disabled ? (
+                                <span className="text-zinc-400">-</span>
+                              ) : (
+                                <div className="inline-flex items-center gap-1.5 justify-center">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={bev.purchasedPackages || 0}
+                                    onChange={(e) => handleUpdatePurchasedQty(bev.id, e.target.value)}
+                                    className="w-16 px-2 py-1 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-center font-bold text-xs text-zinc-900 dark:text-zinc-100 focus:border-emerald-500 outline-none"
+                                    title="Digite quantas embalagens você já comprou"
+                                  />
+                                  <span className="text-[11px] text-zinc-400 font-medium">un</span>
+                                </div>
+                              )}
+                            </td>
+
+                            {/* BALANÇO: FALTA / SOBRA / CONCLUÍDO */}
+                            <td className="py-3">
+                              {bev.disabled ? (
+                                <span className="text-zinc-400 text-[11px]">-</span>
+                              ) : bev.balancePackages === 0 ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50 text-[11px] font-semibold">
+                                  <Check className="w-3 h-3 stroke-[3]" />
+                                  <span>Tudo comprado</span>
+                                </span>
+                              ) : bev.balancePackages < 0 ? (
+                                <div>
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/50 text-[11px] font-bold">
+                                    Faltam {bev.missingPackages} un
+                                  </span>
+                                  <span className="block text-[10px] text-zinc-400 mt-0.5">
+                                    A comprar: R$ {bev.missingCost.toFixed(2)}
+                                  </span>
+                                </div>
+                              ) : (
+                                <div>
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-400 border border-cyan-200/50 dark:border-cyan-800/50 text-[11px] font-bold">
+                                    Sobra de +{bev.surplusPackages} un
+                                  </span>
+                                  <span className="block text-[10px] text-cyan-600 dark:text-cyan-400/80 mt-0.5 font-medium">
+                                    Excedente: ~{bev.surplusLiters}L
+                                  </span>
+                                </div>
+                              )}
+                            </td>
+
+                            <td className="py-3 text-right font-bold text-emerald-600">R$ {bev.totalCostConfirmed.toLocaleString('pt-BR')}</td>
+                            <td className="py-3 text-right">
                               <div className="flex items-center justify-end gap-1">
                                 <button onClick={() => handleOpenBeverageModal(bev)} className="p-1 rounded text-zinc-400 hover:text-zinc-600">
                                   <Edit2 className="w-3.5 h-3.5" />
@@ -3354,6 +3476,20 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
                   <label className="block text-zinc-400 mb-1">Volume Emb. (L)</label>
                   <input type="number" step="0.01" name="packageVolume" defaultValue={editingBeverage?.packageVolume || 2.0} className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white" />
                 </div>
+              </div>
+              <div>
+                <label className="block text-zinc-400 mb-1">Já Comprado / Estoque Atual (Quantidade de Embalagens)</label>
+                <input
+                  type="number"
+                  min="0"
+                  name="purchasedPackages"
+                  defaultValue={editingBeverage?.purchasedPackages || 0}
+                  placeholder="Ex: 5"
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white font-semibold"
+                />
+                <span className="text-[10px] text-zinc-500 mt-1 block">
+                  Informe quantas unidades/garrafas você já tem em casa ou comprou. O sistema calculará o que falta ou a sobra automaticamente.
+                </span>
               </div>
               <div className="flex justify-end gap-2 pt-3 border-t border-zinc-800">
                 <button type="button" onClick={() => setBeverageModalOpen(false)} className="px-3 py-2 rounded-xl border border-zinc-700">Cancelar</button>
