@@ -105,6 +105,15 @@ export default function PublicInviteAndRsvpPage() {
   const handleSelectGuest = (g) => {
     setSelectedGuest(g);
     setStatus(g.status === 'declined' ? 'declined' : 'confirmed');
+    if (g.declineReason) {
+      setDeclineReason(PRESET_DECLINE_REASONS.includes(g.declineReason) ? g.declineReason : 'Outro motivo');
+      if (!PRESET_DECLINE_REASONS.includes(g.declineReason)) {
+        setCustomDeclineReason(g.declineReason);
+      }
+    }
+    if (g.messageToCelebrant) {
+      setMessageToCelebrant(g.messageToCelebrant);
+    }
     if (Array.isArray(g.restrictions) && g.restrictions.length > 0) {
       const first = g.restrictions[0];
       if (PRESET_RESTRICTION_OPTIONS.includes(first)) {
@@ -359,17 +368,26 @@ export default function PublicInviteAndRsvpPage() {
                 </label>
 
                 {selectedGuest ? (
-                  <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-between">
-                    <div>
-                      <strong className="text-sm font-semibold text-white block">{selectedGuest.name}</strong>
+                  <div className="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <strong className="text-sm font-semibold text-white block">{selectedGuest.name}</strong>
+                        {selectedGuest.status && selectedGuest.status !== 'pending' && (
+                          <span className="text-[10px] text-zinc-400 mt-0.5 block">
+                            Status atual: <span className={selectedGuest.status === 'confirmed' ? 'text-emerald-400 font-medium' : 'text-rose-400 font-medium'}>
+                              {selectedGuest.status === 'confirmed' ? 'Confirmado' : 'Ausente'}
+                            </span> • Você pode atualizar sua resposta abaixo a qualquer momento.
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedGuest(null)}
+                        className="text-xs text-zinc-400 hover:text-white px-2.5 py-1 rounded-lg bg-zinc-800 shrink-0 ml-2"
+                      >
+                        Trocar
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedGuest(null)}
-                      className="text-xs text-zinc-400 hover:text-white px-2.5 py-1 rounded-lg bg-zinc-800"
-                    >
-                      Trocar
-                    </button>
                   </div>
                 ) : (
                   <div className="relative">
@@ -517,7 +535,7 @@ export default function PublicInviteAndRsvpPage() {
                 disabled={submitting || (!selectedGuest && !search.trim())}
                 className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-bold hover:opacity-90 disabled:opacity-50 transition shadow-lg text-xs"
               >
-                {submitting ? 'Enviando...' : 'Confirmar Resposta'}
+                {submitting ? 'Salvando...' : selectedGuest?.status && selectedGuest.status !== 'pending' ? 'Atualizar Minha Resposta' : 'Confirmar Resposta'}
               </button>
             </form>
           </div>
