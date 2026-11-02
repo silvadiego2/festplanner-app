@@ -869,6 +869,10 @@ export default function App() {
       const effectiveMissingPackages = Math.ceil(effectiveDeficitLiters / packageVol);
       const effectiveMissingCost = Number((effectiveMissingPackages * packageVol * bev.unitCostPerLiter).toFixed(2));
 
+      // Meta ajustada em litros e embalagens após a compensação
+      const adjustedLitersNeeded = Math.max(0, Number((bev.totalLitersConfirmed - totalCoveredLiters).toFixed(1)));
+      const adjustedPackagesNeeded = Math.ceil(adjustedLitersNeeded / packageVol);
+
       return {
         ...bev,
         balancePackages: -effectiveMissingPackages,
@@ -878,7 +882,9 @@ export default function App() {
         surplusLiters: 0,
         isCompensated: totalCoveredLiters > 0,
         compensatedLiters: totalCoveredLiters,
-        compensatedSource: coveredFromCrossCategory > 0 ? 'Intercâmbio (Refri/Suco)' : 'Sobra do Grupo'
+        compensatedSource: coveredFromCrossCategory > 0 ? 'Intercâmbio (Refri/Suco)' : 'Sobra do Grupo',
+        adjustedLitersNeeded,
+        adjustedPackagesNeeded
       };
     });
 
@@ -2402,10 +2408,11 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
                         <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400">
                           <th className="pb-2.5">Bebida / Insumo</th>
                           <th className="pb-2.5">Consumo / Hora</th>
-                          <th className="pb-2.5">Necessário (Meta)</th>
-                          <th className="pb-2.5 text-center">Já Comprado (Estoque)</th>
-                          <th className="pb-2.5">Balanço & Compensação</th>
-                          <th className="pb-2.5 text-right">Custo Total</th>
+                          <th className="pb-2.5">Meta Inicial</th>
+                          <th className="pb-2.5">Meta Ajustada (c/ Sobra)</th>
+                          <th className="pb-2.5 text-center">Já Comprado</th>
+                          <th className="pb-2.5">Balanço & Abatimento</th>
+                          <th className="pb-2.5 text-right">Custo a Comprar</th>
                           <th className="pb-2.5 text-right">Ação</th>
                         </tr>
                       </thead>
@@ -2424,9 +2431,35 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
                               </span>
                             </td>
                             <td className="py-3 text-zinc-500">{bev.disabled ? '0 ml/h' : `${bev.mlPerPersonPerHour} ml/h`}</td>
+                            
+                            {/* META INICIAL TEÓRICA */}
                             <td className="py-3">
-                              <span className="font-bold text-zinc-900 dark:text-zinc-100 block">{bev.packagesConfirmed} un</span>
-                              <span className="text-[10px] text-zinc-400 block">{bev.totalLitersConfirmed} Litros</span>
+                              <span className="text-zinc-600 dark:text-zinc-400 block">{bev.packagesConfirmed} un</span>
+                              <span className="text-[10px] text-zinc-400 block">{bev.totalLitersConfirmed} L</span>
+                            </td>
+
+                            {/* META AJUSTADA APÓS ABSORVER SOBRAS */}
+                            <td className="py-3">
+                              {bev.disabled ? (
+                                <span className="text-zinc-400">-</span>
+                              ) : bev.isCompensated ? (
+                                <div>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="line-through text-zinc-400 text-[11px]">{bev.packagesConfirmed} un</span>
+                                    <span className="font-bold text-emerald-600 dark:text-emerald-400 text-xs">
+                                      ➔ {bev.adjustedPackagesNeeded} un
+                                    </span>
+                                  </div>
+                                  <span className="block text-[10px] text-emerald-500 font-medium">
+                                    Reduzido para {bev.adjustedLitersNeeded}L (-{bev.compensatedLiters}L cobertos)
+                                  </span>
+                                </div>
+                              ) : (
+                                <div>
+                                  <span className="font-bold text-zinc-900 dark:text-zinc-100 block">{bev.packagesConfirmed} un</span>
+                                  <span className="text-[10px] text-zinc-400 block">{bev.totalLitersConfirmed} L</span>
+                                </div>
+                              )}
                             </td>
 
                             {/* CONTROLE INLINE DE QUANTIDADE JÁ COMPRADA */}
@@ -2458,24 +2491,24 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
                                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-400 border border-cyan-200/50 dark:border-cyan-800/50 text-[11px] font-bold">
                                       Sobra de +{bev.surplusPackages} un (+{bev.surplusLiters}L)
                                     </span>
-                                    <span className="block text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-medium">
-                                      ↳ Suprindo déficits do grupo
+                                    <span className="block text-[10px] text-cyan-600 dark:text-cyan-400 mt-0.5 font-medium">
+                                      ↳ Abatendo a meta de outros itens
                                     </span>
                                   </div>
                                 ) : (
                                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50 text-[11px] font-semibold">
                                     <Check className="w-3 h-3 stroke-[3]" />
-                                    <span>Tudo comprado</span>
+                                    <span>Meta atingida</span>
                                   </span>
                                 )
                               ) : bev.missingPackages === 0 && bev.isCompensated ? (
                                 <div>
                                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200/50 dark:border-teal-800/50 text-[11px] font-semibold">
                                     <Check className="w-3 h-3 stroke-[3]" />
-                                    <span>100% Suprido por sobra</span>
+                                    <span>100% Coberto por sobra</span>
                                   </span>
                                   <span className="block text-[10px] text-zinc-400 mt-0.5">
-                                    {bev.compensatedLiters}L cobertos ({bev.compensatedSource})
+                                    {bev.compensatedLiters}L recebidos ({bev.compensatedSource})
                                   </span>
                                 </div>
                               ) : (
@@ -2485,17 +2518,33 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
                                   </span>
                                   {bev.isCompensated && (
                                     <span className="block text-[10px] text-teal-600 dark:text-teal-400 mt-0.5 font-medium">
-                                      {bev.compensatedLiters}L já abatidos por sobras
+                                      Meta reduzida em {bev.compensatedLiters}L por sobras
                                     </span>
                                   )}
-                                  <span className="block text-[10px] text-zinc-400 mt-0.5">
-                                    A comprar: R$ {bev.missingCost.toFixed(2)}
+                                </div>
+                              )}
+                            </td>
+
+                            {/* CUSTO A COMPRAR EFETIVO */}
+                            <td className="py-3 text-right">
+                              {bev.disabled ? (
+                                <span className="text-zinc-400">-</span>
+                              ) : bev.missingPackages === 0 ? (
+                                <span className="font-bold text-emerald-600 dark:text-emerald-400 text-xs">
+                                  R$ 0,00 <span className="text-[10px] font-normal text-zinc-400 block">(Suprido)</span>
+                                </span>
+                              ) : (
+                                <div>
+                                  <span className="font-bold text-amber-600 dark:text-amber-400 text-xs block">
+                                    R$ {bev.missingCost.toFixed(2)}
+                                  </span>
+                                  <span className="text-[10px] text-zinc-400 block">
+                                    de R$ {bev.totalCostConfirmed.toFixed(2)}
                                   </span>
                                 </div>
                               )}
                             </td>
 
-                            <td className="py-3 text-right font-bold text-emerald-600">R$ {bev.totalCostConfirmed.toLocaleString('pt-BR')}</td>
                             <td className="py-3 text-right">
                               <div className="flex items-center justify-end gap-1">
                                 <button onClick={() => handleOpenBeverageModal(bev)} className="p-1 rounded text-zinc-400 hover:text-zinc-600">
