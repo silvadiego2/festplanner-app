@@ -33,7 +33,8 @@ import {
   MessageSquareQuote,
   Calculator,
   RotateCcw,
-  ThermometerSun
+  ThermometerSun,
+  Scale
 } from 'lucide-react';
 
 // ==============================================================================
@@ -90,6 +91,11 @@ const SALVADOR_INGREDIENT_DATABASE = [
   { keywords: ['salgado', 'coxinha', 'kibe', 'pastel', 'empada', 'quiche', 'canapé'], defaultAmount: 8, unit: 'un', defaultCost: 1.40, category: 'Entradas' },
 
   // Sobremesas, Bolos & Doces
+  { keywords: ['morango', 'morangos'], defaultAmount: 0.08, unit: 'kg', defaultCost: 28.00, category: 'Frutas' },
+  { keywords: ['maracuja', 'maracujá'], defaultAmount: 0.05, unit: 'kg', defaultCost: 14.00, category: 'Frutas' },
+  { keywords: ['limao', 'limão'], defaultAmount: 0.04, unit: 'kg', defaultCost: 6.50, category: 'Frutas' },
+  { keywords: ['laranja'], defaultAmount: 0.15, unit: 'kg', defaultCost: 5.50, category: 'Frutas' },
+  { keywords: ['abacaxi'], defaultAmount: 0.10, unit: 'kg', defaultCost: 7.00, category: 'Frutas' },
   { keywords: ['bolo', 'torta'], defaultAmount: 0.10, unit: 'kg', defaultCost: 75.00, category: 'Confeitaria' },
   { keywords: ['doce', 'docinho', 'brigadeiro', 'beijinho', 'trufa'], defaultAmount: 4, unit: 'un', defaultCost: 2.20, category: 'Doces' },
   { keywords: ['leite condensado'], defaultAmount: 0.05, unit: 'kg', defaultCost: 16.50, category: 'Confeitaria' },
@@ -98,6 +104,15 @@ const SALVADOR_INGREDIENT_DATABASE = [
 
 // MODELOS RÁPIDOS DE PRATOS SUGERIDOS PARA FESTA EM SALVADOR
 const SUGGESTED_DISH_TEMPLATES = [
+  {
+    id: 'd5',
+    name: 'Buffet de Mini Salgados Finos & Canapés',
+    category: 'starter',
+    isHot: false,
+    ingredients: [
+      { name: 'Mini Salgados & Quiches Sortidos', amountPerPerson: 10, unit: 'un', unitCost: 1.40 }
+    ]
+  },
   {
     id: 'd1',
     name: 'Churrasco Baiano: Picanha & Queijo Coalho',
@@ -145,15 +160,6 @@ const SUGGESTED_DISH_TEMPLATES = [
     ]
   },
   {
-    id: 'd5',
-    name: 'Buffet de Mini Salgados Finos & Canapés',
-    category: 'starter',
-    isHot: false,
-    ingredients: [
-      { name: 'Mini Salgados & Quiches Sortidos', amountPerPerson: 10, unit: 'un', unitCost: 1.40 }
-    ]
-  },
-  {
     id: 'd6',
     name: 'Bolo Comemorativo & Brigadeiros Gourmet',
     category: 'dessert',
@@ -164,6 +170,62 @@ const SUGGESTED_DISH_TEMPLATES = [
     ]
   }
 ];
+
+// TABELA TÉCNICA DE RENDIMENTO DE FRUTAS PARA SUCOS EM EVENTOS
+// (Quanto 1 kg de fruta in natura rende de suco pronto pronto para servir)
+const FRUIT_JUICE_YIELD_TABLE = {
+  morango: {
+    name: 'Morango in Natura',
+    yieldPerKgLiters: 1.85, // 1kg de morango batido com 1L de água/gelo rende ~1,85L
+    waterRatio: '1 parte de fruta : 1 parte de água',
+    description: '1 kg de morango limpo rende cerca de 1,8 a 2,0 Litros de suco pronto (~9 a 10 copos de 200ml).'
+  },
+  maracuja: {
+    name: 'Maracujá (Fruta com casca)',
+    yieldPerKgLiters: 1.60, // 1kg de fruta dá ~350g de polpa que rende ~1.6L
+    waterRatio: '1 parte de polpa : 3 a 4 partes de água',
+    description: '1 kg de maracujá rende ~350ml de polpa pura, diluindo para 1,5L a 1,7L de suco pronto.'
+  },
+  laranja: {
+    name: 'Laranja Pêra',
+    yieldPerKgLiters: 0.48, // Suco puro espremido sem água
+    waterRatio: 'Puro (sem água)',
+    description: '1 kg de laranja pera in natura espremida rende ~480ml de suco 100% puro (~2 a 3 copos).'
+  },
+  limao: {
+    name: 'Limão Tahiti (Limonada Suíça)',
+    yieldPerKgLiters: 2.40, // 1kg de limão faz bastante limonada
+    waterRatio: '1kg rende 2,2L a 2,5L com água e gelo',
+    description: '1 kg de limão rende cerca de 2,2L a 2,5L de limonada bem equilibrada.'
+  },
+  abacaxi: {
+    name: 'Abacaxi Pérola',
+    yieldPerKgLiters: 1.50,
+    waterRatio: '1kg de polpa descascada + 500ml água',
+    description: '1 kg de abacaxi descascado rende cerca de 1,5 Litros de suco denso com hortelã.'
+  },
+  uva: {
+    name: 'Uva Roxa Integral',
+    yieldPerKgLiters: 0.75,
+    waterRatio: 'Extração integral',
+    description: '1 kg de uva roxa rende aproximadamente 750ml de suco integral concentrado.'
+  },
+  polpa_congelada: {
+    name: 'Polpa Congelada (100g / 1kg)',
+    yieldPerKgLiters: 3.50, // 1kg de polpa (10 pacotinhos) rende ~3,5L
+    waterRatio: '100g polpa : 250 a 300ml de água',
+    description: '1 kg de polpa pura congelada rende cerca de 3,5 Litros de suco pronto.'
+  }
+};
+
+// ORDEM CRONOLÓGICA DAS ETAPAS DO CARDÁPIO
+const MENU_CATEGORY_ORDER = {
+  starter: { order: 1, label: '1. Entradas, Canapés & Salgados' },
+  protein: { order: 2, label: '2. Pratos Principais, Carnes & Almoço' },
+  side: { order: 3, label: '3. Acompanhamentos & Guarnições' },
+  dessert: { order: 4, label: '4. Sobremesas, Bolo & Doces' },
+  other: { order: 5, label: '5. Outros Itens' }
+};
 
 function findIngredientIntel(ingredientName) {
   if (!ingredientName || typeof ingredientName !== 'string') return null;
@@ -354,6 +416,11 @@ export default function App() {
   const [calcIntensity, setCalcIntensity] = useState('normal'); // 'light' (0.85) | 'normal' (1.0) | 'heavy' (1.2)
   const [calcWeather, setCalcWeather] = useState('hot'); // 'mild' (0.95) | 'hot' (1.15) | 'very_hot' (1.30)
   const [calcPanelOpen, setCalcPanelOpen] = useState(false);
+
+  // CALCULADORA DE RENDIMENTO DE FRUTAS / SUCOS
+  const [fruitCalcModalOpen, setFruitCalcModalOpen] = useState(false);
+  const [selectedFruit, setSelectedFruit] = useState('morango');
+  const [fruitKgInput, setFruitKgInput] = useState(1);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [eventEditModalOpen, setEventEditModalOpen] = useState(false);
@@ -616,7 +683,15 @@ export default function App() {
     let totalCostConfirmed = 0;
     let totalCostAll = 0;
 
-    const itemsDetailed = menu.map(item => {
+    // Organização Cronológica: Entradas -> Principal/Carnes -> Acompanhamentos -> Sobremesas
+    const sortedMenu = [...menu].sort((a, b) => {
+      const orderA = MENU_CATEGORY_ORDER[a.category]?.order || 99;
+      const orderB = MENU_CATEGORY_ORDER[b.category]?.order || 99;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.name.localeCompare(b.name, 'pt-BR');
+    });
+
+    const itemsDetailed = sortedMenu.map(item => {
       let itemCostConfirmed = 0;
       let itemCostAll = 0;
 
@@ -642,14 +717,17 @@ export default function App() {
     return { itemsDetailed, totalCostConfirmed: Math.round(totalCostConfirmed), totalCostAll: Math.round(totalCostAll) };
   }, [menu, stats.confirmedEaters, stats.allPotentialEaters]);
 
-  // Cálculos de Bebidas Detalhadas (Confirmados vs. Todos)
+  // Cálculos de Bebidas Detalhadas (Confirmados vs. Todos) - ORDENADAS EM ORDEM ALFABÉTICA (A-Z)
   const calculatedBeverages = useMemo(() => {
     const hours = Number(config.durationHours) || 5;
     const servesAlcohol = config.servesAlcohol !== false;
     let totalBeveragesCostConfirmed = 0;
     let totalBeveragesCostAll = 0;
 
-    const list = beverages.map(bev => {
+    // Ordenação Alfabética A-Z das Bebidas
+    const sortedBeverages = [...beverages].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+
+    const list = sortedBeverages.map(bev => {
       const isAlcohol = bev.category === 'alcohol';
 
       // Se o evento não serve álcool, zera o consumo de bebidas alcoólicas
@@ -1902,13 +1980,23 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
                     </button>
                   )}
                   {cateringSubTab === 'beverages' && (
-                    <button
-                      onClick={() => handleOpenBeverageModal(null)}
-                      className="px-3.5 py-1.5 rounded-xl text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center gap-1.5 shadow-sm"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Nova Bebida</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setFruitCalcModalOpen(true)}
+                        className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60 flex items-center gap-1.5 shadow-xs hover:bg-emerald-100 dark:hover:bg-emerald-900 transition"
+                      >
+                        <Scale className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Calculadora de Frutas & Sucos (kg ➔ L)</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleOpenBeverageModal(null)}
+                        className="px-3.5 py-1.5 rounded-xl text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Nova Bebida</span>
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -1920,13 +2008,13 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="text-base font-bold">Fichas Técnicas & Preços Salvador - BA</h3>
+                          <h3 className="text-base font-bold">Cardápio Cronológico (Entradas ➔ Principal ➔ Sobremesa)</h3>
                           <span className="text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-200/50">
-                            Salvador Engine
+                            Ordem de Início
                           </span>
                         </div>
                         <p className="text-xs text-zinc-500 mt-0.5">
-                          Insumos calculados para {stats.confirmedEaters.toFixed(1)} cotas alimentares confirmadas
+                          Pratos agrupados cronologicamente pelo momento em que são servidos no evento.
                         </p>
                       </div>
                       <div className="text-left sm:text-right">
@@ -1962,86 +2050,112 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
                       </div>
                     </div>
 
-                    {/* Lista Completa dos Pratos */}
-                    <div className="space-y-4">
-                      {calculatedMenu.itemsDetailed.map(dish => (
-                        <div key={dish.id} className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <strong className="text-sm font-semibold">{dish.name}</strong>
-                                {dish.isHot ? (
-                                  <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-600 border border-amber-200/50 flex items-center gap-1">
-                                    <Flame className="w-2.5 h-2.5" /> Quente (Rechaud Inox)
-                                  </span>
-                                ) : (
-                                  <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-                                    Servido Frio
-                                  </span>
-                                )}
-                              </div>
-                              <span className="text-[10px] text-zinc-400 uppercase tracking-wider">{dish.category}</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className="text-xs font-bold text-emerald-600">
-                                R$ {dish.itemCostConfirmed.toLocaleString('pt-BR')} <span className="text-[10px] text-zinc-400 font-normal">(Confirmados)</span>
-                              </span>
-                              <div className="flex items-center gap-1">
-                                <button
-                                  onClick={() => handleOpenDishModal(dish)}
-                                  className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                                  title="Editar receita & ingredientes"
-                                >
-                                  <Edit2 className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteDish(dish.id)}
-                                  className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30"
-                                  title="Remover prato"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
+                    {/* Lista Completa dos Pratos Agrupada por Etapas Cronológicas */}
+                    <div className="space-y-6">
+                      {['starter', 'protein', 'side', 'dessert'].map(catKey => {
+                        const dishesInCat = calculatedMenu.itemsDetailed.filter(d => (d.category || 'protein') === catKey);
+                        if (dishesInCat.length === 0) return null;
 
-                          <div className="overflow-x-auto pt-2 border-t border-zinc-200/60 dark:border-zinc-800">
-                            <table className="w-full text-left text-xs">
-                              <thead>
-                                <tr className="text-zinc-400 text-[11px]">
-                                  <th className="pb-1.5 font-normal">Ingrediente / Insumo</th>
-                                  <th className="pb-1.5 font-normal">Qtd / Pessoa</th>
-                                  <th className="pb-1.5 font-normal">Preço Unit. (Salvador)</th>
-                                  <th className="pb-1.5 font-normal">Total ({stats.confirmedEaters.toFixed(1)} cotas)</th>
-                                  <th className="pb-1.5 font-normal text-right">Subtotal</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-zinc-200/40 dark:divide-zinc-800/40 text-zinc-600 dark:text-zinc-300">
-                                {(dish.ingredients || []).map((ing, i) => (
-                                  <tr key={i}>
-                                    <td className="py-1.5 font-medium text-zinc-800 dark:text-zinc-200">{ing.name}</td>
-                                    <td className="py-1.5">{ing.amountPerPerson} {ing.unit}</td>
-                                    <td className="py-1.5">R$ {Number(ing.unitCost || 0).toFixed(2)} / {ing.unit}</td>
-                                    <td className="py-1.5 font-semibold text-zinc-900 dark:text-zinc-100">{ing.qtyConfirmed} {ing.unit}</td>
-                                    <td className="py-1.5 text-right font-semibold text-zinc-900 dark:text-zinc-100">R$ {Number(ing.costConfirmed || 0).toFixed(2)}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
+                        const catInfo = MENU_CATEGORY_ORDER[catKey] || { label: catKey };
+
+                        return (
+                          <div key={catKey} className="space-y-3">
+                            <div className="flex items-center gap-2 pb-1.5 border-b border-zinc-200 dark:border-zinc-800">
+                              <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                                {catInfo.label}
+                              </span>
+                              <span className="text-[10px] text-zinc-400 font-normal">
+                                ({dishesInCat.length} {dishesInCat.length === 1 ? 'opção' : 'opções'})
+                              </span>
+                            </div>
+
+                            <div className="space-y-3">
+                              {dishesInCat.map(dish => (
+                                <div key={dish.id} className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40">
+                                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <strong className="text-sm font-semibold">{dish.name}</strong>
+                                        {dish.isHot ? (
+                                          <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-600 border border-amber-200/50 flex items-center gap-1">
+                                            <Flame className="w-2.5 h-2.5" /> Quente (Rechaud Inox)
+                                          </span>
+                                        ) : (
+                                          <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                                            Servido Frio
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <span className="text-xs font-bold text-emerald-600">
+                                        R$ {dish.itemCostConfirmed.toLocaleString('pt-BR')} <span className="text-[10px] text-zinc-400 font-normal">(Confirmados)</span>
+                                      </span>
+                                      <div className="flex items-center gap-1">
+                                        <button
+                                          onClick={() => handleOpenDishModal(dish)}
+                                          className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                          title="Editar receita & ingredientes"
+                                        >
+                                          <Edit2 className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                          onClick={() => handleDeleteDish(dish.id)}
+                                          className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                                          title="Remover prato"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="overflow-x-auto pt-2 border-t border-zinc-200/60 dark:border-zinc-800">
+                                    <table className="w-full text-left text-xs">
+                                      <thead>
+                                        <tr className="text-zinc-400 text-[11px]">
+                                          <th className="pb-1.5 font-normal">Ingrediente / Insumo</th>
+                                          <th className="pb-1.5 font-normal">Qtd / Pessoa</th>
+                                          <th className="pb-1.5 font-normal">Preço Unit. (Salvador)</th>
+                                          <th className="pb-1.5 font-normal">Total ({stats.confirmedEaters.toFixed(1)} cotas)</th>
+                                          <th className="pb-1.5 font-normal text-right">Subtotal</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-zinc-200/40 dark:divide-zinc-800/40 text-zinc-600 dark:text-zinc-300">
+                                        {(dish.ingredients || []).map((ing, i) => (
+                                          <tr key={i}>
+                                            <td className="py-1.5 font-medium text-zinc-800 dark:text-zinc-200">{ing.name}</td>
+                                            <td className="py-1.5">{ing.amountPerPerson} {ing.unit}</td>
+                                            <td className="py-1.5">R$ {Number(ing.unitCost || 0).toFixed(2)} / {ing.unit}</td>
+                                            <td className="py-1.5 font-semibold text-zinc-900 dark:text-zinc-100">{ing.qtyConfirmed} {ing.unit}</td>
+                                            <td className="py-1.5 text-right font-semibold text-zinc-900 dark:text-zinc-100">R$ {Number(ing.costConfirmed || 0).toFixed(2)}</td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* SUB-ABA 2: BEBIDAS E GELO */}
+              {/* SUB-ABA 2: BEBIDAS E GELO (ORGANIZADAS EM ORDEM ALFABÉTICA) */}
               {cateringSubTab === 'beverages' && (
                 <div className={`p-5 rounded-3xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800' : 'bg-white border-zinc-200 shadow-xs'}`}>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                     <div>
-                      <h3 className="text-base font-bold">Discriminação de Bebidas, Sucos & Gelo</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-bold">Discriminação de Bebidas, Sucos & Gelo</h3>
+                        <span className="text-[10px] font-semibold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full text-zinc-600 dark:text-zinc-400">
+                          Ordem Alfabética (A-Z)
+                        </span>
+                      </div>
                       <p className="text-xs text-zinc-500">Estimativas dimensionadas para {config.durationHours} horas de celebração</p>
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -2136,106 +2250,180 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
           {/* ============================================================ */}
           {activeTab === 'structure_hub' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-2">
+              <div className="flex items-center justify-between pb-2 border-b border-zinc-200/80 dark:border-zinc-800">
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setStructureSubTab('rentals')}
-                    className={`px-4 py-2 rounded-xl text-xs font-semibold ${structureSubTab === 'rentals' ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950' : 'text-zinc-500'}`}
+                    className={`px-4 py-2 rounded-xl text-xs font-semibold transition ${
+                      structureSubTab === 'rentals'
+                        ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
+                        : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800'
+                    }`}
                   >
                     Locações de Brinquedos, Espaço & Móveis
                   </button>
                   <button
                     onClick={() => setStructureSubTab('tableware')}
-                    className={`px-4 py-2 rounded-xl text-xs font-semibold ${structureSubTab === 'tableware' ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950' : 'text-zinc-500'}`}
+                    className={`px-4 py-2 rounded-xl text-xs font-semibold transition ${
+                      structureSubTab === 'tableware'
+                        ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
+                        : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800'
+                    }`}
                   >
                     Calculadora de Louças, Rechauds & Mesas
                   </button>
                 </div>
-
-                {structureSubTab === 'rentals' && (
-                  <button
-                    onClick={() => handleOpenRentalModal(null)}
-                    className="px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center gap-1.5"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Nova Locação</span>
-                  </button>
-                )}
+                <div className="text-right hidden sm:block">
+                  <span className="text-[10px] text-zinc-400 block uppercase font-medium">Subtotal Estrutura</span>
+                  <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                    R$ {(budget.rentalsCost + budget.tablewareCostConfirmed).toLocaleString('pt-BR')}
+                  </span>
+                </div>
               </div>
 
               {structureSubTab === 'rentals' && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {rentals.map(rental => (
-                    <div key={rental.id} className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-start justify-between">
-                          <span className="text-[10px] uppercase text-zinc-400 font-semibold">{rental.category}</span>
-                          <div className="flex items-center gap-1">
-                            <button onClick={() => handleOpenRentalModal(rental)} className="p-1 rounded text-zinc-400 hover:text-zinc-600">
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button onClick={() => handleDeleteRental(rental.id)} className="p-1 rounded text-zinc-400 hover:text-rose-500">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                        <h4 className="font-bold text-sm mt-1">{rental.name}</h4>
-                        <p className="text-xs text-zinc-500 mt-1">{rental.supplier || 'Fornecedor padrão'}</p>
-                        {rental.notes && <p className="text-[11px] text-zinc-400 mt-1.5 italic">{rental.notes}</p>}
-                      </div>
-                      <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between items-center text-xs">
-                        <span>{rental.hasMonitor ? 'Monitor incluso' : 'Sem monitor'}</span>
-                        <strong className="font-bold text-sm text-emerald-600">R$ {Number(rental.cost).toLocaleString('pt-BR')}</strong>
-                      </div>
+                <div className={`p-5 rounded-3xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800' : 'bg-white border-zinc-200 shadow-xs'}`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+                    <div>
+                      <h2 className="text-base font-bold tracking-tight">Locações, Brinquedos e Mobiliário</h2>
+                      <p className="text-xs text-zinc-500 mt-1">Gerencie os equipamentos infantis, espaço físico e móveis contratados.</p>
                     </div>
-                  ))}
+                    <button
+                      onClick={() => handleOpenRentalModal(null)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-sm"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Novo Item de Locação</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {rentals.map(rental => (
+                      <div key={rental.id} className={`p-4 rounded-2xl border flex flex-col justify-between ${darkMode ? 'bg-zinc-900/50 border-zinc-800' : 'bg-zinc-50 border-zinc-200/70'}`}>
+                        <div>
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+                                {rental.category === 'toy' ? 'Brinquedo & Recreação' : rental.category === 'furniture' ? 'Mobiliário' : 'Espaço Físico'}
+                              </span>
+                              <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 mt-0.5">{rental.name}</h4>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => handleOpenRentalModal(rental)}
+                                className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                                title="Editar"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteRental(rental.id)}
+                                className="p-1 rounded text-zinc-400 hover:text-rose-500"
+                                title="Excluir"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                          <p className="text-xs text-zinc-500 mt-1.5">{rental.supplier || 'Fornecedor'}</p>
+                          {rental.notes && <p className="text-[11px] text-zinc-400 mt-1">{rental.notes}</p>}
+                        </div>
+                        <div className="mt-4 pt-3 border-t border-zinc-200/70 dark:border-zinc-800 flex items-center justify-between text-xs">
+                          <span className="text-zinc-500">{rental.hasMonitor ? 'Monitor incluso' : 'Sem monitor'}</span>
+                          <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                            R$ {Number(rental.cost || 0).toLocaleString('pt-BR')}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
               {structureSubTab === 'tableware' && (
-                <div className="space-y-4">
-                  <div className={`p-4 rounded-2xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-white border-zinc-200'} flex flex-wrap items-center justify-between gap-4 text-xs`}>
-                    <div className="flex items-center gap-3">
-                      <span className="font-semibold text-zinc-600 dark:text-zinc-300">Modo de Serviço:</span>
-                      <div className="flex bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-lg font-medium">
-                        <button
-                          onClick={() => setConfig({ ...config, materialMode: 'rental' })}
-                          className={`px-3 py-1 rounded-md transition ${config.materialMode === 'rental' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xs font-bold' : 'text-zinc-500'}`}
-                        >
-                          Louças / Aluguel
-                        </button>
-                        <button
-                          onClick={() => setConfig({ ...config, materialMode: 'disposable' })}
-                          className={`px-3 py-1 rounded-md transition ${config.materialMode === 'disposable' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xs font-bold' : 'text-zinc-500'}`}
-                        >
-                          Descartáveis
-                        </button>
-                      </div>
+                <div className={`p-5 rounded-3xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800' : 'bg-white border-zinc-200 shadow-xs'}`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+                    <div>
+                      <h2 className="text-base font-bold tracking-tight">Calculadora de Louças, Rechauds, Mesas & Descartáveis</h2>
+                      <p className="text-xs text-zinc-500 mt-1">
+                        Dimensionamento técnico de pratos, talheres, taças e pastilhas de queima para rechauds inox.
+                      </p>
                     </div>
-                    <div className="flex items-center gap-4 text-[11px] text-zinc-500">
-                      <span>Margem segurança: <strong>+{config.safetyMarginPct}%</strong></span>
-                      <span>Capacidade/mesa: <strong>{config.tableCapacity} lug.</strong></span>
-                      <span>Total estimado: <strong className="text-emerald-600 text-xs">R$ {calculatedMaterials.tablewareCostConfirmed.toLocaleString('pt-BR')}</strong></span>
+                    <div className="flex bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-xl text-xs font-medium">
+                      <button
+                        onClick={() => setConfig({ ...config, materialMode: 'rental' })}
+                        className={`px-3 py-1 rounded-lg transition ${config.materialMode === 'rental' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xs font-semibold' : 'text-zinc-500'}`}
+                      >
+                        Louças / Aluguel
+                      </button>
+                      <button
+                        onClick={() => setConfig({ ...config, materialMode: 'disposable' })}
+                        className={`px-3 py-1 rounded-lg transition ${config.materialMode === 'disposable' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xs font-semibold' : 'text-zinc-500'}`}
+                      >
+                        Descartáveis
+                      </button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                    <div className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 space-y-2">
-                      <strong className="block font-bold mb-2">Pratos & Talheres</strong>
-                      <div className="flex justify-between"><span>Pratos Refeição:</span><strong>{calculatedMaterials.mainPlates} un</strong></div>
-                      <div className="flex justify-between"><span>Pratos Sobremesa:</span><strong>{calculatedMaterials.dessertPlates} un</strong></div>
-                      <div className="flex justify-between"><span>Talheres:</span><strong>{calculatedMaterials.forksAndKnives} pares</strong></div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-zinc-50 border-zinc-200/70'}`}>
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-4 flex items-center gap-2">
+                        <Layers className="w-4 h-4 text-zinc-400" /> Pratos & Talheres
+                      </h3>
+                      <div className="space-y-3 text-xs">
+                        <div className="flex justify-between py-2 border-b border-zinc-200/60 dark:border-zinc-800">
+                          <span className="text-zinc-600 dark:text-zinc-400">Pratos Refeição (+{config.safetyMarginPct}%)</span>
+                          <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.mainPlates} un</strong>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-zinc-200/60 dark:border-zinc-800">
+                          <span className="text-zinc-600 dark:text-zinc-400">Pratos Sobremesa / Bolo</span>
+                          <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.dessertPlates} un</strong>
+                        </div>
+                        <div className="flex justify-between py-2">
+                          <span className="text-zinc-600 dark:text-zinc-400">Talheres (Garfos e Facas)</span>
+                          <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.forksAndKnives} pares</strong>
+                        </div>
+                      </div>
                     </div>
-                    <div className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 space-y-2">
-                      <strong className="block font-bold mb-2">Copos & Taças</strong>
-                      <div className="flex justify-between"><span>Copos de Água:</span><strong>{calculatedMaterials.waterGlasses} un</strong></div>
-                      <div className="flex justify-between"><span>Tulipas Chopp:</span><strong>{calculatedMaterials.beerTulips} un</strong></div>
+
+                    <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-zinc-50 border-zinc-200/70'}`}>
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-4 flex items-center gap-2">
+                        <Wine className="w-4 h-4 text-zinc-400" /> Copos & Taças
+                      </h3>
+                      <div className="space-y-3 text-xs">
+                        <div className="flex justify-between py-2 border-b border-zinc-200/60 dark:border-zinc-800">
+                          <span className="text-zinc-600 dark:text-zinc-400">Copos / Taças de Água</span>
+                          <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.waterGlasses} un</strong>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-zinc-200/60 dark:border-zinc-800">
+                          <span className="text-zinc-600 dark:text-zinc-400">Tulipas de Chopp</span>
+                          <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.beerTulips} un</strong>
+                        </div>
+                        <div className="flex justify-between py-2">
+                          <span className="text-zinc-600 dark:text-zinc-400">Guardanapos</span>
+                          <strong className="text-zinc-900 dark:text-zinc-100">{stats.confirmedCount * 8} folhas</strong>
+                        </div>
+                      </div>
                     </div>
-                    <div className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 space-y-2">
-                      <strong className="block font-bold mb-2">Rechauds & Mesas</strong>
-                      <div className="flex justify-between"><span>Rechauds Inox:</span><strong>{calculatedMaterials.rechauds} cubas</strong></div>
-                      <div className="flex justify-between"><span>Pastilhas Álcool Gel:</span><strong>{calculatedMaterials.fuelPastesNeeded} un</strong></div>
-                      <div className="flex justify-between"><span>Mesas ({config.tableCapacity} lug.):</span><strong>{calculatedMaterials.guestTablesNeeded} jogos</strong></div>
+
+                    <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-zinc-50 border-zinc-200/70'}`}>
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-4 flex items-center gap-2">
+                        <Flame className="w-4 h-4 text-zinc-400" /> Rechauds & Mesas
+                      </h3>
+                      <div className="space-y-3 text-xs">
+                        <div className="flex justify-between py-2 border-b border-zinc-200/60 dark:border-zinc-800">
+                          <span className="text-zinc-600 dark:text-zinc-400">Rechauds Inox (Sincronizado)</span>
+                          <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.rechauds} cubas</strong>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-zinc-200/60 dark:border-zinc-800">
+                          <span className="text-zinc-600 dark:text-zinc-400">Pastilhas Álcool Gel ({config.durationHours}h)</span>
+                          <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.fuelPastesNeeded} un</strong>
+                        </div>
+                        <div className="flex justify-between py-2">
+                          <span className="text-zinc-600 dark:text-zinc-400">Jogos de Mesas ({config.tableCapacity} lug.)</span>
+                          <strong className="text-zinc-900 dark:text-zinc-100">{calculatedMaterials.guestTablesNeeded} jogos</strong>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2244,242 +2432,232 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
           )}
 
           {/* ============================================================ */}
-          {/* TAB 5: CENTRO DE CUSTOS & COMPRAS */}
+          {/* TAB 5: CENTRO DE CUSTOS */}
           {/* ============================================================ */}
           {activeTab === 'finance' && (
             <div className="space-y-6">
-              <div className={`p-5 rounded-3xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800' : 'bg-white border-zinc-200 shadow-xs'} space-y-4`}>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className={`p-5 rounded-3xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800' : 'bg-white border-zinc-200 shadow-xs'}`}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                   <div>
-                    <h2 className="text-base font-bold">Centro de Custos Integrado & Sincronizado</h2>
-                    <p className="text-xs text-zinc-500 mt-0.5">Valores atualizados automaticamente com base no cardápio, bebidas e locações</p>
+                    <h2 className="text-base font-bold tracking-tight">Centro de Custos Integrado & Sincronizado</h2>
+                    <p className="text-xs text-zinc-500 mt-1">
+                      Custo Real com Confirmados: <strong>R$ {budget.grandTotalConfirmed.toLocaleString('pt-BR')}</strong> | Se Todos Forem: <strong>R$ {budget.grandTotalAll.toLocaleString('pt-BR')}</strong>
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleOpenExpenseModal(null)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-sm"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Adicionar Despesa Manual</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs mb-6">
+                  <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200/80 dark:border-zinc-800">
+                    <span className="text-zinc-400 block text-[11px]">Locações & Espaço</span>
+                    <strong className="text-base block mt-1">R$ {budget.rentalsCost.toLocaleString('pt-BR')}</strong>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200/80 dark:border-zinc-800">
+                    <span className="text-zinc-400 block text-[11px]">Buffet (Receitas & Carnes)</span>
+                    <strong className="text-base block mt-1 text-emerald-600">R$ {budget.foodCostConfirmed.toLocaleString('pt-BR')}</strong>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200/80 dark:border-zinc-800">
+                    <span className="text-zinc-400 block text-[11px]">Bebidas Detalhadas & Gelo</span>
+                    <strong className="text-base block mt-1 text-emerald-600">R$ {budget.beveragesCostConfirmed.toLocaleString('pt-BR')}</strong>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200/80 dark:border-zinc-800">
+                    <span className="text-zinc-400 block text-[11px]">Louças, Rechauds & Mesas</span>
+                    <strong className="text-base block mt-1">R$ {budget.tablewareCostConfirmed.toLocaleString('pt-BR')}</strong>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className={`border-b ${darkMode ? 'border-zinc-800 text-zinc-400' : 'border-zinc-200 text-zinc-500'}`}>
+                      <tr>
+                        <th className="pb-2.5 font-medium">Descrição</th>
+                        <th className="pb-2.5 font-medium">Categoria</th>
+                        <th className="pb-2.5 font-medium">Previsto</th>
+                        <th className="pb-2.5 font-medium">Real / Pago</th>
+                        <th className="pb-2.5 font-medium">Status</th>
+                        <th className="pb-2.5 font-medium text-right">Ação</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                      {manualExpenses.map(expense => (
+                        <tr key={expense.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40">
+                          <td className="py-3 font-semibold text-zinc-900 dark:text-zinc-100">{expense.description}</td>
+                          <td className="py-3 text-zinc-500">{expense.category}</td>
+                          <td className="py-3 text-zinc-600 dark:text-zinc-300">R$ {Number(expense.estimated || 0).toLocaleString('pt-BR')}</td>
+                          <td className="py-3 font-bold text-zinc-900 dark:text-zinc-100">
+                            R$ {Number(expense.actual || expense.estimated || 0).toLocaleString('pt-BR')}
+                          </td>
+                          <td className="py-3">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                              expense.paid ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400'
+                            }`}>
+                              {expense.paid ? 'Pago' : 'Pendente'}
+                            </span>
+                          </td>
+                          <td className="py-3 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => handleOpenExpenseModal(expense)}
+                                className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteExpense(expense.id)}
+                                className="p-1 rounded text-zinc-400 hover:text-rose-600"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ============================================================ */}
+          {/* TAB 6: LINHA DO TEMPO */}
+          {/* ============================================================ */}
+          {activeTab === 'checklist' && (
+            <div className="space-y-6">
+              <div className={`p-5 rounded-3xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800' : 'bg-white border-zinc-200 shadow-xs'}`}>
+                <h2 className="text-base font-bold tracking-tight">Linha do Tempo & Tarefas</h2>
+                <p className="text-xs text-zinc-500 mt-1 mb-4">
+                  {stats.completedChecklist} de {checklist.length} concluídas ({stats.checklistProgress}%)
+                </p>
+                <div className="space-y-2.5">
+                  {checklist.map(task => (
+                    <div
+                      key={task.id}
+                      onClick={() => setChecklist(checklist.map(item => item.id === task.id ? { ...item, completed: !item.completed } : item))}
+                      className={`p-3 rounded-2xl border text-xs flex items-center justify-between cursor-pointer transition ${
+                        task.completed
+                          ? 'bg-zinc-50/60 dark:bg-zinc-900/20 border-zinc-200/50 dark:border-zinc-800/50 opacity-60'
+                          : darkMode
+                          ? 'bg-zinc-900/60 border-zinc-800 hover:border-zinc-700'
+                          : 'bg-white border-zinc-200/80 hover:border-zinc-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center transition ${
+                          task.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-zinc-300 dark:border-zinc-600'
+                        }`}>
+                          {task.completed && <Check className="w-3 h-3 stroke-[3]" />}
+                        </div>
+                        <span className={`font-medium ${task.completed ? 'line-through text-zinc-400' : 'text-zinc-800 dark:text-zinc-200'}`}>
+                          {task.title}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-zinc-400 shrink-0 ml-3">{task.period}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ============================================================ */}
+          {/* TAB 7: CONFIGURAÇÕES DO EVENTO */}
+          {/* ============================================================ */}
+          {activeTab === 'config' && (
+            <div className="space-y-6">
+              <div className={`p-5 rounded-3xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800' : 'bg-white border-zinc-200 shadow-xs'}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-base font-bold tracking-tight">Parâmetros Gerais do Evento</h2>
+                    <p className="text-xs text-zinc-500 mt-0.5">Configure aniversariante, local, tema e PIN de segurança</p>
                   </div>
                   <button
-                    onClick={() => handleOpenExpenseModal(null)}
-                    className="px-3.5 py-1.5 rounded-xl text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center gap-1.5"
+                    onClick={() => setEventEditModalOpen(true)}
+                    className="px-3 py-1.5 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium flex items-center gap-1.5"
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Adicionar Despesa Avulsa</span>
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Ajustar Horário & Data</span>
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                  <div className="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                    <span className="text-zinc-400 block text-[10px]">Buffet (Receitas)</span>
-                    <strong className="text-sm font-bold text-emerald-600">R$ {budget.foodCostConfirmed.toLocaleString('pt-BR')}</strong>
-                    <span className="text-[10px] text-zinc-500 block">Se 100%: R$ {budget.foodCostAll.toLocaleString('pt-BR')}</span>
-                  </div>
-                  <div className="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                    <span className="text-zinc-400 block text-[10px]">Bebidas & Gelo</span>
-                    <strong className="text-sm font-bold text-amber-500">R$ {budget.beveragesCostConfirmed.toLocaleString('pt-BR')}</strong>
-                    <span className="text-[10px] text-zinc-500 block">Se 100%: R$ {budget.beveragesCostAll.toLocaleString('pt-BR')}</span>
-                  </div>
-                  <div className="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                    <span className="text-zinc-400 block text-[10px]">Locações & Espaço</span>
-                    <strong className="text-sm font-bold">R$ {budget.rentalsCost.toLocaleString('pt-BR')}</strong>
-                    <span className="text-[10px] text-zinc-500 block">Fixo independente de RSVP</span>
-                  </div>
-                  <div className="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                    <span className="text-zinc-400 block text-[10px]">Louças & Estrutura</span>
-                    <strong className="text-sm font-bold">R$ {budget.tablewareCostConfirmed.toLocaleString('pt-BR')}</strong>
-                    <span className="text-[10px] text-zinc-500 block">Se 100%: R$ {budget.tablewareCostAll.toLocaleString('pt-BR')}</span>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-3">Despesas Manuais & Contratações Adicionais</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400">
-                          <th className="pb-2">Descrição</th>
-                          <th className="pb-2">Categoria</th>
-                          <th className="pb-2">Previsto</th>
-                          <th className="pb-2">Realizado</th>
-                          <th className="pb-2">Status</th>
-                          <th className="pb-2 text-right">Ação</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                        {manualExpenses.map(exp => (
-                          <tr key={exp.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30">
-                            <td className="py-2.5 font-medium">{exp.description}</td>
-                            <td className="py-2.5 text-zinc-500">{exp.category}</td>
-                            <td className="py-2.5 text-zinc-500">R$ {Number(exp.estimated).toLocaleString('pt-BR')}</td>
-                            <td className="py-2.5 font-bold">R$ {Number(exp.actual || exp.estimated).toLocaleString('pt-BR')}</td>
-                            <td className="py-2.5">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${exp.paid ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
-                                {exp.paid ? 'Pago' : 'Pendente'}
-                              </span>
-                            </td>
-                            <td className="py-2.5 text-right">
-                              <div className="flex items-center justify-end gap-1">
-                                <button onClick={() => handleOpenExpenseModal(exp)} className="p-1 rounded text-zinc-400 hover:text-zinc-600">
-                                  <Edit2 className="w-3.5 h-3.5" />
-                                </button>
-                                <button onClick={() => handleDeleteExpense(exp.id)} className="p-1 rounded text-zinc-400 hover:text-rose-500">
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          )}
-
-          {/* ============================================================ */}
-          {/* TAB 6: LINHA DO TEMPO & CRONOGRAMA */}
-          {/* ============================================================ */}
-          {activeTab === 'checklist' && (
-            <div className={`p-5 rounded-3xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800' : 'bg-white border-zinc-200 shadow-xs'} space-y-3`}>
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-base font-bold">Linha do Tempo & Tarefas</h2>
-                <span className="text-xs text-zinc-500">{stats.completedChecklist} de {checklist.length} tarefas concluídas ({stats.checklistProgress}%)</span>
-              </div>
-              {checklist.map(item => (
-                <div
-                  key={item.id}
-                  onClick={() => setChecklist(checklist.map(c => c.id === item.id ? { ...c, completed: !c.completed } : c))}
-                  className="p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-xs cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className={`w-4 h-4 rounded border flex items-center justify-center ${item.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-zinc-300'}`}>
-                      {item.completed && <Check className="w-3 h-3" />}
-                    </div>
-                    <span className={item.completed ? 'line-through text-zinc-400' : 'font-medium'}>{item.title}</span>
-                  </div>
-                  <span className="text-[10px] text-zinc-400">{item.period}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* ============================================================ */}
-          {/* TAB 7: CONFIGURAÇÕES GERAIS COM CAMPO DO TEMA */}
-          {/* ============================================================ */}
-          {activeTab === 'config' && (
-            <div className={`p-5 rounded-3xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800' : 'bg-white border-zinc-200 shadow-xs'} space-y-6 text-xs`}>
-              <div>
-                <h2 className="text-base font-bold">Parâmetros Gerais do Evento</h2>
-                <p className="text-xs text-zinc-500 mt-0.5">Configure os dados do aniversariante, local e segurança de acesso.</p>
-              </div>
-
-              {/* BLOCO DE SEGURANÇA E PIN */}
-              <div className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                   <div>
-                    <h3 className="font-bold text-xs text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                      🔒 Senha de Proteção do Painel (PIN)
-                    </h3>
-                    <p className="text-[11px] text-zinc-500 mt-0.5">
-                      Impede que pessoas que receberem o link de RSVP acessem seus custos, fornecedores ou convidados ao apagar /rsvp da URL.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setChangePinModalOpen(true)}
-                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition shadow-sm"
-                    >
-                      Alterar PIN
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleLogoutHost}
-                      className="px-3 py-1.5 rounded-xl border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition text-xs"
-                    >
-                      Bloquear Agora
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-zinc-500 mb-1">Nome do Aniversariante</label>
-                  <input
-                    type="text"
-                    value={config.celebrantName}
-                    onChange={(e) => setConfig({ ...config, celebrantName: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-zinc-500 mb-1">Idade Comemorada</label>
-                  <input
-                    type="number"
-                    value={config.age}
-                    onChange={(e) => setConfig({ ...config, age: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-zinc-500 mb-1">Título da Comemoração / Subtítulo do Convite</label>
-                  <input
-                    type="text"
-                    value={config.theme}
-                    placeholder="Ex: Aniversário de 36 anos, B-Day Sunset, Boteco do Diego..."
-                    onChange={(e) => setConfig({ ...config, theme: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent font-medium text-emerald-600 dark:text-emerald-400"
-                  />
-                  <span className="text-[10px] text-zinc-400 mt-0.5 block">
-                    Este texto aparece com destaque logo abaixo do seu nome no convite digital (/rsvp).
-                  </span>
-                </div>
-                <div>
-                  <label className="block text-zinc-500 mb-1">Nome do Espaço</label>
-                  <input
-                    type="text"
-                    value={config.venueName}
-                    onChange={(e) => setConfig({ ...config, venueName: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-zinc-500 mb-1">Endereço Completo</label>
-                  <input
-                    type="text"
-                    value={config.venueAddress}
-                    onChange={(e) => setConfig({ ...config, venueAddress: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-zinc-500 mb-1">Margem de Segurança de Louças (%)</label>
-                  <input
-                    type="number"
-                    value={config.safetyMarginPct}
-                    onChange={(e) => setConfig({ ...config, safetyMarginPct: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-zinc-500 mb-1">Capacidade por Mesa (Lugares)</label>
-                  <input
-                    type="number"
-                    value={config.tableCapacity}
-                    onChange={(e) => setConfig({ ...config, tableCapacity: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent"
-                  />
-                </div>
-                <div className="flex items-center pt-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
+                    <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Nome do Aniversariante</label>
                     <input
-                      type="checkbox"
-                      checked={config.servesAlcohol !== false}
-                      onChange={(e) => setConfig({ ...config, servesAlcohol: e.target.checked })}
-                      className="rounded border-zinc-300 dark:border-zinc-700"
+                      type="text"
+                      value={config.celebrantName}
+                      onChange={(e) => setConfig({ ...config, celebrantName: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
                     />
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-                      Servir Bebidas Alcoólicas no Evento (Chopp, Cerveja, Vinho)
-                    </span>
-                  </label>
+                  </div>
+                  <div>
+                    <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Título / Tema da Ocasião</label>
+                    <input
+                      type="text"
+                      value={config.theme || ''}
+                      onChange={(e) => setConfig({ ...config, theme: e.target.value })}
+                      placeholder="Ex: Aniversário de 36 anos"
+                      className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Data da Festa</label>
+                    <input
+                      type="date"
+                      value={config.date}
+                      onChange={(e) => setConfig({ ...config, date: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Duração Total (horas)</label>
+                    <input
+                      type="number"
+                      value={config.durationHours}
+                      onChange={(e) => setConfig({ ...config, durationHours: Number(e.target.value) })}
+                      className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Nome do Salão / Local</label>
+                    <input
+                      type="text"
+                      value={config.venueName}
+                      onChange={(e) => setConfig({ ...config, venueName: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-zinc-600 dark:text-zinc-400 mb-1">Endereço Completo</label>
+                    <input
+                      type="text"
+                      value={config.venueAddress}
+                      onChange={(e) => setConfig({ ...config, venueAddress: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                    />
+                  </div>
+                </div>
+
+                {/* Card de alteração de PIN */}
+                <div className="mt-5 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">Senha de Proteção do Painel (PIN)</h3>
+                    <p className="text-[11px] text-zinc-500">Impede que convidados visualizem despesas e lista completa caso apaguem /rsvp da URL.</p>
+                  </div>
+                  <button
+                    onClick={() => setChangePinModalOpen(true)}
+                    className="px-3.5 py-1.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 text-xs font-semibold"
+                  >
+                    Alterar PIN
+                  </button>
                 </div>
               </div>
             </div>
@@ -2489,76 +2667,95 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
       </div>
 
       {/* ============================================================ */}
-      {/* MODAIS */}
+      {/* MODAL: RECADO DO CONVIDADO */}
       {/* ============================================================ */}
+      {guestMessageModalOpen && viewingGuestMessage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="w-full max-w-sm rounded-3xl border border-zinc-800 bg-zinc-900 p-5 text-zinc-100 space-y-3 text-xs shadow-2xl">
+            <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
+              <strong className="text-sm font-bold">{viewingGuestMessage.name}</strong>
+              <button onClick={() => setGuestMessageModalOpen(false)} className="text-zinc-400 hover:text-white">✕</button>
+            </div>
+            {viewingGuestMessage.declineReason && (
+              <div>
+                <span className="text-[10px] text-zinc-400 uppercase font-bold block">Motivo informado para ausência:</span>
+                <p className="text-rose-400 font-medium mt-0.5">{viewingGuestMessage.declineReason}</p>
+              </div>
+            )}
+            {viewingGuestMessage.messageToCelebrant && (
+              <div>
+                <span className="text-[10px] text-zinc-400 uppercase font-bold block">Recado carinhoso:</span>
+                <p className="text-zinc-200 italic mt-0.5 bg-zinc-950 p-2.5 rounded-xl border border-zinc-800">
+                  "{viewingGuestMessage.messageToCelebrant}"
+                </p>
+              </div>
+            )}
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setGuestMessageModalOpen(false)}
+                className="px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-medium"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
+      {/* ============================================================ */}
       {/* MODAL: ALTERAR PIN DE SEGURANÇA */}
+      {/* ============================================================ */}
       {changePinModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-sm rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-100 space-y-4 text-xs">
-            <div className="flex justify-between items-center border-b border-zinc-800 pb-3">
-              <h3 className="font-bold text-sm flex items-center gap-2">
-                <span>Alterar PIN de Acesso</span>
-              </h3>
-              <button onClick={() => setChangePinModalOpen(false)} className="text-zinc-400 hover:text-white">✕</button>
-            </div>
-
+          <div className="w-full max-w-sm rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-100 space-y-3 text-xs shadow-2xl">
+            <h3 className="font-bold text-sm">Alterar Senha do Anfitrião (PIN)</h3>
             <form onSubmit={handleChangePinSubmit} className="space-y-3">
               <div>
                 <label className="block text-zinc-400 mb-1">PIN Atual</label>
                 <input
                   type="password"
                   inputMode="numeric"
-                  maxLength={8}
-                  required
                   value={currentPinAttempt}
                   onChange={(e) => setCurrentPinAttempt(e.target.value)}
-                  placeholder="Digite seu PIN atual"
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white outline-none focus:border-emerald-500 tracking-widest text-center"
+                  required
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-center font-mono"
                 />
               </div>
-
               <div>
                 <label className="block text-zinc-400 mb-1">Novo PIN (mínimo 4 dígitos)</label>
                 <input
                   type="password"
                   inputMode="numeric"
-                  maxLength={8}
-                  required
                   value={newPinValue}
                   onChange={(e) => setNewPinValue(e.target.value)}
-                  placeholder="Digite o novo PIN"
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white outline-none focus:border-emerald-500 tracking-widest text-center"
+                  required
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-center font-mono"
                 />
               </div>
-
               <div>
-                <label className="block text-zinc-400 mb-1">Confirme o Novo PIN</label>
+                <label className="block text-zinc-400 mb-1">Confirmar Novo PIN</label>
                 <input
                   type="password"
                   inputMode="numeric"
-                  maxLength={8}
-                  required
                   value={confirmNewPinValue}
                   onChange={(e) => setConfirmNewPinValue(e.target.value)}
-                  placeholder="Repita o novo PIN"
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white outline-none focus:border-emerald-500 tracking-widest text-center"
+                  required
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-center font-mono"
                 />
               </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-zinc-800">
+              <div className="flex justify-end gap-2 pt-2 border-t border-zinc-800">
                 <button
                   type="button"
                   onClick={() => setChangePinModalOpen(false)}
-                  className="px-3 py-2 rounded-xl border border-zinc-700"
+                  className="px-3 py-1.5 rounded-xl border border-zinc-700"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-emerald-600 font-bold text-white hover:bg-emerald-500 transition"
+                  className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-white"
                 >
-                  Confirmar Novo PIN
+                  Salvar PIN
                 </button>
               </div>
             </form>
@@ -2566,230 +2763,270 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
         </div>
       )}
 
-      {/* MODAL: RECADO DO CONVIDADO */}
-      {guestMessageModalOpen && viewingGuestMessage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-100 space-y-4">
-            <div className="flex justify-between items-center border-b border-zinc-800 pb-3">
-              <div>
-                <h3 className="font-bold text-sm">{viewingGuestMessage.name}</h3>
-                <span className="text-[10px] text-zinc-400">{viewingGuestMessage.group}</span>
-              </div>
-              <button onClick={() => setGuestMessageModalOpen(false)} className="text-zinc-400">✕</button>
-            </div>
-
-            {viewingGuestMessage.status === 'declined' && viewingGuestMessage.declineReason && (
-              <div className="p-3 rounded-2xl bg-rose-950/40 border border-rose-800/60 text-xs">
-                <span className="text-[10px] text-rose-300 uppercase font-semibold block mb-0.5">Motivo da ausência:</span>
-                <p className="text-rose-200">{viewingGuestMessage.declineReason}</p>
-              </div>
-            )}
-
-            {viewingGuestMessage.messageToCelebrant && (
-              <div className="p-3.5 rounded-2xl bg-zinc-950 border border-zinc-800 text-xs">
-                <span className="text-[10px] text-emerald-400 uppercase font-semibold block mb-1 flex items-center gap-1">
-                  <MessageSquareQuote className="w-3.5 h-3.5" /> Recado para o aniversariante:
-                </span>
-                <p className="text-zinc-200 italic">"{viewingGuestMessage.messageToCelebrant}"</p>
-              </div>
-            )}
-
-            <div className="flex justify-end pt-2">
-              <button
-                onClick={() => setGuestMessageModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold"
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: LINK DE RSVP E WHATSAPP */}
-      {rsvpSimModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-sm rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-100 space-y-4">
-            <h3 className="font-bold text-sm">Convite Digital & Link de RSVP</h3>
-            <p className="text-xs text-zinc-400">
-              Copie a mensagem formatada para WhatsApp ou compartilhe o QR Code direto com os convidados:
-            </p>
-
-            {(() => {
-              const currentUrl = typeof window !== 'undefined'
-                ? `${window.location.origin}/rsvp`
-                : 'https://seu-app.vercel.app/rsvp';
-
-              return (
-                <div className="space-y-3">
-                  <div className="p-2.5 rounded-xl border border-zinc-800 bg-zinc-950 text-[11px] font-mono break-all text-emerald-400 select-all">
-                    {currentUrl}
-                  </div>
-
-                  <div className="flex justify-center p-3 bg-white rounded-2xl">
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(currentUrl)}`}
-                      alt="QR Code do Convite"
-                      className="w-28 h-28"
-                    />
-                  </div>
-
-                  <div className="space-y-2 pt-2">
-                    <button
-                      onClick={handleCopyWhatsAppInvite}
-                      className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition"
-                    >
-                      <Copy className="w-4 h-4" />
-                      <span>Copiar Texto P/ WhatsApp</span>
-                    </button>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          if (navigator.clipboard) {
-                            navigator.clipboard.writeText(currentUrl);
-                            showToast('Link copiado!');
-                          }
-                        }}
-                        className="flex-1 py-2 rounded-xl bg-zinc-800 text-xs font-semibold"
-                      >
-                        Copiar Apenas o Link
-                      </button>
-                      <a
-                        href={currentUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3 py-2 rounded-xl border border-zinc-700 text-xs font-semibold flex items-center justify-center"
-                      >
-                        Testar
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-
-            <div className="flex justify-end pt-2 border-t border-zinc-800">
-              <button
-                onClick={() => setRsvpSimModalOpen(false)}
-                className="px-3 py-1.5 rounded-lg border border-zinc-700 text-xs"
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: EDIÇÃO DE HORÁRIO, DATA E TEMA */}
+      {/* ============================================================ */}
+      {/* MODAL: EDIÇÃO RÁPIDA DE HORÁRIO E DATA */}
+      {/* ============================================================ */}
       {eventEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-100 space-y-4 text-xs">
-            <h3 className="font-bold text-sm">Editar Programação & Tema da Festa</h3>
+          <div className={`w-full max-w-md rounded-3xl border p-6 shadow-2xl ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-emerald-500" />
+                <h3 className="text-sm font-bold">Editar Programação & Horário</h3>
+              </div>
+              <button onClick={() => setEventEditModalOpen(false)} className="text-zinc-400 hover:text-zinc-600 text-xs">✕</button>
+            </div>
             <form onSubmit={(e) => {
               e.preventDefault();
               const form = e.target;
-              const theme = form.theme.value.trim();
               const startTime = form.startTime.value;
               const endTime = form.endTime.value;
               const date = form.date.value;
+              const theme = form.theme.value.trim();
 
-              let duration = 6;
+              let duration = Number(config.durationHours) || 5;
               try {
-                const [sH, sM] = startTime.split(':').map(Number);
-                const [eH, eM] = endTime.split(':').map(Number);
-                let diff = (eH + eM/60) - (sH + sM/60);
+                const [startH, startM] = startTime.split(':').map(Number);
+                const [endH, endM] = endTime.split(':').map(Number);
+                let diff = (endH + endM / 60) - (startH + startM / 60);
                 if (diff <= 0) diff += 24;
                 duration = Math.round(diff * 10) / 10;
               } catch (_) {}
 
-              setConfig({ ...config, theme, date, startTime, endTime, durationHours: duration });
+              setConfig({
+                ...config,
+                date,
+                startTime,
+                endTime,
+                theme: theme || config.theme,
+                durationHours: duration
+              });
               setEventEditModalOpen(false);
-              showToast(`Programação e tema atualizados com sucesso!`);
-            }} className="space-y-3">
+              showToast(`Horário atualizado para ${startTime} (${duration}h de festa)!`);
+            }} className="space-y-4 text-xs">
               <div>
-                <label className="block text-zinc-400 mb-1">Tema / Estilo da Festa</label>
+                <label className="block text-zinc-500 mb-1">Título da Comemoração (ex: Aniversário de 36 anos)</label>
                 <input
                   type="text"
                   name="theme"
-                  defaultValue={config.theme}
-                  placeholder="Ex: Sunset Chic & Boteco Moderno"
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-emerald-400 font-semibold text-xs"
+                  defaultValue={config.theme || ''}
+                  className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs"
                 />
               </div>
               <div>
-                <label className="block text-zinc-400 mb-1">Data da Festa</label>
-                <input type="date" name="date" defaultValue={config.date} required className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white" />
+                <label className="block text-zinc-500 mb-1">Data da Comemoração</label>
+                <input
+                  type="date"
+                  name="date"
+                  defaultValue={config.date}
+                  required
+                  className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs font-semibold"
+                />
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-zinc-400 mb-1">Início (Aparece no convite)</label>
-                  <input type="time" name="startTime" defaultValue={config.startTime} required className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white" />
+                  <label className="block text-zinc-500 mb-1">Início da Festa</label>
+                  <input
+                    type="time"
+                    name="startTime"
+                    defaultValue={config.startTime}
+                    required
+                    className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs font-semibold"
+                  />
                 </div>
                 <div>
-                  <label className="block text-zinc-400 mb-1">Término (Uso interno p/ cálculo)</label>
-                  <input type="time" name="endTime" defaultValue={config.endTime} required className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white" />
+                  <label className="block text-zinc-500 mb-1">Término da Festa</label>
+                  <input
+                    type="time"
+                    name="endTime"
+                    defaultValue={config.endTime}
+                    required
+                    className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs font-semibold"
+                  />
                 </div>
               </div>
-              <div className="flex justify-end gap-2 pt-3 border-t border-zinc-800">
-                <button type="button" onClick={() => setEventEditModalOpen(false)} className="px-3 py-2 rounded-xl border border-zinc-700">Cancelar</button>
-                <button type="submit" className="px-4 py-2 rounded-xl bg-emerald-600 font-bold text-white">Salvar Alterações</button>
+              <div className="flex justify-end gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setEventEditModalOpen(false)}
+                  className="px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold"
+                >
+                  Salvar
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL: CONVIDADO (CRIAR / EDITAR) */}
-      {guestModalOpen && (
+      {/* MODAL: LINK RSVP */}
+      {rsvpSimModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-100 space-y-3 text-xs">
-            <h3 className="font-bold text-sm">{editingGuest ? 'Editar Convidado' : 'Novo Convidado'}</h3>
-            <form onSubmit={handleSaveGuest} className="space-y-3">
-              <div>
-                <label className="block text-zinc-400 mb-1">Nome Completo</label>
-                <input type="text" name="name" defaultValue={editingGuest?.name || ''} required className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white" />
+          <div className="w-full max-w-sm rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-100 space-y-4 text-xs">
+            <h3 className="font-bold text-sm">Link de RSVP & Convite Digital</h3>
+            <p className="text-zinc-400">Compartilhe o link do convite com seus convidados pelo WhatsApp:</p>
+            {(() => {
+              const currentUrl = typeof window !== 'undefined' ? `${window.location.origin}/rsvp` : 'https://seu-app.vercel.app/rsvp';
+              return (
+                <div className="space-y-3">
+                  <div className="p-2.5 rounded-xl border border-zinc-800 bg-zinc-950 font-mono text-[11px] text-emerald-400 break-all select-all">
+                    {currentUrl}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        if (navigator.clipboard) {
+                          navigator.clipboard.writeText(currentUrl);
+                          showToast('Link copiado!');
+                        }
+                      }}
+                      className="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
+                    >
+                      Copiar Link
+                    </button>
+                    <button
+                      onClick={handleCopyWhatsAppInvite}
+                      className="px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-medium"
+                      title="Copiar mensagem pronta para WhatsApp"
+                    >
+                      Copiar Texto
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+            <div className="flex justify-end pt-2 border-t border-zinc-800">
+              <button
+                onClick={() => setRsvpSimModalOpen(false)}
+                className="px-3 py-1.5 rounded-xl border border-zinc-700 text-zinc-300"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* MODAL: CALCULADORA DE RENDIMENTO DE FRUTAS & SUCOS (kg ➔ L) */}
+      {/* ============================================================ */}
+      {fruitCalcModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="w-full max-w-lg rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-100 space-y-4 text-xs max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b border-zinc-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Scale className="w-4 h-4 text-emerald-400" />
+                <h3 className="font-bold text-sm">Calculadora de Rendimento de Frutas & Sucos</h3>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => setFruitCalcModalOpen(false)} className="text-zinc-400 hover:text-white">✕</button>
+            </div>
+
+            <p className="text-zinc-400 text-xs">
+              Descubra exatamente quantos litros e copos de suco pronto cada quilo de fruta in natura vai produzir para sua festa.
+            </p>
+
+            <div className="p-4 rounded-2xl bg-zinc-950 border border-zinc-800 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-zinc-400 mb-1">Grupo</label>
-                  <select name="group" defaultValue={editingGuest?.group || 'Família'} className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white">
-                    {PRESET_GROUPS.map((g, i) => <option key={i} value={g}>{g}</option>)}
+                  <label className="block text-zinc-400 font-semibold mb-1">Qual fruta você comprou?</label>
+                  <select
+                    value={selectedFruit}
+                    onChange={(e) => setSelectedFruit(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-white font-medium outline-none focus:border-emerald-500"
+                  >
+                    <option value="morango">🍓 Morango in Natura</option>
+                    <option value="maracuja">🟡 Maracujá da Fruta</option>
+                    <option value="laranja">🍊 Laranja Pêra (Suco Puro)</option>
+                    <option value="limao">🍋 Limão (Limonada)</option>
+                    <option value="abacaxi">🍍 Abacaxi Pérola</option>
+                    <option value="uva">🍇 Uva Roxa Integral</option>
+                    <option value="polpa_congelada">🧊 Polpa de Fruta Congelada</option>
                   </select>
                 </div>
+
                 <div>
-                  <label className="block text-zinc-400 mb-1">Faixa Etária</label>
-                  <select name="category" defaultValue={editingGuest?.category || 'adult'} className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white">
-                    <option value="adult">Adulto</option>
-                    <option value="child_6_11">Criança (6-11 anos)</option>
-                    <option value="child_0_5">Criança (0-5 anos)</option>
-                  </select>
+                  <label className="block text-zinc-400 font-semibold mb-1">Quantidade Comprada (kg)</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0.1"
+                    value={fruitKgInput}
+                    onChange={(e) => setFruitKgInput(parseFloat(e.target.value) || 0)}
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-white text-base font-bold outline-none focus:border-emerald-500"
+                  />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-zinc-400 mb-1">Status RSVP</label>
-                  <select name="status" defaultValue={editingGuest?.status || 'pending'} className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white">
-                    <option value="confirmed">Confirmado</option>
-                    <option value="pending">Pendente</option>
-                    <option value="declined">Ausente (Não poderá ir)</option>
-                  </select>
-                </div>
-                <div className="flex items-center pt-5">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" name="drinksAlcohol" defaultChecked={editingGuest ? editingGuest.drinksAlcohol : true} className="rounded" />
-                    <span>Consome Álcool</span>
-                  </label>
-                </div>
+
+              {/* RESULTADO DO CÁLCULO DE RENDIMENTO */}
+              {(() => {
+                const info = FRUIT_JUICE_YIELD_TABLE[selectedFruit] || FRUIT_JUICE_YIELD_TABLE.morango;
+                const totalLitersProduced = Number((fruitKgInput * info.yieldPerKgLiters).toFixed(2));
+                const totalGlasses200ml = Math.floor((totalLitersProduced * 1000) / 200);
+                const totalGlasses300ml = Math.floor((totalLitersProduced * 1000) / 300);
+
+                return (
+                  <div className="mt-3 p-4 rounded-xl bg-emerald-950/40 border border-emerald-800/60 space-y-2">
+                    <span className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider block">
+                      Resultado Técnico de Produção:
+                    </span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-extrabold text-white">{totalLitersProduced} Litros</span>
+                      <span className="text-xs text-emerald-300">de suco pronto para servir</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-emerald-900/60 text-xs">
+                      <div>
+                        <span className="text-zinc-400 block text-[10px]">Copos de 200ml:</span>
+                        <strong className="text-white text-sm">~{totalGlasses200ml} copos</strong>
+                      </div>
+                      <div>
+                        <span className="text-zinc-400 block text-[10px]">Copos de 300ml:</span>
+                        <strong className="text-white text-sm">~{totalGlasses300ml} copos</strong>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 text-[11px] text-zinc-300">
+                      💡 <strong>Proporção ideal:</strong> {info.waterRatio}
+                      <p className="text-zinc-400 mt-0.5">{info.description}</p>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* TABELA DE REFERÊNCIA RÁPIDA DE TODAS AS FRUTAS */}
+            <div className="space-y-2">
+              <span className="font-semibold text-zinc-300 block">Tabela Rápida de Rendimento (1 kg de cada fruta):</span>
+              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                {Object.entries(FRUIT_JUICE_YIELD_TABLE).map(([k, item]) => (
+                  <div key={k} className="p-2.5 rounded-xl border border-zinc-800 bg-zinc-950 flex items-center justify-between text-[11px]">
+                    <div>
+                      <strong className="text-white block">{item.name}</strong>
+                      <span className="text-zinc-400 text-[10px]">{item.waterRatio}</span>
+                    </div>
+                    <span className="font-bold text-emerald-400 text-xs shrink-0">
+                      1kg ➔ {item.yieldPerKgLiters} Litros
+                    </span>
+                  </div>
+                ))}
               </div>
-              <div>
-                <label className="block text-zinc-400 mb-1">Outra Restrição / Observação</label>
-                <input type="text" name="customRestriction" placeholder="Ex: Alergia a camarão" className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white" />
-              </div>
-              <div className="flex justify-end gap-2 pt-3 border-t border-zinc-800">
-                <button type="button" onClick={() => setGuestModalOpen(false)} className="px-3 py-2 rounded-xl border border-zinc-700">Cancelar</button>
-                <button type="submit" className="px-4 py-2 rounded-xl bg-emerald-600 font-bold text-white">Salvar</button>
-              </div>
-            </form>
+            </div>
+
+            <div className="flex justify-end pt-3 border-t border-zinc-800">
+              <button
+                type="button"
+                onClick={() => setFruitCalcModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-medium text-xs"
+              >
+                Fechar Calculadora
+              </button>
+            </div>
           </div>
         </div>
       )}
