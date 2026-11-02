@@ -2914,6 +2914,159 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
       )}
 
       {/* ============================================================ */}
+      {/* MODAL: CONVIDADO (CRIAR E EDITAR MANUALMENTE) */}
+      {/* ============================================================ */}
+      {guestModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className={`w-full max-w-lg rounded-3xl border p-6 shadow-2xl max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}>
+            <div className="flex items-center justify-between mb-4 border-b border-zinc-200/60 dark:border-zinc-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-emerald-500" />
+                <h3 className="text-sm font-bold">{editingGuest ? 'Editar Convidado' : 'Novo Convidado'}</h3>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => {
+                  setGuestModalOpen(false);
+                  setEditingGuest(null);
+                }} 
+                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-xs"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveGuest} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-zinc-500 dark:text-zinc-400 mb-1 font-medium">Nome Completo</label>
+                <input
+                  type="text"
+                  required
+                  defaultValue={editingGuest?.name || ''}
+                  name="name"
+                  placeholder="Ex: Carlos Eduardo"
+                  className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-zinc-500 dark:text-zinc-400 mb-1 font-medium">Grupo / Categoria</label>
+                  <select 
+                    name="group" 
+                    defaultValue={editingGuest?.group || 'Família'} 
+                    className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs dark:bg-zinc-900"
+                  >
+                    {PRESET_GROUPS.map((grp, i) => (
+                      <option key={i} value={grp}>{grp}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-zinc-500 dark:text-zinc-400 mb-1 font-medium">Faixa Etária</label>
+                  <select 
+                    name="category" 
+                    defaultValue={editingGuest?.category || 'adult'} 
+                    className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs dark:bg-zinc-900"
+                  >
+                    <option value="adult">Adulto (Cota integral)</option>
+                    <option value="child_6_11">Criança 6-11 anos (0.5 cota)</option>
+                    <option value="child_0_5">Criança 0-5 anos (Isento)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-zinc-500 dark:text-zinc-400 mb-1 font-medium">Status RSVP (Presença)</label>
+                  <select 
+                    name="status" 
+                    defaultValue={editingGuest?.status || 'pending'} 
+                    className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs dark:bg-zinc-900 font-semibold"
+                  >
+                    <option value="confirmed">Confirmado (Irá comparecer)</option>
+                    <option value="pending">Pendente (Aguardando resposta)</option>
+                    <option value="declined">Ausente (Não comparecerá)</option>
+                  </select>
+                </div>
+                <div className="flex items-center pt-5">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input 
+                      type="checkbox" 
+                      name="drinksAlcohol" 
+                      defaultChecked={editingGuest ? editingGuest.drinksAlcohol : true} 
+                      className="rounded border-zinc-300 dark:border-zinc-700" 
+                    />
+                    <span className="font-medium text-zinc-700 dark:text-zinc-300">Consome Bebidas Alcoólicas</span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-zinc-500 dark:text-zinc-400 mb-1.5 font-medium">Restrições Alimentares</label>
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {PRESET_RESTRICTIONS.map((res, i) => {
+                    const isSelected = selectedRestrictions.includes(res);
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => {
+                          if (res === 'Sem restrições') {
+                            setSelectedRestrictions(['Sem restrições']);
+                          } else {
+                            const withoutSem = selectedRestrictions.filter(r => r !== 'Sem restrições');
+                            if (isSelected) {
+                              const filtered = withoutSem.filter(r => r !== res);
+                              setSelectedRestrictions(filtered.length === 0 ? ['Sem restrições'] : filtered);
+                            } else {
+                              setSelectedRestrictions([...withoutSem, res]);
+                            }
+                          }
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition ${
+                          isSelected 
+                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent font-semibold shadow-xs' 
+                            : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                        }`}
+                      >
+                        {res}
+                      </button>
+                    );
+                  })}
+                </div>
+                <input
+                  type="text"
+                  name="customRestriction"
+                  placeholder="Outra restrição específica (ex: Alergia a frutos do mar)"
+                  className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-zinc-200/60 dark:border-zinc-800">
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setGuestModalOpen(false);
+                    setEditingGuest(null);
+                  }} 
+                  className="px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-white shadow-md transition"
+                >
+                  {editingGuest ? 'Salvar Alterações' : 'Adicionar Convidado'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
       {/* MODAL: CALCULADORA DE RENDIMENTO DE FRUTAS & SUCOS (kg ➔ L) */}
       {/* ============================================================ */}
       {fruitCalcModalOpen && (
