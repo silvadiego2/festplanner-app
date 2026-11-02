@@ -30,7 +30,10 @@ import {
   Cloud,
   SlidersHorizontal,
   Copy,
-  MessageSquareQuote
+  MessageSquareQuote,
+  Calculator,
+  RotateCcw,
+  ThermometerSun
 } from 'lucide-react';
 
 // ==============================================================================
@@ -205,7 +208,8 @@ const INITIAL_EVENT_CONFIG = {
   disposableUnitCost: 1.80,
   rechaudRentalCost: 45.00,
   fuelPasteCost: 8.00,
-  hostPin: "1234"
+  hostPin: "1234",
+  servesAlcohol: true
 };
 
 const INITIAL_GUESTS = [
@@ -229,6 +233,59 @@ const INITIAL_BEVERAGE_TYPES = [
   { id: 'b10', name: 'Gelo Filtrado (Consumo)', category: 'ice', mlPerPersonPerHour: 80, unitCostPerLiter: 3.00, unitPackage: 'Saco 5kg', packageVolume: 5.0 },
   { id: 'b11', name: 'Gelo em Cubos/Barra (Tina & Coolers)', category: 'ice', mlPerPersonPerHour: 100, unitCostPerLiter: 2.20, unitPackage: 'Saco 10kg', packageVolume: 10.0 }
 ];
+
+// MODELOS TÉCNICOS FIXOS DE CALCULADORA DE BEBIDAS (ESTILO DESCORCHA / EVENT MASTER)
+// PRESERVAM SEMPRE OS VALORES ORIGINAIS CASO VOCÊ ALTERE E QUEIRA RESTAURAR
+const BEVERAGE_CALCULATOR_PRESETS = {
+  churrasco_boteco: {
+    label: 'Churrasco & Boteco Sunset',
+    description: 'Foco alto em cerveja/chopp bem gelado, água mineral, refrigerantes e água de coco.',
+    rates: {
+      soda: 140, // ml/pessoa/h somados
+      juice: 80,
+      water: 120,
+      alcohol_beer: 360,
+      alcohol_wine: 30,
+      ice: 200
+    }
+  },
+  jantar_formal: {
+    label: 'Jantar Formal & Casamento / 15 Anos',
+    description: 'Consumo equilibrado com ênfase em vinhos tintos, brancos, espumante brut para brindes e água.',
+    rates: {
+      soda: 100,
+      juice: 60,
+      water: 140,
+      alcohol_beer: 180,
+      alcohol_wine: 90,
+      ice: 140
+    }
+  },
+  balada_animada: {
+    label: 'Festa Animada & Balada',
+    description: 'Público festeiro com alto consumo de chopp, cerveja, energéticos e gelo abundante.',
+    rates: {
+      soda: 150,
+      juice: 70,
+      water: 150,
+      alcohol_beer: 420,
+      alcohol_wine: 40,
+      ice: 240
+    }
+  },
+  padrao_salvador: {
+    label: 'Padrão Técnico Salvador (Equilibrado)',
+    description: 'Proporções clássicas testadas para o calor de Salvador, com margem de segurança.',
+    rates: {
+      soda: 150,
+      juice: 90,
+      water: 120,
+      alcohol_beer: 320,
+      alcohol_wine: 60,
+      ice: 180
+    }
+  }
+};
 
 const INITIAL_RENTALS = [
   { id: '1', name: 'Salão Villa Verde & Lounge', category: 'venue', cost: 2800, supplier: 'Espaço Villa Verde', notes: 'Incluso limpeza pós-evento' },
@@ -291,6 +348,12 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [cateringSubTab, setCateringSubTab] = useState('menu'); // 'menu' | 'beverages'
   const [structureSubTab, setStructureSubTab] = useState('rentals'); // 'rentals' | 'tableware'
+
+  // CALCULADORA DE BEBIDAS (ESTILO DESCORCHA)
+  const [calcEventType, setCalcEventType] = useState('padrao_salvador');
+  const [calcIntensity, setCalcIntensity] = useState('normal'); // 'light' (0.85) | 'normal' (1.0) | 'heavy' (1.2)
+  const [calcWeather, setCalcWeather] = useState('hot'); // 'mild' (0.95) | 'hot' (1.15) | 'very_hot' (1.30)
+  const [calcPanelOpen, setCalcPanelOpen] = useState(false);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [eventEditModalOpen, setEventEditModalOpen] = useState(false);
@@ -582,18 +645,38 @@ export default function App() {
   // Cálculos de Bebidas Detalhadas (Confirmados vs. Todos)
   const calculatedBeverages = useMemo(() => {
     const hours = Number(config.durationHours) || 5;
+    const servesAlcohol = config.servesAlcohol !== false;
     let totalBeveragesCostConfirmed = 0;
     let totalBeveragesCostAll = 0;
 
     const list = beverages.map(bev => {
       const isAlcohol = bev.category === 'alcohol';
+
+      // Se o evento não serve álcool, zera o consumo de bebidas alcoólicas
+      if (isAlcohol && !servesAlcohol) {
+        return {
+          ...bev,
+          totalLitersConfirmed: 0,
+          totalCostConfirmed: 0,
+          packagesConfirmed: 0,
+          totalLitersAll: 0,
+          totalCostAll: 0,
+          packagesAll: 0,
+          disabled: true
+        };
+      }
+
+      // Se não houver álcool, adiciona uma ligeira compensação (+25%) em sucos e refrigerantes
+      const compensationFactor = (!servesAlcohol && (bev.category === 'soda' || bev.category === 'juice')) ? 1.25 : 1.0;
+      const effectiveRate = bev.mlPerPersonPerHour * compensationFactor;
+
       const headcountConfirmed = isAlcohol ? stats.confirmedDrinkers : stats.confirmedCount;
       const headcountAll = isAlcohol ? stats.allPotentialDrinkers : stats.totalGuests;
 
-      const totalLitersConfirmed = Number(((bev.mlPerPersonPerHour * headcountConfirmed * hours) / 1000).toFixed(1));
+      const totalLitersConfirmed = Number(((effectiveRate * headcountConfirmed * hours) / 1000).toFixed(1));
       const totalCostConfirmed = Number((totalLitersConfirmed * bev.unitCostPerLiter).toFixed(2));
 
-      const totalLitersAll = Number(((bev.mlPerPersonPerHour * headcountAll * hours) / 1000).toFixed(1));
+      const totalLitersAll = Number(((effectiveRate * headcountAll * hours) / 1000).toFixed(1));
       const totalCostAll = Number((totalLitersAll * bev.unitCostPerLiter).toFixed(2));
 
       const packagesConfirmed = Math.ceil(totalLitersConfirmed / (bev.packageVolume || 1));
@@ -602,23 +685,33 @@ export default function App() {
       totalBeveragesCostConfirmed += totalCostConfirmed;
       totalBeveragesCostAll += totalCostAll;
 
-      return { ...bev, totalLitersConfirmed, totalCostConfirmed, packagesConfirmed, totalLitersAll, totalCostAll, packagesAll };
+      return {
+        ...bev,
+        totalLitersConfirmed,
+        totalCostConfirmed,
+        packagesConfirmed,
+        totalLitersAll,
+        totalCostAll,
+        packagesAll,
+        disabled: false
+      };
     });
 
     return { list, totalCostConfirmed: Math.round(totalBeveragesCostConfirmed), totalCostAll: Math.round(totalBeveragesCostAll) };
-  }, [beverages, config.durationHours, stats.confirmedCount, stats.confirmedDrinkers, stats.totalGuests, stats.allPotentialDrinkers]);
+  }, [beverages, config.durationHours, config.servesAlcohol, stats.confirmedCount, stats.confirmedDrinkers, stats.totalGuests, stats.allPotentialDrinkers]);
 
   // Cálculos de Louças, Rechauds, Mesas e Descartáveis
   const calculatedMaterials = useMemo(() => {
     const confirmed = stats.confirmedCount;
     const all = stats.totalGuests;
     const safety = 1 + ((Number(config.safetyMarginPct) || 15) / 100);
+    const servesAlcohol = config.servesAlcohol !== false;
 
     const mainPlates = Math.ceil(confirmed * 1.25 * safety);
     const dessertPlates = Math.ceil(confirmed * 1.35 * safety);
     const forksAndKnives = Math.ceil(confirmed * 1.3 * safety);
-    const waterGlasses = Math.ceil(confirmed * 1.5 * safety);
-    const beerTulips = Math.ceil(stats.confirmedDrinkers * 2 * safety);
+    const waterGlasses = Math.ceil(confirmed * (servesAlcohol ? 1.5 : 2.0) * safety);
+    const beerTulips = servesAlcohol ? Math.ceil(stats.confirmedDrinkers * 2 * safety) : 0;
 
     const rechauds = Math.max(1, stats.hotDishesCount);
     const durationHours = Number(config.durationHours) || 5;
@@ -846,6 +939,51 @@ export default function App() {
   const handleDeleteDish = (id) => {
     setMenu(menu.filter(d => d.id !== id));
     showToast('Prato removido do cardápio.');
+  };
+
+  // --- MOTOR DE CÁLCULO DE BEBIDAS (DESCORCHA CALIBRATION) ---
+  const handleApplyDescorchaCalculator = () => {
+    const preset = BEVERAGE_CALCULATOR_PRESETS[calcEventType] || BEVERAGE_CALCULATOR_PRESETS.padrao_salvador;
+
+    // Fator de intensidade
+    const intensityMultiplier = calcIntensity === 'light' ? 0.85 : calcIntensity === 'heavy' ? 1.25 : 1.0;
+
+    // Fator de clima (Salvador é quente por padrão)
+    const weatherHydrationMultiplier = calcWeather === 'very_hot' ? 1.30 : calcWeather === 'hot' ? 1.15 : 0.95;
+
+    const updated = beverages.map(bev => {
+      let baseRate = bev.mlPerPersonPerHour;
+
+      if (bev.category === 'alcohol') {
+        if (bev.name.toLowerCase().includes('vinho') || bev.name.toLowerCase().includes('espumante')) {
+          baseRate = preset.rates.alcohol_wine * intensityMultiplier;
+        } else {
+          baseRate = preset.rates.alcohol_beer * intensityMultiplier * (calcWeather === 'very_hot' ? 1.1 : 1.0);
+        }
+      } else if (bev.category === 'water') {
+        baseRate = (bev.name.toLowerCase().includes('com gás') ? 40 : 80) * weatherHydrationMultiplier;
+      } else if (bev.category === 'juice') {
+        baseRate = 45 * weatherHydrationMultiplier;
+      } else if (bev.category === 'soda') {
+        baseRate = (bev.name.toLowerCase().includes('cola') ? 85 : 55) * weatherHydrationMultiplier;
+      } else if (bev.category === 'ice') {
+        baseRate = (bev.name.toLowerCase().includes('consumo') ? 80 : 110) * weatherHydrationMultiplier;
+      }
+
+      return {
+        ...bev,
+        mlPerPersonPerHour: Math.round(baseRate)
+      };
+    });
+
+    setBeverages(updated);
+    showToast(`Bebidas recalculadas pelo perfil "${preset.label}"!`);
+  };
+
+  // Função para restaurar exatamente os padrões de fábrica originais
+  const handleRestoreDefaultBeverages = () => {
+    setBeverages(INITIAL_BEVERAGE_TYPES);
+    showToast('Parâmetros originais de bebidas restaurados com sucesso!');
   };
 
   // --- CRUD BEBIDAS ---
@@ -1906,11 +2044,43 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
                       <h3 className="text-base font-bold">Discriminação de Bebidas, Sucos & Gelo</h3>
                       <p className="text-xs text-zinc-500">Estimativas dimensionadas para {config.durationHours} horas de celebração</p>
                     </div>
-                    <div className="text-left sm:text-right">
-                      <span className="text-[10px] text-zinc-400 block uppercase">Total Bebidas (Confirmados)</span>
-                      <strong className="text-lg font-bold text-emerald-600">R$ {calculatedBeverages.totalCostConfirmed.toLocaleString('pt-BR')}</strong>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                      {/* TOGGLE: SERVIR BEBIDAS ALCOÓLICAS */}
+                      <div className="flex items-center gap-2 p-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
+                        <Wine className={`w-4 h-4 ${config.servesAlcohol !== false ? 'text-emerald-500' : 'text-zinc-400'}`} />
+                        <span className="text-xs font-semibold">Bebidas Alcoólicas:</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const nextVal = !(config.servesAlcohol !== false);
+                            setConfig({ ...config, servesAlcohol: nextVal });
+                            showToast(nextVal ? 'Bebidas alcoólicas ativadas no cálculo!' : 'Bebidas alcoólicas desativadas (não alcoólico)!');
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                            config.servesAlcohol !== false
+                              ? 'bg-emerald-600 text-white shadow-xs'
+                              : 'bg-zinc-300 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300'
+                          }`}
+                        >
+                          {config.servesAlcohol !== false ? 'SIM (Chopp/Vinho)' : 'NÃO (Sem Álcool)'}
+                        </button>
+                      </div>
+
+                      <div className="text-left sm:text-right">
+                        <span className="text-[10px] text-zinc-400 block uppercase">Total Bebidas (Confirmados)</span>
+                        <strong className="text-lg font-bold text-emerald-600">R$ {calculatedBeverages.totalCostConfirmed.toLocaleString('pt-BR')}</strong>
+                      </div>
                     </div>
                   </div>
+
+                  {config.servesAlcohol === false && (
+                    <div className="mb-4 p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/60 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
+                      <Wine className="w-4 h-4 shrink-0 text-amber-500" />
+                      <span>
+                        <strong>Modo Sem Álcool Ativo:</strong> Cervejas, chopp e vinhos foram zerados no orçamento. O consumo de refrigerantes, sucos e água foi compensado automaticamente (+25%).
+                      </span>
+                    </div>
+                  )}
 
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
@@ -1927,11 +2097,18 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
                       </thead>
                       <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
                         {calculatedBeverages.list.map(bev => (
-                          <tr key={bev.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30">
-                            <td className="py-2.5 font-medium">{bev.name}</td>
-                            <td className="py-2.5 text-zinc-500">{bev.mlPerPersonPerHour} ml/h</td>
+                          <tr key={bev.id} className={`hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 ${bev.disabled ? 'opacity-40 line-through' : ''}`}>
+                            <td className="py-2.5 font-medium">
+                              {bev.name}
+                              {bev.disabled && (
+                                <span className="ml-2 text-[10px] no-underline px-1.5 py-0.2 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-500 font-normal">
+                                  Não servido
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-2.5 text-zinc-500">{bev.disabled ? '0 ml/h' : `${bev.mlPerPersonPerHour} ml/h`}</td>
                             <td className="py-2.5 font-bold">{bev.totalLitersConfirmed} L</td>
-                            <td className="py-2.5 text-zinc-500">~{bev.packagesConfirmed} un ({bev.unitPackage})</td>
+                            <td className="py-2.5 text-zinc-500">{bev.disabled ? '-' : `~${bev.packagesConfirmed} un (${bev.unitPackage})`}</td>
                             <td className="py-2.5 text-zinc-500">R$ {Number(bev.unitCostPerLiter).toFixed(2)}/L</td>
                             <td className="py-2.5 text-right font-bold text-emerald-600">R$ {bev.totalCostConfirmed.toLocaleString('pt-BR')}</td>
                             <td className="py-2.5 text-right">
@@ -2290,6 +2467,19 @@ Subtotal Estrutura: R$ ${calculatedMaterials.tablewareCostConfirmed.toLocaleStri
                     onChange={(e) => setConfig({ ...config, tableCapacity: Number(e.target.value) })}
                     className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent"
                   />
+                </div>
+                <div className="flex items-center pt-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={config.servesAlcohol !== false}
+                      onChange={(e) => setConfig({ ...config, servesAlcohol: e.target.checked })}
+                      className="rounded border-zinc-300 dark:border-zinc-700"
+                    />
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+                      Servir Bebidas Alcoólicas no Evento (Chopp, Cerveja, Vinho)
+                    </span>
+                  </label>
                 </div>
               </div>
             </div>
